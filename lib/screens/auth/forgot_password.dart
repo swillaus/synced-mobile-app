@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:synced/screens/auth/verification_code.dart';
 import 'package:synced/utils/constants.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -121,6 +122,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     // TODO - call verify OTP API
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => VerificationCodePage(
+                                email: _emailController.text,
+                                password: '',
+                                source: 'reset')));
                   },
                   child: const Text(
                     'Send OTP code',

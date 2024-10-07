@@ -35,21 +35,28 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.1),
           color: Colors.white,
           child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                     child: Image.asset(
-                  'assets/forgot_pass_img.png',
+                  'assets/reset_password.png',
                 )),
-                const SizedBox(height: 25),
-                const Text('Create New Password',
-                    style: TextStyle(
-                        fontSize: 24,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 15),
-                Text('Password',
+                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                const Center(
+                    child: Text('Reset Your Password',
+                        style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600))),
+                const Center(
+                    child: Text('Now you can reset your old password',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w500))),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                Text('Enter a new password',
                     style: TextStyle(color: headingColor, fontSize: 18)),
                 const SizedBox(height: 5),
                 TextField(
@@ -70,13 +77,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -88,7 +95,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   obscureText: !showPassword,
                 ),
                 const SizedBox(height: 15),
-                Text('Confirm Password',
+                Text('Confirm new password',
                     style: TextStyle(color: headingColor, fontSize: 18)),
                 const SizedBox(height: 5),
                 TextField(
@@ -109,13 +116,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(24.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -131,7 +138,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   style: ButtonStyle(
                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0))),
+                              borderRadius: BorderRadius.circular(24.0))),
                       fixedSize: WidgetStateProperty.all(Size(
                           MediaQuery.of(context).size.width * 0.8,
                           MediaQuery.of(context).size.height * 0.075)),
@@ -168,9 +175,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         MaterialPageRoute(
                             builder: (context) => const PasswordChanged()));
                   },
-                  child: Text(
-                    'Reset Password',
-                    style: TextStyle(color: headingColor, fontSize: 18),
+                  child: const Text(
+                    'Submit',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
               ])),

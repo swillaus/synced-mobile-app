@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
-import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/change_password.dart';
 import 'package:synced/screens/home/home_screen.dart';
-import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:synced/utils/widgets.dart';
@@ -59,7 +57,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                       fontSize: 24,
                       color: Colors.black,
                       fontWeight: FontWeight.w600)),
-              Text('An 4 digit OTP has been sent to \n ${widget.email}',
+              Text('A 4 digit OTP has been sent to \n ${widget.email}',
                   style: TextStyle(color: headingColor, fontSize: 18)),
               showError
                   ? const SizedBox(height: 10)
@@ -90,30 +88,37 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                         MediaQuery.of(context).size.height * 0.075)),
                     backgroundColor: WidgetStateProperty.all(clickableColor)),
                 onPressed: () async {
-                  setState(() {
-                    showSpinner = true;
-                    showError = false;
-                  });
-                  final resp = widget.source == 'auth'
-                      ? await ApiService.verifyCode(0000, widget.email)
-                      : await ApiService.verifyForgotPasswordCode(
-                          0000, widget.email);
-                  if (resp.isEmpty || resp['code'] != 200) {
-                    setState(() {
-                      showSpinner = false;
-                      errorMessage = resp['reason'];
-                      showError = true;
-                    });
-                    return;
-                  }
-                  if (widget.source == 'auth') {
-                    await _db.deleteUsers();
-                    User.email = widget.email;
-                    User.password = widget.password;
-                    User.name = resp['data']['name'];
-                    User.authToken = resp['data']['token'];
-                    _db.saveUser();
-                  } else {}
+                  // setState(() {
+                  //   showSpinner = true;
+                  //   showError = false;
+                  // });
+                  // final resp = widget.source == 'auth'
+                  //     ? await ApiService.verifyCode(0000, widget.email)
+                  //     : await ApiService.verifyForgotPasswordCode(
+                  //         0000, widget.email);
+                  // if (resp.isEmpty || resp['code'] != 200) {
+                  //   setState(() {
+                  //     showSpinner = false;
+                  //     errorMessage = resp['reason'];
+                  //     showError = true;
+                  //   });
+                  //   return;
+                  // }
+                  // if (widget.source == 'auth') {
+                  //   await _db.deleteUsers();
+                  //   User.email = widget.email;
+                  //   User.password = widget.password;
+                  //   User.name = resp['data']['name'];
+                  //   User.authToken = resp['data']['token'];
+                  //   _db.saveUser();
+                  // } else {}
+                  // Navigator.pushReplacement(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => widget.source == 'auth'
+                  //             ? const HomeScreen()
+                  //             : ChangePasswordPage(email: widget.email)));
+
                   Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
