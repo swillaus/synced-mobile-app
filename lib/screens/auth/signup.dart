@@ -202,9 +202,9 @@ class _SignupPageState extends State<SignupPage> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const VerificationCodePage(
-                            email: 'sunil@zignite.io',
-                            password: 'Teamzignite1!',
+                        builder: (context) => VerificationCodePage(
+                            email: _emailController.text,
+                            password: _passwordController.text,
                             source: 'auth')));
               },
               child: const Text(
