@@ -204,10 +204,10 @@ class _LoginPageState extends State<LoginPage> {
                 }
                 final resp = await ApiService.authenticateUser(
                     _emailController.text, _passwordController.text);
-                if (resp['status'] != 0) {
+                if (resp.isEmpty || resp['status'] != 0) {
                   setState(() {
                     showSpinner = false;
-                    errorMessage = resp['message'];
+                    errorMessage = resp['message'] ?? "Something went wrong";
                     showError = true;
                   });
                   return;

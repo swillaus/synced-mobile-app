@@ -8,6 +8,8 @@ import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 
+String selectedOrgId = '';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -46,7 +48,7 @@ class _AppState extends State<App> {
     return MaterialApp(
       theme: ThemeData(
         fontFamily: 'Typography',
-        primaryColor: headingColor,
+        primaryColor: clickableColor,
       ),
       home: widget.firstCall
           ? OnboardingPage(firstCall: widget.firstCall)

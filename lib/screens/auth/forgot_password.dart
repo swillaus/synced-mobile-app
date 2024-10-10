@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:synced/screens/auth/verification_code.dart';
+import 'package:synced/screens/auth/login.dart';
+import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -113,22 +114,46 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 const SizedBox(height: 15),
                 ElevatedButton(
                   style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24.0))),
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24.0))),
                       fixedSize: WidgetStateProperty.all(Size(
                           MediaQuery.of(context).size.width * 0.8,
                           MediaQuery.of(context).size.height * 0.075)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     // TODO - call verify OTP API
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => VerificationCodePage(
-                                email: _emailController.text,
-                                password: '',
-                                source: 'reset')));
+                    final resp =
+                        await ApiService.resetPassword(_emailController.text);
+                    if (resp['status'] != 0) {
+                      print('Something went wrong');
+                      return;
+                    }
+                    showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                              backgroundColor: Colors.white,
+                              content: Center(
+                                child: Container(
+                                  color: Colors.white,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.35,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6,
+                                  child: Text(resp['message']),
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () =>
+                                        Navigator.pushAndRemoveUntil(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const LoginPage()),
+                                            (Route<dynamic> route) => false),
+                                    child: const Text('Ok'))
+                              ],
+                            ));
                   },
                   child: const Text(
                     'Send OTP code',
