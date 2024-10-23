@@ -7,10 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/utils/constants.dart';
 
-import 'database_helper.dart';
-
 String baseUrl = '$hostUrl/';
-var _db = DatabaseHelper();
 
 class ApiService {
   static Future<Map> authenticateUser(email, password) async {
@@ -185,6 +182,253 @@ class ApiService {
       File file = File('$tempPath/$invoiceId.pdf');
       await file.writeAsBytes(await response.stream.toBytes());
       return {'path': file.path};
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadInvoice(
+      String invoicePath, orgId, notes) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+
+    var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/uploadInvoiceByMobileUpload?notes=$notes'));
+    request.fields.addAll({
+      'organisationId': orgId,
+      'recordId': '',
+      'isBankTransMode': 'false',
+    });
+    request.files
+        .add(await http.MultipartFile.fromPath('invoice', invoicePath));
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<List> getPaymentAccounts(String orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'Connection': 'keep-alive',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/BankAccounts/getPaymentAccounts?organizationId=$orgId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
+
+  static Future<Map> getBankDetails(String orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'Connection': 'keep-alive',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Organisation/GetBankAccountDetails?organisationId=$orgId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<Map> deleteExpense(id) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'DELETE',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/deleteInvoice?id=$id'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 204) {
+      var jsonRes = {'message': 'Deleted successfully'};
+      print(jsonRes.toString());
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<Map> updateExpense(Map expense) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'PUT',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/updateInvoice'));
+    request.body = json.encode(expense);
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      return {'message': 'Expense updated successfully'};
+    } else {
+      print('Error - ${response.statusCode}');
+      return {};
+    }
+  }
+
+  static Future<List> getTaxRates(orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/TaxRates/getTaxRates?id=$orgId&isSettings=false'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
+
+  static Future<Map> publishReceipt(receipt) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'POST',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/PublishReceipt'));
+    request.body = json.encode(receipt);
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      return {'message': 'Expense published successfully'};
+    } else {
+      print('Error - ${response.statusCode}');
+      return {};
+    }
+  }
+
+  static Future<List> getSuppliers(orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Suppliers/getSuppliers?organizationId=$orgId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
+
+  static Future<Map> getInvoiceById(id) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/getInvoiceById?id=$id'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
     } else {
       print(response.reasonPhrase);
       return {};

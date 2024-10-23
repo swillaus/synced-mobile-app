@@ -1,14 +1,20 @@
+import 'dart:io';
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf_render/pdf_render_widgets.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:synced/main.dart';
-import 'package:synced/screens/expenses/create_expense.dart';
+import 'package:synced/screens/expenses/update_expense_data.dart';
+import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 
-Widget getExpensesWidget(BuildContext context, List reviewExpenses,
-    List processedExpenses, showSpinner, setState, tabController) {
+Widget getExpensesWidget(
+    BuildContext context, setState, tabController, mounted) {
   Widget noExpenseWidget = Center(
     child: Column(
       children: [
@@ -28,8 +34,10 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
                 fontWeight: FontWeight.w400)),
         const SizedBox(height: 30),
         ElevatedButton(
-          onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const CreateExpense())),
+          onPressed: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const HomeScreen(pageIndex: 0))),
           style: ButtonStyle(
               shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0))),
@@ -47,153 +55,277 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
     TextEditingController reviewSearchController = TextEditingController();
     TextEditingController processedSearchController = TextEditingController();
 
-    if (reviewExpenses.isEmpty && processedExpenses.isEmpty) {
+    if (reviewExpenses.isEmpty &&
+        processedExpenses.isEmpty &&
+        !showUploadingInvoice) {
       return noExpenseWidget;
     }
     if (tabController.index == 0) {
       return Container(
-        padding: const EdgeInsets.all(15),
+        color: const Color(0xfffbfbfb),
+        padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+        height: MediaQuery.of(context).size.height * 0.8,
+        width: double.maxFinite,
         child: Column(
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xfff3f3f3),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide:
-                          BorderSide(color: Colors.transparent, width: 0)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide:
-                          BorderSide(color: Colors.transparent, width: 0)),
-                  focusColor: Color(0XFF8E8E8E),
-                  hintText: 'Search here',
-                  prefixIcon: Icon(Icons.search),
-                  prefixIconColor: Color(0XFF8E8E8E)),
-              onEditingComplete: () async {
-                setState(() {
-                  showSpinner = true;
-                });
-                final resp = await ApiService.getExpenses(
-                    false, selectedOrgId, reviewSearchController.text);
-                if (resp.isNotEmpty) {
-                  reviewExpenses = resp['invoices'];
-                }
+            Expanded(
+                flex: 1,
+                child: TextField(
+                  decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xfff3f3f3),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide:
+                              BorderSide(color: Colors.transparent, width: 0)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide:
+                              BorderSide(color: Colors.transparent, width: 0)),
+                      focusColor: Color(0XFF8E8E8E),
+                      hintText: 'Search here',
+                      prefixIcon: Icon(Icons.search),
+                      prefixIconColor: Color(0XFF8E8E8E)),
+                  onEditingComplete: () async {
+                    setState(() {
+                      showSpinner = true;
+                    });
+                    final resp = await ApiService.getExpenses(
+                        false, selectedOrgId, reviewSearchController.text);
+                    if (resp.isNotEmpty) {
+                      reviewExpenses = resp['invoices'];
+                    }
 
-                for (var exp in reviewExpenses) {
-                  final invoiceResp = await ApiService.downloadInvoice(
-                      exp['invoicePdfUrl'], selectedOrgId);
-                  setState(() {
-                    exp['invoice_path'] = invoiceResp['path'];
-                  });
-                  if (kDebugMode) {
-                    print(invoiceResp);
-                  }
-                }
-                setState(() {
-                  showSpinner = false;
-                });
-              },
-              controller: reviewSearchController,
-            ),
+                    final tempDir = await getTemporaryDirectory();
+
+                    for (var exp in reviewExpenses) {
+                      if (await File(
+                                  '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                              .exists() ==
+                          false) {
+                        final invoiceResp = await ApiService.downloadInvoice(
+                            exp['invoicePdfUrl'], selectedOrgId);
+                        setState(() {
+                          exp['invoice_path'] = invoiceResp['path'];
+                        });
+                        if (kDebugMode) {
+                          print(invoiceResp);
+                        }
+                      } else {
+                        setState(() {
+                          exp['invoice_path'] =
+                              '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                        });
+                      }
+                    }
+                    setState(() {
+                      showSpinner = false;
+                    });
+                  },
+                  controller: reviewSearchController,
+                )),
             const SizedBox(height: 10),
-            SizedBox(
-                height: MediaQuery.of(context).size.height * 0.6,
+            if (showUploadingInvoice) ...[
+              Card(
+                color: Colors.white,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                          height: 75,
+                          width: 75,
+                          child: uploadingData['path'] != null
+                              ? Image.file(File(uploadingData['path']))
+                              : CircularProgressIndicator(
+                                  color: clickableColor,
+                                )),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: Chip(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24)),
+                                  side: const BorderSide(
+                                    color: Color(0XFFF6CA58),
+                                  ),
+                                  backgroundColor: const Color(0XFFFFFEF4),
+                                  label: const Text('Processing',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0XFF667085))),
+                                ),
+                              ),
+                              SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.3),
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: Text(uploadingData['size'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 10,
+                                        color: Color(0XFF667085))),
+                              )
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: LinearProgressIndicator(
+                                value: Random().nextDouble(),
+                                valueColor:
+                                    AlwaysStoppedAnimation(clickableColor)),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Expanded(
+                flex: showUploadingInvoice ? 5 : 8,
                 child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: reviewExpenses.length,
                     itemBuilder: (context, index) {
                       bool isSameDate = true;
-                      final String dateString = reviewExpenses[index]['date'];
-                      final DateTime date = DateTime.parse(dateString);
+                      DateTime? date;
                       final item = reviewExpenses[index];
                       if (index == 0) {
                         isSameDate = false;
-                      } else {
-                        final String prevDateString =
-                            reviewExpenses[index - 1]['date'];
-                        final DateTime prevDate =
-                            DateTime.parse(prevDateString);
-                        isSameDate = date.isSameDate(prevDate);
+                      }
+                      if (reviewExpenses[index]['date'] != null) {
+                        final String dateString = reviewExpenses[index]['date'];
+                        date = DateTime.parse(dateString);
+                        if (index == 0) {
+                          isSameDate = false;
+                        } else if (reviewExpenses[index - 1]['date'] != null) {
+                          final String prevDateString =
+                              reviewExpenses[index - 1]['date'];
+                          final DateTime prevDate =
+                              DateTime.parse(prevDateString);
+                          isSameDate = date.isSameDate(prevDate);
+                        }
                       }
                       if (index == 0 || !(isSameDate)) {
                         return Column(children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Expanded(child: Divider()),
-                              Text(' ${date.formatDate()} ',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12,
-                                      color: Color(0XFF667085))),
-                              const Expanded(child: Divider()),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Card(
-                            color: Colors.white,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  item['invoice_path'] != null
-                                      ? SizedBox(
-                                          height: 75,
-                                          width: 75,
-                                          child: PdfViewer.openFile(
-                                              item['invoice_path']))
-                                      : CircularProgressIndicator(
-                                          color: clickableColor,
-                                        ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item['supplierName'],
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0XFF344054))),
-                                      Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Text(
-                                            'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                      ),
-                                      if (item['accountName'] != null) ...[
-                                        Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: Chip(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(24)),
-                                            side: BorderSide(
-                                              color: clickableColor,
-                                            ),
-                                            label: Text(item['accountName']),
-                                            color: const WidgetStatePropertyAll(
-                                                Color(0XFFFFFEF4)),
-                                            labelStyle: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0XFF667085)),
-                                          ),
-                                        )
-                                      ]
-                                    ],
-                                  ),
-                                  Text(
-                                    '${NumberFormat().simpleCurrencySymbol(item['currency'])}${item['amountDue']}',
+                          if (reviewExpenses[index]['date'] != null) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Expanded(child: Divider()),
+                                Text(' ${date?.formatDate()} ',
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w400,
                                         fontSize: 12,
-                                        color: Color(0XFF101828)),
-                                  )
-                                ],
+                                        color: Color(0XFF667085))),
+                                const Expanded(child: Divider()),
+                              ],
+                            ),
+                            const SizedBox(height: 10)
+                          ],
+                          GestureDetector(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushNewScreen(
+                                navigatorKey.currentContext!,
+                                screen: UpdateExpenseData(
+                                    expense: item,
+                                    imagePath: item['invoice_path']),
+                                withNavBar:
+                                    false, // OPTIONAL VALUE. True by default.
+                                pageTransitionAnimation:
+                                    PageTransitionAnimation.fade,
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                        height: 75,
+                                        width: 75,
+                                        child: item['invoice_path'] != null
+                                            ? PdfViewer.openFile(
+                                                item['invoice_path'])
+                                            : CircularProgressIndicator(
+                                                color: clickableColor,
+                                              )),
+                                    SizedBox(
+                                      height: 100,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.4,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(item['supplierName'] ?? '',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0XFF344054))),
+                                          if (item['dueDate'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Text(
+                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                            )
+                                          ],
+                                          if (item['accountName'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.bottomLeft,
+                                              child: Chip(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            24)),
+                                                side: BorderSide(
+                                                  color: clickableColor,
+                                                ),
+                                                label:
+                                                    Text(item['accountName']),
+                                                color:
+                                                    const WidgetStatePropertyAll(
+                                                        Color(0XFFFFFEF4)),
+                                                labelStyle: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0XFF667085)),
+                                              ),
+                                            )
+                                          ]
+                                        ],
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                            color: Color(0XFF101828)),
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -201,68 +333,95 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
                         ]);
                       } else {
                         return Column(children: [
-                          Card(
-                            color: Colors.white,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  item['invoice_path'] != null
-                                      ? SizedBox(
-                                          height: 75,
-                                          width: 75,
-                                          child: PdfViewer.openFile(
-                                              item['invoice_path']))
-                                      : CircularProgressIndicator(
-                                          color: clickableColor,
-                                        ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item['supplierName'],
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0XFF344054))),
-                                      Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Text(
-                                            'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                      ),
-                                      if (item['accountName'] != null) ...[
-                                        Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: Chip(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(24)),
-                                            side: BorderSide(
-                                              color: clickableColor,
-                                            ),
-                                            label: Text(item['accountName']),
-                                            color: const WidgetStatePropertyAll(
-                                                Color(0XFFFFFEF4)),
-                                            labelStyle: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0XFF667085)),
+                          GestureDetector(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushNewScreen(
+                                navigatorKey.currentContext!,
+                                screen: UpdateExpenseData(
+                                    expense: item,
+                                    imagePath: item['invoice_path']),
+                                withNavBar:
+                                    false, // OPTIONAL VALUE. True by default.
+                                pageTransitionAnimation:
+                                    PageTransitionAnimation.fade,
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                        height: 75,
+                                        width: 75,
+                                        child: uploadingData['path'] != null
+                                            ? PdfViewer.openFile(
+                                                uploadingData['path'])
+                                            : CircularProgressIndicator(
+                                                color: clickableColor,
+                                              )),
+                                    SizedBox(
+                                      height: 100,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.4,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(item['supplierName'],
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0XFF344054))),
+                                          Align(
+                                            alignment: Alignment.topLeft,
+                                            child: Text(
+                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
                                           ),
-                                        )
-                                      ]
-                                    ],
-                                  ),
-                                  Text(
-                                    '${NumberFormat().simpleCurrencySymbol(item['currency'])}${item['amountDue']}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                        color: Color(0XFF101828)),
-                                  )
-                                ],
+                                          if (item['accountName'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.bottomLeft,
+                                              child: Chip(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            24)),
+                                                side: BorderSide(
+                                                  color: clickableColor,
+                                                ),
+                                                label:
+                                                    Text(item['accountName']),
+                                                color:
+                                                    const WidgetStatePropertyAll(
+                                                        Color(0XFFFFFEF4)),
+                                                labelStyle: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0XFF667085)),
+                                              ),
+                                            )
+                                          ]
+                                        ],
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                            color: Color(0XFF101828)),
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -275,7 +434,8 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
       );
     } else if (tabController.index == 1) {
       return Container(
-        padding: const EdgeInsets.all(15),
+        color: const Color(0xfffbfbfb),
+        padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
         child: Column(
           children: [
             TextField(
@@ -314,7 +474,6 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
                     print(invoiceResp);
                   }
                 }
-
                 setState(() {
                   showSpinner = false;
                 });
@@ -322,8 +481,7 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
               controller: processedSearchController,
             ),
             const SizedBox(height: 10),
-            SizedBox(
-                height: MediaQuery.of(context).size.height * 0.6,
+            Expanded(
                 child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: processedExpenses.length,
@@ -357,68 +515,94 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Card(
-                            color: Colors.white,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  item['invoice_path'] != null
-                                      ? SizedBox(
-                                          height: 75,
-                                          width: 75,
-                                          child: PdfViewer.openFile(
-                                              item['invoice_path']))
-                                      : CircularProgressIndicator(
-                                          color: clickableColor,
-                                        ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item['supplierName'],
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0XFF344054))),
-                                      Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Text(
-                                            'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                      ),
-                                      if (item['accountName'] != null) ...[
-                                        Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: Chip(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(24)),
-                                            side: BorderSide(
-                                              color: clickableColor,
-                                            ),
-                                            label: Text(item['accountName']),
-                                            color: const WidgetStatePropertyAll(
-                                                Color(0XFFFFFEF4)),
-                                            labelStyle: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0XFF667085)),
+                          GestureDetector(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushNewScreen(
+                                navigatorKey.currentContext!,
+                                screen: UpdateExpenseData(
+                                    expense: item,
+                                    imagePath: item['invoice_path']),
+                                withNavBar:
+                                    false, // OPTIONAL VALUE. True by default.
+                                pageTransitionAnimation:
+                                    PageTransitionAnimation.fade,
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                        height: 75,
+                                        width: 75,
+                                        child: uploadingData['path'] != null
+                                            ? PdfViewer.openFile(
+                                                uploadingData['path'])
+                                            : CircularProgressIndicator(
+                                                color: clickableColor,
+                                              )),
+                                    SizedBox(
+                                      height: 100,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.4,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(item['supplierName'],
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0XFF344054))),
+                                          Align(
+                                            alignment: Alignment.topLeft,
+                                            child: Text(
+                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
                                           ),
-                                        )
-                                      ]
-                                    ],
-                                  ),
-                                  Text(
-                                    '${NumberFormat().simpleCurrencySymbol(item['currency'])}${item['amountDue']}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                        color: Color(0XFF101828)),
-                                  )
-                                ],
+                                          if (item['accountName'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.bottomLeft,
+                                              child: Chip(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            24)),
+                                                side: BorderSide(
+                                                  color: clickableColor,
+                                                ),
+                                                label:
+                                                    Text(item['accountName']),
+                                                color:
+                                                    const WidgetStatePropertyAll(
+                                                        Color(0XFFFFFEF4)),
+                                                labelStyle: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0XFF667085)),
+                                              ),
+                                            )
+                                          ]
+                                        ],
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                            color: Color(0XFF101828)),
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -426,48 +610,94 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
                         ]);
                       } else {
                         return Column(children: [
-                          Card(
-                            color: Colors.white,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  item['invoice_path'] != null
-                                      ? SizedBox(
-                                          height: 75,
-                                          width: 75,
-                                          child: PdfViewer.openFile(
-                                              item['invoice_path']))
-                                      : CircularProgressIndicator(
-                                          color: clickableColor,
-                                        ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item['supplierName'],
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0XFF344054))),
-                                      Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Text(
-                                            'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                          GestureDetector(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushNewScreen(
+                                navigatorKey.currentContext!,
+                                screen: UpdateExpenseData(
+                                    expense: item,
+                                    imagePath: item['invoice_path']),
+                                withNavBar:
+                                    false, // OPTIONAL VALUE. True by default.
+                                pageTransitionAnimation:
+                                    PageTransitionAnimation.fade,
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                        height: 75,
+                                        width: 75,
+                                        child: uploadingData['path'] != null
+                                            ? PdfViewer.openFile(
+                                                uploadingData['path'])
+                                            : CircularProgressIndicator(
+                                                color: clickableColor,
+                                              )),
+                                    SizedBox(
+                                      height: 100,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.4,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(item['supplierName'],
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0XFF344054))),
+                                          Align(
+                                            alignment: Alignment.topLeft,
+                                            child: Text(
+                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                          ),
+                                          if (item['accountName'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.bottomLeft,
+                                              child: Chip(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            24)),
+                                                side: BorderSide(
+                                                  color: clickableColor,
+                                                ),
+                                                label:
+                                                    Text(item['accountName']),
+                                                color:
+                                                    const WidgetStatePropertyAll(
+                                                        Color(0XFFFFFEF4)),
+                                                labelStyle: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0XFF667085)),
+                                              ),
+                                            )
+                                          ]
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  Text(
-                                    '${NumberFormat().simpleCurrencySymbol(item['currency'])}${item['amountDue']}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                        color: Color(0XFF101828)),
-                                  )
-                                ],
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                            color: Color(0XFF101828)),
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -483,11 +713,7 @@ Widget getExpensesWidget(BuildContext context, List reviewExpenses,
     }
   }
 
-  return Center(
-      child: Container(
-    color: const Color(0xfffbfbfb),
-    child: getPageContent(),
-  ));
+  return getPageContent();
 }
 
 const String dateFormatter = "d MMMM y";

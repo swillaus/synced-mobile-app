@@ -9,6 +9,7 @@ import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 
 String selectedOrgId = '';
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +35,7 @@ void main() async {
 }
 
 class App extends StatefulWidget {
-  App({super.key, required this.firstCall, required this.isLoggedIn});
+  const App({super.key, required this.firstCall, required this.isLoggedIn});
 
   final bool firstCall, isLoggedIn;
 
@@ -46,14 +47,15 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       theme: ThemeData(
-        fontFamily: 'Typography',
+        fontFamily: 'Inter',
         primaryColor: clickableColor,
       ),
       home: widget.firstCall
           ? OnboardingPage(firstCall: widget.firstCall)
           : widget.isLoggedIn
-              ? const HomeScreen()
+              ? const HomeScreen(pageIndex: 0)
               : const SignupPage(),
     );
   }
