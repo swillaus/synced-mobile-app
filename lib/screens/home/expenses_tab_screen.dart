@@ -102,7 +102,20 @@ Widget getExpensesWidget(
                       if (await File(
                                   '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
                               .exists() ==
-                          false) {
+                          true) {
+                        setState(() {
+                          exp['invoice_path'] =
+                              '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                        });
+                      } else if (await File(
+                                  '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                              .exists() ==
+                          true) {
+                        setState(() {
+                          exp['invoice_path'] =
+                              '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                        });
+                      } else {
                         final invoiceResp = await ApiService.downloadInvoice(
                             exp['invoicePdfUrl'], selectedOrgId);
                         setState(() {
@@ -111,11 +124,6 @@ Widget getExpensesWidget(
                         if (kDebugMode) {
                           print(invoiceResp);
                         }
-                      } else {
-                        setState(() {
-                          exp['invoice_path'] =
-                              '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
-                        });
                       }
                     }
                     setState(() {
@@ -473,19 +481,38 @@ Widget getExpensesWidget(
                   showSpinner = true;
                 });
                 final resp = await ApiService.getExpenses(
-                    true, selectedOrgId, processedSearchController.text);
+                    false, selectedOrgId, reviewSearchController.text);
                 if (resp.isNotEmpty) {
-                  processedExpenses = resp['invoices'];
+                  reviewExpenses = resp['invoices'];
                 }
 
-                for (var exp in processedExpenses) {
-                  final invoiceResp = await ApiService.downloadInvoice(
-                      exp['invoicePdfUrl'], selectedOrgId);
-                  setState(() {
-                    exp['invoice_path'] = invoiceResp['path'];
-                  });
-                  if (kDebugMode) {
-                    print(invoiceResp);
+                final tempDir = await getApplicationDocumentsDirectory();
+
+                for (var exp in reviewExpenses) {
+                  if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                          .exists() ==
+                      true) {
+                    setState(() {
+                      exp['invoice_path'] =
+                          '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                    });
+                  } else if (await File(
+                              '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                          .exists() ==
+                      true) {
+                    setState(() {
+                      exp['invoice_path'] =
+                          '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                    });
+                  } else {
+                    final invoiceResp = await ApiService.downloadInvoice(
+                        exp['invoicePdfUrl'], selectedOrgId);
+                    setState(() {
+                      exp['invoice_path'] = invoiceResp['path'];
+                    });
+                    if (kDebugMode) {
+                      print(invoiceResp);
+                    }
                   }
                 }
                 setState(() {
