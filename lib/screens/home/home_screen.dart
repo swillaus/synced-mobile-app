@@ -87,107 +87,111 @@ class _HomeScreenState extends State<HomeScreen>
         notesController = TextEditingController();
         showDialog(
             context: navigatorKey.currentContext!,
-            builder: (context) => AlertDialog(
-                  backgroundColor: Colors.white,
-                  title: const Text('Add Note (Optional)',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Color(0XFF2A2A2A))),
-                  content: Container(
-                    color: Colors.white,
-                    height: MediaQuery.of(navigatorKey.currentContext!)
-                            .size
-                            .height *
-                        0.35,
-                    width:
-                        MediaQuery.of(navigatorKey.currentContext!).size.width *
+            builder: (context) => StatefulBuilder(
+                builder: (context, setState) => AlertDialog(
+                      backgroundColor: Colors.white,
+                      title: const Text('Add Note (Optional)',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0XFF2A2A2A))),
+                      content: Container(
+                        color: Colors.white,
+                        height: MediaQuery.of(navigatorKey.currentContext!)
+                                .size
+                                .height *
+                            0.35,
+                        width: MediaQuery.of(navigatorKey.currentContext!)
+                                .size
+                                .width *
                             0.9,
-                    child: Column(
-                      children: [
-                        TextField(
-                          decoration: InputDecoration(
-                              focusColor: Colors.grey.shade400,
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: Colors.grey.shade400, width: 0.4)),
-                              focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: Colors.grey.shade400,
-                                      width: 0.4))),
-                          maxLines: 5,
-                          controller: notesController,
-                          autofocus: true,
-                          enabled: true,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ButtonStyle(
-                              shape: WidgetStateProperty.all<
-                                      RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(24.0))),
-                              fixedSize: WidgetStateProperty.all(Size(
-                                  MediaQuery.of(context).size.width * 0.8,
-                                  MediaQuery.of(context).size.height * 0.075)),
-                              backgroundColor: WidgetStateProperty.all(
-                                  const Color(0XFF009318))),
-                          onPressed: _onPressed,
-                          child: const Text(
-                            'Submit',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        TextButton(
-                            onPressed: () async {
-                              Navigator.pop(navigatorKey.currentContext!);
-                              setState(() {
-                                showUploadingInvoice = true;
-                                uploadingData = {
-                                  'path': imagesPath!.first,
-                                  'size': fileSize
-                                };
-                                _controller.index = 0;
-                              });
-                              ApiService.uploadInvoice(
-                                      imagesPath!.first, selectedOrgId, '')
-                                  .then((uploadResp) {
-                                showUploadingInvoice = false;
-                                uploadingData = {};
-                                if (uploadResp.isEmpty) {
-                                  ScaffoldMessenger.of(
-                                          navigatorKey.currentContext!)
-                                      .showSnackBar(const SnackBar(
-                                          content: Text(
-                                              'We were unable to process the image, please try again.')));
-                                  return;
-                                } else {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: uploadResp,
-                                                  imagePath:
-                                                      imagesPath!.first)));
-                                }
-                              });
-                            },
-                            child: const Text('Skip',
+                        child: Column(
+                          children: [
+                            TextField(
+                              decoration: InputDecoration(
+                                  focusColor: Colors.grey.shade400,
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade400,
+                                          width: 0.4)),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade400,
+                                          width: 0.4))),
+                              maxLines: 5,
+                              controller: notesController,
+                              autofocus: true,
+                              enabled: true,
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              style: ButtonStyle(
+                                  shape: WidgetStateProperty.all<
+                                          RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0))),
+                                  fixedSize: WidgetStateProperty.all(Size(
+                                      MediaQuery.of(context).size.width * 0.8,
+                                      MediaQuery.of(context).size.height *
+                                          0.06)),
+                                  backgroundColor: WidgetStateProperty.all(
+                                      const Color(0XFF009318))),
+                              onPressed: _onPressed,
+                              child: const Text(
+                                'Submit',
                                 style: TextStyle(
+                                    color: Colors.white,
                                     fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0XFFFF4E4E))))
-                      ],
-                    ),
-                  ),
-                ));
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(navigatorKey.currentContext!);
+                                  setState(() {
+                                    showUploadingInvoice = true;
+                                    uploadingData = {
+                                      'path': imagesPath!.first,
+                                      'size': fileSize
+                                    };
+                                    _controller.index = 0;
+                                  });
+                                  ApiService.uploadInvoice(
+                                          imagesPath!.first, selectedOrgId, '')
+                                      .then((uploadResp) {
+                                    showUploadingInvoice = false;
+                                    uploadingData = {};
+                                    if (uploadResp.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                              navigatorKey.currentContext!)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'We were unable to process the image, please try again.')));
+                                      return;
+                                    } else {
+                                      Navigator.push(
+                                          navigatorKey.currentContext!,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  UpdateExpenseData(
+                                                      expense: uploadResp,
+                                                      imagePath:
+                                                          imagesPath!.first)));
+                                    }
+                                  });
+                                },
+                                child: const Text('Skip',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0XFFFF4E4E))))
+                          ],
+                        ),
+                      ),
+                    )));
       } else if (imagesPath!.isEmpty) {
         Navigator.pushAndRemoveUntil(
             navigatorKey.currentContext!,

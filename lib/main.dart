@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
 import 'package:is_first_run/is_first_run.dart';
 import 'package:synced/models/user.dart';
-import 'package:synced/screens/auth/signup.dart';
+import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
@@ -56,7 +56,7 @@ class _AppState extends State<App> {
           ? OnboardingPage(firstCall: widget.firstCall)
           : widget.isLoggedIn
               ? const HomeScreen(pageIndex: 0)
-              : const SignupPage(),
+              : const LoginPage(),
     );
   }
 }
@@ -80,7 +80,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       skipFunctionOverride: () => Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const SignupPage(),
+          builder: (context) => const LoginPage(),
         ),
       ),
       skipTextButton: Text('Skip',
@@ -90,17 +90,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const SignupPage(),
+            builder: (context) => const LoginPage(),
           ),
         );
       },
-      finishButtonText: 'Get Started!',
+      finishButtonText: '➔',
       finishButtonStyle: FinishButtonStyle(
-        shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24))),
+        shape: const CircleBorder(),
         backgroundColor: clickableColor,
       ),
-      finishButtonTextStyle: const TextStyle(color: Colors.white),
+      finishButtonTextStyle: const TextStyle(color: Colors.white, fontSize: 18),
       controllerColor: clickableColor,
       totalPage: 3,
       headerBackgroundColor: Colors.white,

@@ -43,7 +43,7 @@ Widget getExpensesWidget(
                   borderRadius: BorderRadius.circular(12.0))),
               fixedSize: WidgetStateProperty.all(Size(
                   MediaQuery.of(context).size.width * 0.8,
-                  MediaQuery.of(context).size.height * 0.05)),
+                  MediaQuery.of(context).size.height * 0.06)),
               backgroundColor: WidgetStateProperty.all(clickableColor)),
           child: const Text('Scan now', style: TextStyle(color: Colors.white)),
         )

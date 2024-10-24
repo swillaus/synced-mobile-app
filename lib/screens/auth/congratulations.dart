@@ -31,10 +31,10 @@ class CongratulationsPage extends StatelessWidget {
                 style: ButtonStyle(
                     shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24.0))),
+                            borderRadius: BorderRadius.circular(12.0))),
                     fixedSize: WidgetStateProperty.all(Size(
                         MediaQuery.of(context).size.width * 0.8,
-                        MediaQuery.of(context).size.height * 0.075)),
+                        MediaQuery.of(context).size.height * 0.06)),
                     backgroundColor: WidgetStateProperty.all(clickableColor)),
                 onPressed: () async {
                   Navigator.push(

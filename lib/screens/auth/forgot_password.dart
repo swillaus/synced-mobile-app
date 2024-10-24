@@ -95,13 +95,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         color: validEmail ? clickableColor : null,
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -115,10 +115,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ElevatedButton(
                   style: ButtonStyle(
                       shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24.0))),
+                          borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(Size(
                           MediaQuery.of(context).size.width * 0.8,
-                          MediaQuery.of(context).size.height * 0.075)),
+                          MediaQuery.of(context).size.height * 0.06)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     // TODO - call verify OTP API

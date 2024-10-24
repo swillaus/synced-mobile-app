@@ -24,5 +24,9 @@ Widget getTransactionsWidget(context, setState, tabController, mounted) {
     ),
   );
 
-  return noTransactionWidget;
+  Widget getPageContent() {
+    return noTransactionWidget;
+  }
+
+  return getPageContent();
 }

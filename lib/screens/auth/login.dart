@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/forgot_password.dart';
-import 'package:synced/screens/auth/signup.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
@@ -42,9 +41,7 @@ class _LoginPageState extends State<LoginPage> {
           : validEmail = true;
     });
 
-    return value!.isNotEmpty && !regex.hasMatch(value)
-        ? 'Enter a valid email address'
-        : null;
+    return null;
   }
 
   @override
@@ -98,18 +95,20 @@ class _LoginPageState extends State<LoginPage> {
                   validator: validateEmail,
                   controller: _emailController,
                   decoration: InputDecoration(
-                      suffixIcon: Icon(
-                        validEmail ? Icons.check_circle : null,
-                        color: validEmail ? clickableColor : null,
-                      ),
+                      suffixIcon: validEmail
+                          ? Icon(
+                              Icons.check_circle,
+                              color: clickableColor,
+                            )
+                          : const Icon(Icons.close, color: Colors.red),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -148,13 +147,13 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -183,10 +182,10 @@ class _LoginPageState extends State<LoginPage> {
               style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24.0))),
+                          borderRadius: BorderRadius.circular(12.0))),
                   fixedSize: WidgetStateProperty.all(Size(
                       MediaQuery.of(context).size.width * 0.8,
-                      MediaQuery.of(context).size.height * 0.075)),
+                      MediaQuery.of(context).size.height * 0.06)),
                   backgroundColor: WidgetStateProperty.all(clickableColor)),
               onPressed: () async {
                 setState(() {
@@ -228,20 +227,20 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(color: Colors.white, fontSize: 18),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Don\'t have an account?',
-                    style: TextStyle(color: headingColor)),
-                TextButton(
-                    onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SignupPage())),
-                    child: Text('Sign up',
-                        style: TextStyle(color: clickableColor)))
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Text('Don\'t have an account?',
+            //         style: TextStyle(color: headingColor)),
+            //     TextButton(
+            //         onPressed: () => Navigator.push(
+            //             context,
+            //             MaterialPageRoute(
+            //                 builder: (context) => const SignupPage())),
+            //         child: Text('Sign up',
+            //             style: TextStyle(color: clickableColor)))
+            //   ],
+            // ),
           ],
         ),
       ),

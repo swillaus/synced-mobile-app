@@ -77,13 +77,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -116,13 +116,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.0),
+                          borderRadius: BorderRadius.circular(12.0),
                           borderSide: BorderSide(color: subHeadingColor)),
                       filled: true,
                       fillColor: Colors.white,
@@ -138,10 +138,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   style: ButtonStyle(
                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24.0))),
+                              borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(Size(
                           MediaQuery.of(context).size.width * 0.8,
-                          MediaQuery.of(context).size.height * 0.075)),
+                          MediaQuery.of(context).size.height * 0.06)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     setState(() {
@@ -223,10 +223,10 @@ class _PasswordChangedState extends State<PasswordChanged> {
               style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0))),
+                          borderRadius: BorderRadius.circular(12.0))),
                   fixedSize: WidgetStateProperty.all(Size(
                       MediaQuery.of(context).size.width * 0.8,
-                      MediaQuery.of(context).size.height * 0.075)),
+                      MediaQuery.of(context).size.height * 0.06)),
                   backgroundColor: WidgetStateProperty.all(clickableColor)),
               onPressed: () => Navigator.pushReplacement(context,
                   MaterialPageRoute(builder: (context) => const LoginPage())),
