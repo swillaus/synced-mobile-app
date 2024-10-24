@@ -96,7 +96,7 @@ Widget getExpensesWidget(
                       reviewExpenses = resp['invoices'];
                     }
 
-                    final tempDir = await getApplicationDocumentsDirectory();
+                    final tempDir = await getTemporaryDirectory();
 
                     for (var exp in reviewExpenses) {
                       if (await File(
@@ -393,7 +393,7 @@ Widget getExpensesWidget(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(item['supplierName'],
+                                          Text(item['supplierName'] ?? '',
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                   fontSize: 14,
@@ -486,7 +486,7 @@ Widget getExpensesWidget(
                   reviewExpenses = resp['invoices'];
                 }
 
-                final tempDir = await getApplicationDocumentsDirectory();
+                final tempDir = await getTemporaryDirectory();
 
                 for (var exp in reviewExpenses) {
                   if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf')
@@ -602,7 +602,7 @@ Widget getExpensesWidget(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(item['supplierName'],
+                                          Text(item['supplierName'] ?? '',
                                               style: const TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
@@ -705,7 +705,7 @@ Widget getExpensesWidget(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(item['supplierName'],
+                                          Text(item['supplierName'] ?? '',
                                               style: const TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,

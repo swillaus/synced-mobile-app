@@ -285,6 +285,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getUnprocessedExpenses() async {
+    setState(() {
+      showSpinner = true;
+    });
     final resp = await ApiService.getExpenses(false, selectedOrgId, '');
     if (resp.isNotEmpty) {
       reviewExpenses = resp['invoices'];
@@ -294,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen>
       showSpinner = false;
     });
 
-    final tempDir = await getApplicationDocumentsDirectory();
+    final tempDir = await getTemporaryDirectory();
 
     for (var exp in reviewExpenses) {
       if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf').exists() ==
@@ -323,12 +326,19 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getProcessedExpenses() async {
+    setState(() {
+      showSpinner = true;
+    });
     final resp = await ApiService.getExpenses(true, selectedOrgId, '');
     if (resp.isNotEmpty) {
       processedExpenses = resp['invoices'];
     }
 
-    final tempDir = await getApplicationDocumentsDirectory();
+    setState(() {
+      showSpinner = false;
+    });
+
+    final tempDir = await getTemporaryDirectory();
 
     for (var exp in processedExpenses) {
       if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf').exists() ==
@@ -418,6 +428,8 @@ class _HomeScreenState extends State<HomeScreen>
                       setState(() {
                         selectedOrgId = value!;
                       });
+                      getUnprocessedExpenses();
+                      getProcessedExpenses();
                     },
                     items: getDropdownEntries(),
                     value: selectedOrgId)),

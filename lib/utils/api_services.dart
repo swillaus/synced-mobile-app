@@ -179,7 +179,7 @@ class ApiService {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      Directory tempDir = await getApplicationDocumentsDirectory();
+      Directory tempDir = await getTemporaryDirectory();
       String tempPath = tempDir.path;
 
       final streamData = await response.stream.toBytes();
