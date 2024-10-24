@@ -96,7 +96,7 @@ Widget getExpensesWidget(
                       reviewExpenses = resp['invoices'];
                     }
 
-                    final tempDir = await getTemporaryDirectory();
+                    final tempDir = await getApplicationDocumentsDirectory();
 
                     for (var exp in reviewExpenses) {
                       if (await File(
@@ -260,8 +260,15 @@ Widget getExpensesWidget(
                                         ? SizedBox(
                                             height: 75,
                                             width: 75,
-                                            child: PdfViewer.openFile(
-                                                item['invoice_path']))
+                                            child: item['invoice_path']
+                                                        .toString()
+                                                        .split('.')
+                                                        .last ==
+                                                    'pdf'
+                                                ? PdfViewer.openFile(
+                                                    item['invoice_path'])
+                                                : Image.file(
+                                                    File(item['invoice_path'])))
                                         : CircularProgressIndicator(
                                             color: clickableColor,
                                           ),
@@ -357,8 +364,15 @@ Widget getExpensesWidget(
                                         ? SizedBox(
                                             height: 75,
                                             width: 75,
-                                            child: PdfViewer.openFile(
-                                                item['invoice_path']))
+                                            child: item['invoice_path']
+                                                        .toString()
+                                                        .split('.')
+                                                        .last ==
+                                                    'pdf'
+                                                ? PdfViewer.openFile(
+                                                    item['invoice_path'])
+                                                : Image.file(
+                                                    File(item['invoice_path'])))
                                         : CircularProgressIndicator(
                                             color: clickableColor,
                                           ),
@@ -540,8 +554,15 @@ Widget getExpensesWidget(
                                         ? SizedBox(
                                             height: 75,
                                             width: 75,
-                                            child: PdfViewer.openFile(
-                                                item['invoice_path']))
+                                            child: item['invoice_path']
+                                                        .toString()
+                                                        .split('.')
+                                                        .last ==
+                                                    'pdf'
+                                                ? PdfViewer.openFile(
+                                                    item['invoice_path'])
+                                                : Image.file(
+                                                    File(item['invoice_path'])))
                                         : CircularProgressIndicator(
                                             color: clickableColor,
                                           ),
@@ -636,8 +657,15 @@ Widget getExpensesWidget(
                                         ? SizedBox(
                                             height: 75,
                                             width: 75,
-                                            child: PdfViewer.openFile(
-                                                item['invoice_path']))
+                                            child: item['invoice_path']
+                                                        .toString()
+                                                        .split('.')
+                                                        .last ==
+                                                    'pdf'
+                                                ? PdfViewer.openFile(
+                                                    item['invoice_path'])
+                                                : Image.file(
+                                                    File(item['invoice_path'])))
                                         : CircularProgressIndicator(
                                             color: clickableColor,
                                           ),

@@ -55,12 +55,13 @@ class _HomeScreenState extends State<HomeScreen>
       _controller.index = 0;
     });
     ApiService.uploadInvoice(
-            imagesPath!.first, selectedOrgId, notesController?.text)
+            imagesPath!.first, selectedOrgId, notesController.text)
         .then((uploadResp) {
       setState(() {
         showUploadingInvoice = false;
         uploadingData = {};
       });
+      notesController.clear();
       if (uploadResp.isEmpty) {
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
             const SnackBar(
@@ -375,6 +376,11 @@ class _HomeScreenState extends State<HomeScreen>
             centerTitle: true,
             title: DropdownButtonHideUnderline(
                 child: DropdownButton2(
+                    dropdownStyleData: const DropdownStyleData(
+                        elevation: 1,
+                        decoration: BoxDecoration(color: Colors.white)),
+                    menuItemStyleData: const MenuItemStyleData(
+                        overlayColor: WidgetStatePropertyAll(Colors.white)),
                     onChanged: (value) {
                       setState(() {
                         selectedOrgId = value!;

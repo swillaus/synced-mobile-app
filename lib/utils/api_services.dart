@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/utils/constants.dart';
@@ -177,11 +179,19 @@ class ApiService {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      Directory tempDir = await getTemporaryDirectory();
+      Directory tempDir = await getApplicationDocumentsDirectory();
       String tempPath = tempDir.path;
-      File file = File('$tempPath/$invoiceId.pdf');
-      await file.writeAsBytes(await response.stream.toBytes());
-      return {'path': file.path};
+
+      final streamData = await response.stream.toBytes();
+
+      File file = File('$tempPath/$invoiceId');
+      await file.writeAsBytes(streamData);
+
+      final mimeType = lookupMimeType(file.path, headerBytes: streamData);
+      File fileWithExt =
+          File('$tempPath/$invoiceId.${mimeType?.split('/')[1]}');
+      await fileWithExt.writeAsBytes(streamData);
+      return {'path': fileWithExt.path};
     } else {
       print(response.reasonPhrase);
       return {};
@@ -198,6 +208,9 @@ class ApiService {
       'content-type': 'application/json',
     };
 
+    final mimeTypeData =
+        lookupMimeType(invoicePath, headerBytes: [0xFF, 0xD8])?.split('/');
+
     var request = http.MultipartRequest(
         'POST',
         Uri.parse(
@@ -207,8 +220,8 @@ class ApiService {
       'recordId': '',
       'isBankTransMode': 'false',
     });
-    request.files
-        .add(await http.MultipartFile.fromPath('invoice', invoicePath));
+    request.files.add(await http.MultipartFile.fromPath('invoice', invoicePath,
+        contentType: MediaType(mimeTypeData![0], mimeTypeData[1])));
     request.headers.addAll(headers);
 
     http.StreamedResponse response = await request.send();
