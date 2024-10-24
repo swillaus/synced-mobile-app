@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:currency_picker/currency_picker.dart';
@@ -898,7 +899,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   "accountID": selectedCard?['accountID'],
                                   "bankAccountNumber":
                                       selectedCard?['bankAccountNumber'],
-                                  "currencyCode": selectedCard?['currencyCode'],
+                                  "currencyCode": selectedCurrency,
                                   "name": selectedCard?['name'],
                                   "type": selectedCard?['type']
                                 },
@@ -920,13 +921,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                     updatedExpense['type'] == 'Receipt' ? 1 : 0,
                                 'PdfUrl': updatedExpense['pdfUrl'],
                                 'status': 'AUTHORISED',
-                                'subTotal': updatedExpense['subtotal'],
+                                'subTotal': updatedExpense['subTotal'],
                                 'total': updatedExpense['amountDue'],
                                 'totalTax': updatedExpense['totalTax'],
                                 'type': updatedExpense['type'],
                                 "unreconciledReportIds": ""
                               };
-
+                              print(jsonEncode(receipt));
                               final resp =
                                   await ApiService.publishReceipt(receipt);
                               if (resp.isNotEmpty) {
@@ -963,21 +964,83 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       Center(
                         child: TextButton(
                             onPressed: () async {
-                              final resp =
-                                  await ApiService.deleteExpense(expense['id']);
-                              if (resp.isNotEmpty) {
-                                Navigator.push(
-                                    navigatorKey.currentContext!,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const HomeScreen(pageIndex: 0)));
-                              } else {
-                                ScaffoldMessenger.of(
-                                        navigatorKey.currentContext!)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text(
-                                            'We were unable to delete the expense, please try again.')));
-                              }
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return StatefulBuilder(
+                                        builder: (context, setState) =>
+                                            AlertDialog(
+                                              content: Container(
+                                                color: Colors.white,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                        'Are you sure you want to delete the invoice?',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            fontSize: 14,
+                                                            color:
+                                                                headingColor))
+                                                  ],
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      setState(() {
+                                                        showSpinner = true;
+                                                      });
+                                                      final resp =
+                                                          await ApiService
+                                                              .deleteExpense(
+                                                                  expense[
+                                                                      'id']);
+                                                      setState(() {
+                                                        showSpinner = false;
+                                                      });
+                                                      if (resp.isNotEmpty) {
+                                                        Navigator.push(
+                                                            navigatorKey
+                                                                .currentContext!,
+                                                            MaterialPageRoute(
+                                                                builder: (context) =>
+                                                                    const HomeScreen(
+                                                                        pageIndex:
+                                                                            0)));
+                                                      } else {
+                                                        ScaffoldMessenger.of(
+                                                                navigatorKey
+                                                                    .currentContext!)
+                                                            .showSnackBar(
+                                                                const SnackBar(
+                                                                    content: Text(
+                                                                        'We were unable to delete the expense, please try again.')));
+                                                      }
+                                                    },
+                                                    child: const Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500))),
+                                                TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: const Text('Cancel',
+                                                        style: TextStyle(
+                                                            color: Colors.black,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500)))
+                                              ],
+                                            ));
+                                  });
                             },
                             child: const Text('Delete',
                                 style: TextStyle(

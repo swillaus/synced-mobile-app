@@ -20,7 +20,7 @@ Map uploadingData = {};
 bool showSpinner = false;
 List reviewExpenses = [];
 List processedExpenses = [];
-TextEditingController? notesController;
+TextEditingController notesController = TextEditingController();
 String fileSize = '';
 List<String>? imagesPath = [];
 
@@ -79,12 +79,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   void startScan() async {
     if (await Permission.camera.request().isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please scan one page only")));
       imagesPath = await CunningDocumentScanner.getPictures(
           noOfPages: 1, isGalleryImportAllowed: true);
       setState(() {});
+      if ((imagesPath?.length ?? 0) > 1) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'You have scanned ${imagesPath?.length} pages, only the first page will be saved')));
+      }
       if (imagesPath!.isNotEmpty) {
         fileSize = await getFileSize(imagesPath!.first, 1);
-        notesController = TextEditingController();
         showDialog(
             context: navigatorKey.currentContext!,
             builder: (context) => StatefulBuilder(
@@ -376,20 +382,22 @@ class _HomeScreenState extends State<HomeScreen>
                     },
                     items: getDropdownEntries(),
                     value: selectedOrgId)),
-            bottom: TabBar(
-                indicatorColor: clickableColor,
-                labelColor: clickableColor,
-                unselectedLabelColor: textColor,
-                indicatorSize: TabBarIndicatorSize.tab,
-                tabs: const [
-                  Tab(
-                    text: 'For Review',
-                  ),
-                  Tab(
-                    text: 'Processed',
-                  ),
-                ],
-                controller: tabController),
+            bottom: _controller.index == 0
+                ? TabBar(
+                    indicatorColor: clickableColor,
+                    labelColor: clickableColor,
+                    unselectedLabelColor: textColor,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    tabs: const [
+                      Tab(
+                        text: 'For Review',
+                      ),
+                      Tab(
+                        text: 'Processed',
+                      ),
+                    ],
+                    controller: tabController)
+                : null,
           ),
           body: PersistentTabView(
             navigatorKey.currentContext!,

@@ -256,17 +256,16 @@ Widget getExpensesWidget(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
+                                    item['invoice_path'] != null
+                                        ? SizedBox(
+                                            height: 75,
+                                            width: 75,
+                                            child: PdfViewer.openFile(
+                                                item['invoice_path']))
+                                        : CircularProgressIndicator(
+                                            color: clickableColor,
+                                          ),
                                     SizedBox(
-                                        height: 75,
-                                        width: 75,
-                                        child: item['invoice_path'] != null
-                                            ? PdfViewer.openFile(
-                                                item['invoice_path'])
-                                            : CircularProgressIndicator(
-                                                color: clickableColor,
-                                              )),
-                                    SizedBox(
-                                      height: 100,
                                       width: MediaQuery.of(context).size.width *
                                           0.4,
                                       child: Column(
@@ -354,17 +353,16 @@ Widget getExpensesWidget(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
+                                    item['invoice_path'] != null
+                                        ? SizedBox(
+                                            height: 75,
+                                            width: 75,
+                                            child: PdfViewer.openFile(
+                                                item['invoice_path']))
+                                        : CircularProgressIndicator(
+                                            color: clickableColor,
+                                          ),
                                     SizedBox(
-                                        height: 75,
-                                        width: 75,
-                                        child: uploadingData['path'] != null
-                                            ? PdfViewer.openFile(
-                                                uploadingData['path'])
-                                            : CircularProgressIndicator(
-                                                color: clickableColor,
-                                              )),
-                                    SizedBox(
-                                      height: 100,
                                       width: MediaQuery.of(context).size.width *
                                           0.4,
                                       child: Column(
@@ -379,11 +377,13 @@ Widget getExpensesWidget(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                   color: Color(0XFF344054))),
-                                          Align(
-                                            alignment: Alignment.topLeft,
-                                            child: Text(
-                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                          ),
+                                          if (item['dueDate'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Text(
+                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                            )
+                                          ],
                                           if (item['accountName'] != null) ...[
                                             Align(
                                               alignment: Alignment.bottomLeft,
@@ -536,17 +536,16 @@ Widget getExpensesWidget(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
+                                    item['invoice_path'] != null
+                                        ? SizedBox(
+                                            height: 75,
+                                            width: 75,
+                                            child: PdfViewer.openFile(
+                                                item['invoice_path']))
+                                        : CircularProgressIndicator(
+                                            color: clickableColor,
+                                          ),
                                     SizedBox(
-                                        height: 75,
-                                        width: 75,
-                                        child: uploadingData['path'] != null
-                                            ? PdfViewer.openFile(
-                                                uploadingData['path'])
-                                            : CircularProgressIndicator(
-                                                color: clickableColor,
-                                              )),
-                                    SizedBox(
-                                      height: 100,
                                       width: MediaQuery.of(context).size.width *
                                           0.4,
                                       child: Column(
@@ -560,11 +559,13 @@ Widget getExpensesWidget(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                   color: Color(0XFF344054))),
-                                          Align(
-                                            alignment: Alignment.topLeft,
-                                            child: Text(
-                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                          ),
+                                          if (item['dueDate'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Text(
+                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                            )
+                                          ],
                                           if (item['accountName'] != null) ...[
                                             Align(
                                               alignment: Alignment.bottomLeft,
@@ -631,17 +632,16 @@ Widget getExpensesWidget(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
+                                    item['invoice_path'] != null
+                                        ? SizedBox(
+                                            height: 75,
+                                            width: 75,
+                                            child: PdfViewer.openFile(
+                                                item['invoice_path']))
+                                        : CircularProgressIndicator(
+                                            color: clickableColor,
+                                          ),
                                     SizedBox(
-                                        height: 75,
-                                        width: 75,
-                                        child: uploadingData['path'] != null
-                                            ? PdfViewer.openFile(
-                                                uploadingData['path'])
-                                            : CircularProgressIndicator(
-                                                color: clickableColor,
-                                              )),
-                                    SizedBox(
-                                      height: 100,
                                       width: MediaQuery.of(context).size.width *
                                           0.4,
                                       child: Column(
@@ -655,11 +655,13 @@ Widget getExpensesWidget(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                   color: Color(0XFF344054))),
-                                          Align(
-                                            alignment: Alignment.topLeft,
-                                            child: Text(
-                                                'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                          ),
+                                          if (item['dueDate'] != null) ...[
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Text(
+                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                            )
+                                          ],
                                           if (item['accountName'] != null) ...[
                                             Align(
                                               alignment: Alignment.bottomLeft,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 Widget getTransactionsWidget(context, setState, tabController, mounted) {
   Widget noTransactionWidget = Container(
+    color: Colors.white,
     padding: const EdgeInsets.all(20),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
