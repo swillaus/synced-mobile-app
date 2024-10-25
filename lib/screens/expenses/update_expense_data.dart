@@ -352,6 +352,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    keyboardType: TextInputType.none,
                     controller: dateController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
@@ -451,6 +452,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    keyboardType: TextInputType.none,
                     controller: currencyController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
