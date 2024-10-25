@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf_render/pdf_render_widgets.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/home_screen.dart';
@@ -52,9 +51,6 @@ Widget getExpensesWidget(
   );
 
   Widget getPageContent() {
-    TextEditingController reviewSearchController = TextEditingController();
-    TextEditingController processedSearchController = TextEditingController();
-
     if (reviewExpenses.isEmpty &&
         processedExpenses.isEmpty &&
         !showUploadingInvoice) {
@@ -86,49 +82,48 @@ Widget getExpensesWidget(
                       hintText: 'Search here',
                       prefixIcon: Icon(Icons.search),
                       prefixIconColor: Color(0XFF8E8E8E)),
-                  onEditingComplete: () async {
-                    setState(() {
-                      showSpinner = true;
-                    });
-                    final resp = await ApiService.getExpenses(
-                        false, selectedOrgId, reviewSearchController.text);
-                    if (resp.isNotEmpty) {
-                      reviewExpenses = resp['invoices'];
-                    }
+                  onChanged: (value) async {
+                    reviewDebouncer.debounce(
+                        duration: const Duration(milliseconds: 250),
+                        onDebounce: () async {
+                          final resp = await ApiService.getExpenses(false,
+                              selectedOrgId, reviewSearchController.text);
+                          if (resp.isNotEmpty) {
+                            reviewExpenses = resp['invoices'];
+                          }
 
-                    final tempDir = await getTemporaryDirectory();
+                          final tempDir = await getTemporaryDirectory();
 
-                    for (var exp in reviewExpenses) {
-                      if (await File(
-                                  '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
-                              .exists() ==
-                          true) {
-                        setState(() {
-                          exp['invoice_path'] =
-                              '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                          for (var exp in reviewExpenses) {
+                            if (await File(
+                                        '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                    .exists() ==
+                                true) {
+                              setState(() {
+                                exp['invoice_path'] =
+                                    '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                              });
+                            } else if (await File(
+                                        '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                    .exists() ==
+                                true) {
+                              setState(() {
+                                exp['invoice_path'] =
+                                    '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                              });
+                            } else {
+                              final invoiceResp =
+                                  await ApiService.downloadInvoice(
+                                      exp['invoicePdfUrl'], selectedOrgId);
+                              setState(() {
+                                exp['invoice_path'] = invoiceResp['path'];
+                              });
+                              if (kDebugMode) {
+                                print(invoiceResp);
+                              }
+                            }
+                          }
                         });
-                      } else if (await File(
-                                  '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
-                              .exists() ==
-                          true) {
-                        setState(() {
-                          exp['invoice_path'] =
-                              '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
-                        });
-                      } else {
-                        final invoiceResp = await ApiService.downloadInvoice(
-                            exp['invoicePdfUrl'], selectedOrgId);
-                        setState(() {
-                          exp['invoice_path'] = invoiceResp['path'];
-                        });
-                        if (kDebugMode) {
-                          print(invoiceResp);
-                        }
-                      }
-                    }
-                    setState(() {
-                      showSpinner = false;
-                    });
                   },
                   controller: reviewSearchController,
                 )),
@@ -245,16 +240,12 @@ Widget getExpensesWidget(
                           ],
                           GestureDetector(
                             onTap: () {
-                              PersistentNavBarNavigator.pushNewScreen(
-                                navigatorKey.currentContext!,
-                                screen: UpdateExpenseData(
-                                    expense: item,
-                                    imagePath: item['invoice_path']),
-                                withNavBar:
-                                    false, // OPTIONAL VALUE. True by default.
-                                pageTransitionAnimation:
-                                    PageTransitionAnimation.fade,
-                              );
+                              Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                      builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: item['invoice_path'])));
                             },
                             child: Card(
                               color: Colors.white,
@@ -349,16 +340,12 @@ Widget getExpensesWidget(
                         return Column(children: [
                           GestureDetector(
                             onTap: () {
-                              PersistentNavBarNavigator.pushNewScreen(
-                                navigatorKey.currentContext!,
-                                screen: UpdateExpenseData(
-                                    expense: item,
-                                    imagePath: item['invoice_path']),
-                                withNavBar:
-                                    false, // OPTIONAL VALUE. True by default.
-                                pageTransitionAnimation:
-                                    PageTransitionAnimation.fade,
-                              );
+                              Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                      builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: item['invoice_path'])));
                             },
                             child: Card(
                               color: Colors.white,
@@ -476,48 +463,47 @@ Widget getExpensesWidget(
                   hintText: 'Search here',
                   prefixIcon: Icon(Icons.search),
                   prefixIconColor: Color(0XFF8E8E8E)),
-              onEditingComplete: () async {
-                setState(() {
-                  showSpinner = true;
-                });
-                final resp = await ApiService.getExpenses(
-                    false, selectedOrgId, reviewSearchController.text);
-                if (resp.isNotEmpty) {
-                  reviewExpenses = resp['invoices'];
-                }
+              onChanged: (value) async {
+                processedDebouncer.debounce(
+                    duration: const Duration(milliseconds: 250),
+                    onDebounce: () async {
+                      final resp = await ApiService.getExpenses(
+                          true, selectedOrgId, processedSearchController.text);
+                      if (resp.isNotEmpty) {
+                        reviewExpenses = resp['invoices'];
+                      }
 
-                final tempDir = await getTemporaryDirectory();
+                      final tempDir = await getTemporaryDirectory();
 
-                for (var exp in reviewExpenses) {
-                  if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf')
-                          .exists() ==
-                      true) {
-                    setState(() {
-                      exp['invoice_path'] =
-                          '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                      for (var exp in reviewExpenses) {
+                        if (await File(
+                                    '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                .exists() ==
+                            true) {
+                          setState(() {
+                            exp['invoice_path'] =
+                                '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                          });
+                        } else if (await File(
+                                    '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                .exists() ==
+                            true) {
+                          setState(() {
+                            exp['invoice_path'] =
+                                '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                          });
+                        } else {
+                          final invoiceResp = await ApiService.downloadInvoice(
+                              exp['invoicePdfUrl'], selectedOrgId);
+                          setState(() {
+                            exp['invoice_path'] = invoiceResp['path'];
+                          });
+                          if (kDebugMode) {
+                            print(invoiceResp);
+                          }
+                        }
+                      }
                     });
-                  } else if (await File(
-                              '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
-                          .exists() ==
-                      true) {
-                    setState(() {
-                      exp['invoice_path'] =
-                          '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
-                    });
-                  } else {
-                    final invoiceResp = await ApiService.downloadInvoice(
-                        exp['invoicePdfUrl'], selectedOrgId);
-                    setState(() {
-                      exp['invoice_path'] = invoiceResp['path'];
-                    });
-                    if (kDebugMode) {
-                      print(invoiceResp);
-                    }
-                  }
-                }
-                setState(() {
-                  showSpinner = false;
-                });
               },
               controller: processedSearchController,
             ),
@@ -558,16 +544,12 @@ Widget getExpensesWidget(
                           const SizedBox(height: 10),
                           GestureDetector(
                             onTap: () {
-                              PersistentNavBarNavigator.pushNewScreen(
-                                navigatorKey.currentContext!,
-                                screen: UpdateExpenseData(
-                                    expense: item,
-                                    imagePath: item['invoice_path']),
-                                withNavBar:
-                                    false, // OPTIONAL VALUE. True by default.
-                                pageTransitionAnimation:
-                                    PageTransitionAnimation.fade,
-                              );
+                              Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                      builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: item['invoice_path'])));
                             },
                             child: Card(
                               color: Colors.white,
@@ -661,16 +643,12 @@ Widget getExpensesWidget(
                         return Column(children: [
                           GestureDetector(
                             onTap: () {
-                              PersistentNavBarNavigator.pushNewScreen(
-                                navigatorKey.currentContext!,
-                                screen: UpdateExpenseData(
-                                    expense: item,
-                                    imagePath: item['invoice_path']),
-                                withNavBar:
-                                    false, // OPTIONAL VALUE. True by default.
-                                pageTransitionAnimation:
-                                    PageTransitionAnimation.fade,
-                              );
+                              Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                      builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: item['invoice_path'])));
                             },
                             child: Card(
                               color: Colors.white,

@@ -5,10 +5,12 @@ import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/expenses_tab_screen.dart';
@@ -22,6 +24,11 @@ bool showSpinner = false;
 List reviewExpenses = [];
 List processedExpenses = [];
 TextEditingController notesController = TextEditingController();
+TextEditingController reviewSearchController = TextEditingController();
+TextEditingController processedSearchController = TextEditingController();
+RefreshController refreshController = RefreshController();
+final Debouncer reviewDebouncer = Debouncer();
+final Debouncer processedDebouncer = Debouncer();
 String fileSize = '';
 List<String>? imagesPath = [];
 
@@ -97,12 +104,26 @@ class _HomeScreenState extends State<HomeScreen>
             context: navigatorKey.currentContext!,
             builder: (context) => StatefulBuilder(
                 builder: (context, setState) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0)),
+                      insetPadding: const EdgeInsets.all(10),
                       backgroundColor: Colors.white,
-                      title: const Text('Add Note (Optional)',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Color(0XFF2A2A2A))),
+                      title: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          color: const Color(0XFFF9FAFB),
+                        ),
+                        height: MediaQuery.of(context).size.height * 0.075,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('  Add Note (Optional)',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: headingColor)),
+                        ),
+                      ),
+                      titlePadding: const EdgeInsets.all(0),
                       content: Container(
                         color: Colors.white,
                         height: MediaQuery.of(navigatorKey.currentContext!)
@@ -117,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen>
                           children: [
                             TextField(
                               decoration: InputDecoration(
+                                  hintText: 'Add expense details',
                                   focusColor: Colors.grey.shade400,
                                   border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -180,14 +202,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                   'We were unable to process the image, please try again.')));
                                       return;
                                     } else {
-                                      Navigator.push(
-                                          navigatorKey.currentContext!,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UpdateExpenseData(
-                                                      expense: uploadResp,
-                                                      imagePath:
-                                                          imagesPath!.first)));
+                                      getUnprocessedExpenses();
+                                      getProcessedExpenses();
                                     }
                                   });
                                 },
@@ -285,9 +301,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getUnprocessedExpenses() async {
-    setState(() {
-      showSpinner = true;
-    });
     final resp = await ApiService.getExpenses(false, selectedOrgId, '');
     if (resp.isNotEmpty) {
       reviewExpenses = resp['invoices'];
@@ -295,6 +308,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       showSpinner = false;
+      refreshController.refreshCompleted();
     });
 
     final tempDir = await getTemporaryDirectory();
@@ -326,9 +340,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getProcessedExpenses() async {
-    setState(() {
-      showSpinner = true;
-    });
     final resp = await ApiService.getExpenses(true, selectedOrgId, '');
     if (resp.isNotEmpty) {
       processedExpenses = resp['invoices'];
@@ -411,88 +422,93 @@ class _HomeScreenState extends State<HomeScreen>
         progressIndicator: CircularProgressIndicator(
           color: clickableColor,
         ),
-        child: Scaffold(
-          resizeToAvoidBottomInset: true,
-          backgroundColor: const Color(0xfffbfbfb),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            centerTitle: true,
-            title: DropdownButtonHideUnderline(
-                child: DropdownButton2(
-                    dropdownStyleData: const DropdownStyleData(
-                        elevation: 1,
-                        decoration: BoxDecoration(color: Colors.white)),
-                    menuItemStyleData: const MenuItemStyleData(
-                        overlayColor: WidgetStatePropertyAll(Colors.white)),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedOrgId = value!;
-                      });
-                      getUnprocessedExpenses();
-                      getProcessedExpenses();
-                    },
-                    items: getDropdownEntries(),
-                    value: selectedOrgId)),
-            bottom: _controller.index == 0
-                ? TabBar(
-                    indicatorColor: clickableColor,
-                    labelColor: clickableColor,
-                    unselectedLabelColor: textColor,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    tabs: const [
-                      Tab(
-                        text: 'For Review',
-                      ),
-                      Tab(
-                        text: 'Processed',
-                      ),
-                    ],
-                    controller: tabController)
-                : null,
-          ),
-          body: PersistentTabView(
-            navigatorKey.currentContext!,
-            controller: _controller,
-            screens: [
-              getExpensesWidget(navigatorKey.currentContext!, setState,
-                  tabController, mounted),
-              Container(),
-              getTransactionsWidget(context, setState, tabController, mounted),
-            ],
-            items: _navBarsItems(),
-            handleAndroidBackButtonPress: true,
-            hideOnScrollSettings:
-                const HideOnScrollSettings(hideNavBarOnScroll: true),
+        child: SmartRefresher(
+          onRefresh: getOrganisations,
+          controller: refreshController,
+          child: Scaffold(
             resizeToAvoidBottomInset: true,
-            stateManagement: true,
-            hideNavigationBarWhenKeyboardAppears: true,
-            popBehaviorOnSelectedNavBarItemPress: PopBehavior.all,
-            backgroundColor: Colors.white,
-            isVisible: true,
-            animationSettings: const NavBarAnimationSettings(
-              navBarItemAnimation: ItemAnimationSettings(
-                // Navigation Bar's items animation properties.
-                duration: Duration(milliseconds: 400),
-                curve: Curves.ease,
-              ),
-              screenTransitionAnimation: ScreenTransitionAnimationSettings(
-                // Screen transition animation on change of selected tab.
-                animateTabTransition: true,
-                duration: Duration(milliseconds: 200),
-                screenTransitionAnimationType:
-                    ScreenTransitionAnimationType.fadeIn,
-              ),
+            backgroundColor: const Color(0xfffbfbfb),
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              centerTitle: true,
+              title: DropdownButtonHideUnderline(
+                  child: DropdownButton2(
+                      dropdownStyleData: const DropdownStyleData(
+                          elevation: 1,
+                          decoration: BoxDecoration(color: Colors.white)),
+                      menuItemStyleData: const MenuItemStyleData(
+                          overlayColor: WidgetStatePropertyAll(Colors.white)),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedOrgId = value!;
+                        });
+                        getUnprocessedExpenses();
+                        getProcessedExpenses();
+                      },
+                      items: getDropdownEntries(),
+                      value: selectedOrgId)),
+              bottom: _controller.index == 0
+                  ? TabBar(
+                      indicatorColor: clickableColor,
+                      labelColor: clickableColor,
+                      unselectedLabelColor: textColor,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      tabs: const [
+                        Tab(
+                          text: 'For Review',
+                        ),
+                        Tab(
+                          text: 'Processed',
+                        ),
+                      ],
+                      controller: tabController)
+                  : null,
             ),
-            confineToSafeArea: true,
-            navBarHeight: MediaQuery.of(context).size.height * 0.085,
-            navBarStyle: NavBarStyle.style15,
-            onItemSelected: (index) {
-              if (_controller.index == 1) {
-                startScan();
-              } else {
-                setState(() {});
-              }
-            },
+            body: PersistentTabView(
+              navigatorKey.currentContext!,
+              controller: _controller,
+              screens: [
+                getExpensesWidget(navigatorKey.currentContext!, setState,
+                    tabController, mounted),
+                Container(),
+                getTransactionsWidget(
+                    context, setState, tabController, mounted),
+              ],
+              items: _navBarsItems(),
+              handleAndroidBackButtonPress: false,
+              hideOnScrollSettings:
+                  const HideOnScrollSettings(hideNavBarOnScroll: true),
+              resizeToAvoidBottomInset: true,
+              stateManagement: true,
+              hideNavigationBarWhenKeyboardAppears: true,
+              popBehaviorOnSelectedNavBarItemPress: PopBehavior.all,
+              backgroundColor: Colors.white,
+              isVisible: true,
+              animationSettings: const NavBarAnimationSettings(
+                navBarItemAnimation: ItemAnimationSettings(
+                  // Navigation Bar's items animation properties.
+                  duration: Duration(milliseconds: 400),
+                  curve: Curves.ease,
+                ),
+                screenTransitionAnimation: ScreenTransitionAnimationSettings(
+                  // Screen transition animation on change of selected tab.
+                  animateTabTransition: true,
+                  duration: Duration(milliseconds: 200),
+                  screenTransitionAnimationType:
+                      ScreenTransitionAnimationType.fadeIn,
+                ),
+              ),
+              confineToSafeArea: true,
+              navBarHeight: MediaQuery.of(context).size.height * 0.085,
+              navBarStyle: NavBarStyle.style15,
+              onItemSelected: (index) {
+                if (_controller.index == 1) {
+                  startScan();
+                } else {
+                  setState(() {});
+                }
+              },
+            ),
           ),
         ));
   }

@@ -447,4 +447,32 @@ class ApiService {
       return {};
     }
   }
+
+  static Future<List> getOrgCurrencies(orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Organisation/GetOrganizationCurrencies?organisationId=$orgId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      print(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
 }
