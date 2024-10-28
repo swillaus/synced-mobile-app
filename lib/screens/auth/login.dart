@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
+import 'package:oauth2_client/oauth2_client.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/forgot_password.dart';
 import 'package:synced/screens/home/home_screen.dart';
@@ -25,6 +27,13 @@ class _LoginPageState extends State<LoginPage> {
   String errorMessage = '';
   bool validEmail = false;
   final DatabaseHelper _db = DatabaseHelper();
+  FlutterAppAuth appAuth = const FlutterAppAuth();
+  OAuth2Client client = OAuth2Client(
+    redirectUri: xeroSignInCallbackUrl,
+    customUriScheme: xeroRedirectUrlScheme,
+    authorizeUrl: xeroAuthUrl,
+    tokenUrl: xeroTokenUrl,
+  );
 
   String? validateEmail(String? value) {
     const pattern = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'"
@@ -56,17 +65,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
         child: Scaffold(
           resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            leading: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_ios_new)),
-            backgroundColor: Colors.white,
-            title: const Text(
-              'Login',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            centerTitle: true,
-          ),
           body: Container(
             padding: EdgeInsets.only(
                 left: MediaQuery.of(context).size.width * 0.1,
@@ -251,6 +249,78 @@ class _LoginPageState extends State<LoginPage> {
                 //             style: TextStyle(color: clickableColor)))
                 //   ],
                 // ),
+                const SizedBox(height: 15),
+                const Center(
+                  child: Text(
+                    'or',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0XFF696969)),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                ElevatedButton(
+                  style: ButtonStyle(
+                      side: const WidgetStatePropertyAll(
+                          BorderSide(color: Colors.black, width: 0.5)),
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0))),
+                      fixedSize: WidgetStateProperty.all(Size(
+                          MediaQuery.of(context).size.width * 0.8,
+                          MediaQuery.of(context).size.height * 0.06)),
+                      backgroundColor: WidgetStateProperty.all(Colors.white)),
+                  onPressed: () async {
+                    AuthorizationServiceConfiguration serviceConfiguration =
+                        AuthorizationServiceConfiguration(
+                            authorizationEndpoint: xeroAuthUrl,
+                            tokenEndpoint: xeroTokenUrl);
+                    ExternalUserAgent externalUserAgent =
+                        ExternalUserAgent.ephemeralAsWebAuthenticationSession;
+                    try {
+                      final AuthorizationResponse result =
+                          await appAuth.authorize(
+                        AuthorizationRequest(
+                            xeroClientId, xeroSignInCallbackUrl,
+                            serviceConfiguration: serviceConfiguration,
+                            responseMode: 'fragment',
+                            externalUserAgent: externalUserAgent,
+                            scopes: ['openid', 'profile', 'email'],
+                            nonce: 'nonce'),
+                      );
+                      debugPrint(result.toString());
+                    } on FlutterAppAuthUserCancelledException catch (e) {
+                      debugPrint(e.toString());
+                    } on Exception catch (e) {
+                      debugPrint(e.toString());
+                    }
+
+                    // var tknResp = await client.requestAuthorization(
+                    //     clientId: xeroClientId,
+                    //     scopes: ["openid:profile:email"],
+                    //     customParams: {
+                    //       "grant_type": "authorization_code",
+                    //       "redirect_uri": xeroSignInCallbackUrl
+                    //     },
+                    //     state: xeroState);
+                    // print(tknResp.code);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/xero_logo.png',
+                          height: 30, width: 30),
+                      const SizedBox(width: 15),
+                      const Text(
+                        'Sign in with Xero',
+                        style: TextStyle(
+                            color: Color(0XFF2A2A2A),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500),
+                      )
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
