@@ -132,8 +132,8 @@ class ApiService {
     }
   }
 
-  static Future<Map> getExpenses(
-      bool isProcessed, String orgId, String search) async {
+  static Future<Map> getExpenses(bool isProcessed, String orgId, String search,
+      int page, int pageSize) async {
     var headers = {
       'Accept': 'application/json, text/plain, */*',
       'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -141,10 +141,11 @@ class ApiService {
       'authorization': 'Bearer ${User.authToken}',
       'content-type': 'application/json',
     };
+
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&page=1&pageSize=1000&searchText=$search'));
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&page=1&pageSize=1000&searchText=$search&page=$page&pageSize=$pageSize'));
 
     request.headers.addAll(headers);
 

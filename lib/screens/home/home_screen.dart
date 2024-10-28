@@ -6,6 +6,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -31,6 +32,13 @@ final Debouncer reviewDebouncer = Debouncer();
 final Debouncer processedDebouncer = Debouncer();
 String fileSize = '';
 List<String>? imagesPath = [];
+const pageSize = 15;
+final PagingController reviewPagingController =
+    PagingController(firstPageKey: 1);
+final PagingController processedPagingController =
+    PagingController(firstPageKey: 1);
+int reviewPageKey = 1;
+int processedPageKey = 1;
 
 class HomeScreen extends StatefulWidget {
   final int pageIndex;
@@ -202,8 +210,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                   'We were unable to process the image, please try again.')));
                                       return;
                                     } else {
-                                      getUnprocessedExpenses();
-                                      getProcessedExpenses();
+                                      getUnprocessedExpenses(1);
+                                      getProcessedExpenses(1);
                                     }
                                   });
                                 },
@@ -254,8 +262,16 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) =>
-                getExpensesWidget(context, setState, tabController, mounted),
+            "/expenses": (final context) => getExpensesWidget(
+                context,
+                setState,
+                tabController,
+                mounted,
+                reviewPageKey,
+                processedPageKey,
+                pageSize,
+                getUnprocessedExpenses,
+                getProcessedExpenses),
             "/create-expense": (final context) => Container(),
             "/transactions": (final context) => getTransactionsWidget(
                 context, setState, tabController, mounted),
@@ -270,8 +286,16 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) =>
-                getExpensesWidget(context, setState, tabController, mounted),
+            "/expenses": (final context) => getExpensesWidget(
+                context,
+                setState,
+                tabController,
+                mounted,
+                reviewPageKey,
+                processedPageKey,
+                pageSize,
+                getUnprocessedExpenses,
+                getProcessedExpenses),
             "/create-expense": (final context) => Container(),
             "/transactions": (final context) => getTransactionsWidget(
                 context, setState, tabController, mounted),
@@ -289,8 +313,16 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) =>
-                getExpensesWidget(context, setState, tabController, mounted),
+            "/expenses": (final context) => getExpensesWidget(
+                context,
+                setState,
+                tabController,
+                mounted,
+                reviewPageKey,
+                processedPageKey,
+                pageSize,
+                getUnprocessedExpenses,
+                getProcessedExpenses),
             "/create-expense": (final context) => Container(),
             "/transactions": (final context) => getTransactionsWidget(
                 context, setState, tabController, mounted),
@@ -300,10 +332,23 @@ class _HomeScreenState extends State<HomeScreen>
     ];
   }
 
-  getUnprocessedExpenses() async {
-    final resp = await ApiService.getExpenses(false, selectedOrgId, '');
+  getUnprocessedExpenses(page) async {
+    final resp =
+        await ApiService.getExpenses(false, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
-      reviewExpenses = resp['invoices'];
+      reviewExpenses += resp['invoices'];
+    }
+
+    try {
+      final isLastPage = resp['invoices'].length < pageSize;
+      if (isLastPage) {
+        reviewPagingController.appendLastPage(resp['invoices']);
+      } else {
+        final nextPageKey = page + resp['invoices'].length;
+        reviewPagingController.appendPage(resp['invoices'], nextPageKey);
+      }
+    } catch (error) {
+      reviewPagingController.error = error;
     }
 
     setState(() {
@@ -339,10 +384,23 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  getProcessedExpenses() async {
-    final resp = await ApiService.getExpenses(true, selectedOrgId, '');
+  getProcessedExpenses(page) async {
+    final resp =
+        await ApiService.getExpenses(true, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
-      processedExpenses = resp['invoices'];
+      processedExpenses += resp['invoices'];
+    }
+
+    try {
+      final isLastPage = resp['invoices'].length < pageSize;
+      if (isLastPage) {
+        processedPagingController.appendLastPage(resp['invoices']);
+      } else {
+        final nextPageKey = page + resp['invoices'].length;
+        processedPagingController.appendPage(resp['invoices'], nextPageKey);
+      }
+    } catch (error) {
+      processedPagingController.error = error;
     }
 
     setState(() {
@@ -384,6 +442,14 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {});
     });
     tabController.index = widget.pageIndex;
+    reviewPagingController.addPageRequestListener((pageKey) {
+      reviewPageKey = pageKey;
+      getUnprocessedExpenses(pageKey);
+    });
+    processedPagingController.addPageRequestListener((pageKey) {
+      processedPageKey = pageKey;
+      getProcessedExpenses(pageKey);
+    });
     super.initState();
     getOrganisations();
   }
@@ -400,8 +466,8 @@ class _HomeScreenState extends State<HomeScreen>
         selectedOrgId = organisations[0]['organisationID'];
       }
     }
-    getUnprocessedExpenses();
-    getProcessedExpenses();
+    getUnprocessedExpenses(1);
+    getProcessedExpenses(1);
   }
 
   @override
@@ -442,8 +508,8 @@ class _HomeScreenState extends State<HomeScreen>
                         setState(() {
                           selectedOrgId = value!;
                         });
-                        getUnprocessedExpenses();
-                        getProcessedExpenses();
+                        getUnprocessedExpenses(1);
+                        getProcessedExpenses(1);
                       },
                       items: getDropdownEntries(),
                       value: selectedOrgId)),
@@ -468,8 +534,16 @@ class _HomeScreenState extends State<HomeScreen>
               navigatorKey.currentContext!,
               controller: _controller,
               screens: [
-                getExpensesWidget(navigatorKey.currentContext!, setState,
-                    tabController, mounted),
+                getExpensesWidget(
+                    navigatorKey.currentContext!,
+                    setState,
+                    tabController,
+                    mounted,
+                    reviewPageKey,
+                    processedPageKey,
+                    pageSize,
+                    getUnprocessedExpenses,
+                    getProcessedExpenses),
                 Container(),
                 getTransactionsWidget(
                     context, setState, tabController, mounted),

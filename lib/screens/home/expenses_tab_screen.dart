@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf_render/pdf_render_widgets.dart';
@@ -13,7 +14,15 @@ import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 
 Widget getExpensesWidget(
-    BuildContext context, setState, tabController, mounted) {
+    BuildContext context,
+    setState,
+    tabController,
+    mounted,
+    reviewPageKey,
+    processedPageKey,
+    pageSize,
+    getUnprocessedExpenses,
+    getProcessedExpenses) {
   Widget noExpenseWidget = Center(
     child: Column(
       children: [
@@ -86,8 +95,12 @@ Widget getExpensesWidget(
                     reviewDebouncer.debounce(
                         duration: const Duration(milliseconds: 250),
                         onDebounce: () async {
-                          final resp = await ApiService.getExpenses(false,
-                              selectedOrgId, reviewSearchController.text);
+                          final resp = await ApiService.getExpenses(
+                              false,
+                              selectedOrgId,
+                              reviewSearchController.text,
+                              reviewPageKey,
+                              pageSize);
                           if (resp.isNotEmpty) {
                             reviewExpenses = resp['invoices'];
                           }
@@ -198,10 +211,11 @@ Widget getExpensesWidget(
             ],
             Expanded(
                 flex: showUploadingInvoice ? 5 : 8,
-                child: ListView.builder(
+                child: PagedListView(
                     shrinkWrap: true,
-                    itemCount: reviewExpenses.length,
-                    itemBuilder: (context, index) {
+                    pagingController: reviewPagingController,
+                    builderDelegate: PagedChildBuilderDelegate(
+                        itemBuilder: (context, item, index) {
                       bool isSameDate = true;
                       DateTime? date;
                       final item = reviewExpenses[index];
@@ -437,7 +451,7 @@ Widget getExpensesWidget(
                           const SizedBox(height: 10),
                         ]);
                       }
-                    }))
+                    })))
           ],
         ),
       );
@@ -468,7 +482,11 @@ Widget getExpensesWidget(
                     duration: const Duration(milliseconds: 250),
                     onDebounce: () async {
                       final resp = await ApiService.getExpenses(
-                          true, selectedOrgId, processedSearchController.text);
+                          true,
+                          selectedOrgId,
+                          processedSearchController.text,
+                          processedPageKey,
+                          pageSize);
                       if (resp.isNotEmpty) {
                         reviewExpenses = resp['invoices'];
                       }
@@ -509,10 +527,11 @@ Widget getExpensesWidget(
             ),
             const SizedBox(height: 10),
             Expanded(
-                child: ListView.builder(
+                child: PagedListView(
                     shrinkWrap: true,
-                    itemCount: processedExpenses.length,
-                    itemBuilder: (context, index) {
+                    pagingController: processedPagingController,
+                    builderDelegate: PagedChildBuilderDelegate(
+                        itemBuilder: (context, item, index) {
                       bool isSameDate = true;
                       final String dateString =
                           processedExpenses[index]['date'];
@@ -739,7 +758,7 @@ Widget getExpensesWidget(
                           const SizedBox(height: 10),
                         ]);
                       }
-                    }))
+                    })))
           ],
         ),
       );
