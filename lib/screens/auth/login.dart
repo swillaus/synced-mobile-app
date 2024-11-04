@@ -51,9 +51,7 @@ class _LoginPageState extends State<LoginPage> {
         inAsyncCall: showSpinner,
         color: Colors.white,
         opacity: 1.0,
-        progressIndicator: CircularProgressIndicator(
-          color: clickableColor,
-        ),
+        progressIndicator: appLoader,
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(

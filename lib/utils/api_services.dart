@@ -9,8 +9,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/utils/constants.dart';
 
-String baseUrl = '$hostUrl/';
-
 class ApiService {
   static Future<Map> authenticateUser(email, password) async {
     bool result = await InternetConnectionChecker().hasConnection;
@@ -21,8 +19,7 @@ class ApiService {
     var headers = {
       'Content-Type': 'application/json',
     };
-    var request = http.Request('POST',
-        Uri.parse('https://syncedtestingapi.azurewebsites.net/api/token'));
+    var request = http.Request('POST', Uri.parse('$hostUrl/api/token'));
     request.body = json.encode(
         {"email": email, "password": password, "accountRemember": false});
     request.headers.addAll(headers);
@@ -32,7 +29,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -51,9 +47,7 @@ class ApiService {
       'content-type': 'application/json',
     };
     var request = http.Request(
-        'POST',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Account/SyncedForgotPassword'));
+        'POST', Uri.parse('$hostUrl/api/Account/SyncedForgotPassword'));
     request.body = json.encode({"email": email, "id": ""});
     request.headers.addAll(headers);
 
@@ -62,7 +56,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -71,7 +64,7 @@ class ApiService {
   }
 
   static Future<Map> changePassword(newPassword, email, context) async {
-    Uri apiUrl = Uri.parse('${baseUrl}api/change-password');
+    Uri apiUrl = Uri.parse('$hostUrl/api/change-password');
     var responseData = {};
 
     bool result = await InternetConnectionChecker().hasConnection;
@@ -113,9 +106,7 @@ class ApiService {
       'content-type': 'application/json',
     };
     var request = http.Request(
-        'GET',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Organisation/OrganisationGet'));
+        'GET', Uri.parse('$hostUrl/api/Organisation/OrganisationGet'));
 
     request.headers.addAll(headers);
 
@@ -124,7 +115,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -145,7 +135,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&page=1&pageSize=1000&searchText=$search&page=$page&pageSize=$pageSize'));
+            '$hostUrl/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&page=1&pageSize=1000&searchText=$search&page=$page&pageSize=$pageSize'));
 
     request.headers.addAll(headers);
 
@@ -154,7 +144,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -173,7 +162,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/downloadInvoice?id=$invoiceId&organisationId=$orgId'));
+            '$hostUrl/api/Invoices/downloadInvoice?id=$invoiceId&organisationId=$orgId'));
 
     request.headers.addAll(headers);
 
@@ -215,7 +204,7 @@ class ApiService {
     var request = http.MultipartRequest(
         'POST',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/uploadInvoiceByMobileUpload?notes=$notes'));
+            '$hostUrl/api/Invoices/uploadInvoiceByMobileUpload?notes=$notes'));
     request.fields.addAll({
       'organisationId': orgId,
       'recordId': '',
@@ -230,7 +219,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -249,7 +237,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/BankAccounts/getPaymentAccounts?organizationId=$orgId'));
+            '$hostUrl/api/BankAccounts/getPaymentAccounts?organizationId=$orgId'));
 
     request.headers.addAll(headers);
 
@@ -258,7 +246,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -277,7 +264,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Organisation/GetBankAccountDetails?organisationId=$orgId'));
+            '$hostUrl/api/Organisation/GetBankAccountDetails?organisationId=$orgId'));
 
     request.headers.addAll(headers);
 
@@ -286,7 +273,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -302,9 +288,7 @@ class ApiService {
       'content-type': 'application/json',
     };
     var request = http.Request(
-        'DELETE',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/deleteInvoice?id=$id'));
+        'DELETE', Uri.parse('$hostUrl/api/Invoices/deleteInvoice?id=$id'));
 
     request.headers.addAll(headers);
 
@@ -312,7 +296,6 @@ class ApiService {
 
     if (response.statusCode == 204) {
       var jsonRes = {'message': 'Deleted successfully'};
-      print(jsonRes.toString());
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -327,10 +310,8 @@ class ApiService {
       'authorization': 'Bearer ${User.authToken}',
       'content-type': 'application/json',
     };
-    var request = http.Request(
-        'PUT',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/updateInvoice'));
+    var request =
+        http.Request('PUT', Uri.parse('$hostUrl/api/Invoices/updateInvoice'));
     request.body = json.encode(expense);
     request.headers.addAll(headers);
 
@@ -354,7 +335,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/TaxRates/getTaxRates?id=$orgId&isSettings=false'));
+            '$hostUrl/api/TaxRates/getTaxRates?id=$orgId&isSettings=false'));
 
     request.headers.addAll(headers);
 
@@ -363,7 +344,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -378,10 +358,8 @@ class ApiService {
       'authorization': 'Bearer ${User.authToken}',
       'content-type': 'application/json',
     };
-    var request = http.Request(
-        'POST',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/PublishReceipt'));
+    var request =
+        http.Request('POST', Uri.parse('$hostUrl/api/Invoices/PublishReceipt'));
     request.body = json.encode(receipt);
     request.headers.addAll(headers);
 
@@ -402,10 +380,8 @@ class ApiService {
       'authorization': 'Bearer ${User.authToken}',
       'content-type': 'application/json',
     };
-    var request = http.Request(
-        'GET',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Suppliers/getSuppliers?organizationId=$orgId'));
+    var request = http.Request('GET',
+        Uri.parse('$hostUrl/api/Suppliers/getSuppliers?organizationId=$orgId'));
 
     request.headers.addAll(headers);
 
@@ -414,7 +390,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -430,9 +405,7 @@ class ApiService {
       'content-type': 'application/json',
     };
     var request = http.Request(
-        'GET',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/getInvoiceById?id=$id'));
+        'GET', Uri.parse('$hostUrl/api/Invoices/getInvoiceById?id=$id'));
 
     request.headers.addAll(headers);
 
@@ -441,7 +414,6 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
@@ -460,7 +432,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Organisation/GetOrganizationCurrencies?organisationId=$orgId'));
+            '$hostUrl/api/Organisation/GetOrganizationCurrencies?organisationId=$orgId'));
 
     request.headers.addAll(headers);
 
@@ -469,11 +441,123 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      print(res);
       return jsonRes;
     } else {
       print(response.reasonPhrase);
       return [];
+    }
+  }
+
+  static Future<Map> getReportsList(reportId, orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'POST', Uri.parse('$hostUrl/api/Reporting/GetUnreconciledReportList'));
+    request.body = json.encode({
+      "organizationId": orgId,
+      "userid": 211,
+      "id": "2aad3793-6ba5-4050-8289-40077d7f474d",
+      "isSavedReport": true,
+      "startDate": "1900-01-01",
+      "endDate": "2048-01-01",
+    });
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<List> getUnreconciledReports(orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            '$hostUrl/api/Reporting/getUnreconciledReportMatrics?organizationId=$orgId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      return jsonRes;
+    } else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
+
+  static Future<Map> getRelatedData(relatedId, orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            '$hostUrl/api/Invoices/getRelatedData?organizationId=$orgId&relatedId=$relatedId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      if (jsonRes.isNotEmpty) {
+        return jsonRes[0];
+      } else {
+        return {};
+      }
+    } else {
+      print(response.reasonPhrase);
+      return {};
+    }
+  }
+
+  static Future<Map> getMatchData(relatedId, orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            '$hostUrl/api/Invoices/getMatchData?organizationId=$orgId&relatedId=$relatedId'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      return jsonRes[0];
+    } else {
+      print(response.reasonPhrase);
+      return {};
     }
   }
 }

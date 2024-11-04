@@ -292,9 +292,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       body: ModalProgressHUD(
           color: Colors.white,
           opacity: 1.0,
-          progressIndicator: CircularProgressIndicator(
-            color: clickableColor,
-          ),
+          progressIndicator: appLoader,
           inAsyncCall: showSpinner,
           child: Container(
             padding: const EdgeInsets.all(25),

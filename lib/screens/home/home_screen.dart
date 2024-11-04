@@ -262,19 +262,10 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) => getExpensesWidget(
-                context,
-                setState,
-                tabController,
-                mounted,
-                reviewPageKey,
-                processedPageKey,
-                pageSize,
-                getUnprocessedExpenses,
-                getProcessedExpenses),
+            "/expenses": (final context) =>
+                ExpensesTabScreen(tabController: tabController),
             "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => getTransactionsWidget(
-                context, setState, tabController, mounted),
+            "/transactions": (final context) => const TransactionsTabScreen()
           },
         ),
       ),
@@ -286,19 +277,10 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) => getExpensesWidget(
-                context,
-                setState,
-                tabController,
-                mounted,
-                reviewPageKey,
-                processedPageKey,
-                pageSize,
-                getUnprocessedExpenses,
-                getProcessedExpenses),
+            "/expenses": (final context) =>
+                ExpensesTabScreen(tabController: tabController),
             "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => getTransactionsWidget(
-                context, setState, tabController, mounted),
+            "/transactions": (final context) => const TransactionsTabScreen()
           },
         ),
       ),
@@ -313,19 +295,10 @@ class _HomeScreenState extends State<HomeScreen>
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
           routes: {
-            "/expenses": (final context) => getExpensesWidget(
-                context,
-                setState,
-                tabController,
-                mounted,
-                reviewPageKey,
-                processedPageKey,
-                pageSize,
-                getUnprocessedExpenses,
-                getProcessedExpenses),
+            "/expenses": (final context) =>
+                ExpensesTabScreen(tabController: tabController),
             "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => getTransactionsWidget(
-                context, setState, tabController, mounted),
+            "/transactions": (final context) => const TransactionsTabScreen()
           },
         ),
       ),
@@ -333,6 +306,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getUnprocessedExpenses(page) async {
+    if (page == 1) {
+      reviewExpenses.clear();
+    }
     final resp =
         await ApiService.getExpenses(false, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
@@ -385,6 +361,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getProcessedExpenses(page) async {
+    if (page == 1) {
+      processedExpenses.clear();
+    }
     final resp =
         await ApiService.getExpenses(true, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
@@ -462,12 +441,22 @@ class _HomeScreenState extends State<HomeScreen>
     final resp = await ApiService.getOrganisations();
     if (!resp['failed']) {
       organisations = resp['data'];
-      if (selectedOrgId.isEmpty) {
+      if (selectedOrgId.isEmpty && organisations.isNotEmpty) {
         selectedOrgId = organisations[0]['organisationID'];
       }
     }
-    getUnprocessedExpenses(1);
-    getProcessedExpenses(1);
+    if (selectedOrgId.isNotEmpty) {
+      getUnprocessedExpenses(1);
+      getProcessedExpenses(1);
+    } else {
+      setState(() {
+        showSpinner = false;
+        refreshController.refreshCompleted();
+      });
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+          const SnackBar(
+              content: Text('Please select or create an organization.')));
+    }
   }
 
   @override
@@ -485,9 +474,7 @@ class _HomeScreenState extends State<HomeScreen>
         inAsyncCall: showSpinner,
         opacity: 1.0,
         color: Colors.white,
-        progressIndicator: CircularProgressIndicator(
-          color: clickableColor,
-        ),
+        progressIndicator: appLoader,
         child: SmartRefresher(
           onRefresh: getOrganisations,
           controller: refreshController,
@@ -534,19 +521,9 @@ class _HomeScreenState extends State<HomeScreen>
               navigatorKey.currentContext!,
               controller: _controller,
               screens: [
-                getExpensesWidget(
-                    navigatorKey.currentContext!,
-                    setState,
-                    tabController,
-                    mounted,
-                    reviewPageKey,
-                    processedPageKey,
-                    pageSize,
-                    getUnprocessedExpenses,
-                    getProcessedExpenses),
+                ExpensesTabScreen(tabController: tabController),
                 Container(),
-                getTransactionsWidget(
-                    context, setState, tabController, mounted),
+                const TransactionsTabScreen()
               ],
               items: _navBarsItems(),
               handleAndroidBackButtonPress: false,

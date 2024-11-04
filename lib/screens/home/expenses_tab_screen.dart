@@ -13,22 +13,23 @@ import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 
-Widget getExpensesWidget(
-    BuildContext context,
-    setState,
-    tabController,
-    mounted,
-    reviewPageKey,
-    processedPageKey,
-    pageSize,
-    getUnprocessedExpenses,
-    getProcessedExpenses) {
+class ExpensesTabScreen extends StatefulWidget {
+  final TabController tabController;
+  const ExpensesTabScreen({super.key, required this.tabController});
+
+  @override
+  State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
+}
+
+class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
+  bool showSpinner = false;
   Widget noExpenseWidget = Center(
     child: Column(
       children: [
         const SizedBox(height: 30),
         Image.asset('assets/no-expense.png',
-            height: MediaQuery.of(context).size.height * 0.25),
+            height:
+                MediaQuery.of(navigatorKey.currentContext!).size.height * 0.25),
         const SizedBox(height: 30),
         const Text('No expenses yet!',
             style: TextStyle(
@@ -43,15 +44,16 @@ Widget getExpensesWidget(
         const SizedBox(height: 30),
         ElevatedButton(
           onPressed: () => Navigator.pushReplacement(
-              context,
+              navigatorKey.currentContext!,
               MaterialPageRoute(
                   builder: (context) => const HomeScreen(pageIndex: 0))),
           style: ButtonStyle(
               shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0))),
               fixedSize: WidgetStateProperty.all(Size(
-                  MediaQuery.of(context).size.width * 0.8,
-                  MediaQuery.of(context).size.height * 0.06)),
+                  MediaQuery.of(navigatorKey.currentContext!).size.width * 0.8,
+                  MediaQuery.of(navigatorKey.currentContext!).size.height *
+                      0.06)),
               backgroundColor: WidgetStateProperty.all(clickableColor)),
           child: const Text('Scan now', style: TextStyle(color: Colors.white)),
         )
@@ -59,190 +61,506 @@ Widget getExpensesWidget(
     ),
   );
 
-  Widget getPageContent() {
-    if (reviewExpenses.isEmpty &&
-        processedExpenses.isEmpty &&
-        !showUploadingInvoice) {
-      return noExpenseWidget;
-    }
-    if (tabController.index == 0) {
-      return Container(
-        color: const Color(0xfffbfbfb),
-        padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
-        height: MediaQuery.of(context).size.height * 0.8,
-        width: double.maxFinite,
-        child: Column(
-          children: [
-            Expanded(
-                flex: 1,
-                child: TextField(
-                  decoration: const InputDecoration(
-                      filled: true,
-                      fillColor: Color(0xfff3f3f3),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide:
-                              BorderSide(color: Colors.transparent, width: 0)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide:
-                              BorderSide(color: Colors.transparent, width: 0)),
-                      focusColor: Color(0XFF8E8E8E),
-                      hintText: 'Search here',
-                      prefixIcon: Icon(Icons.search),
-                      prefixIconColor: Color(0XFF8E8E8E)),
-                  onChanged: (value) async {
-                    reviewDebouncer.debounce(
-                        duration: const Duration(milliseconds: 250),
-                        onDebounce: () async {
-                          final resp = await ApiService.getExpenses(
-                              false,
-                              selectedOrgId,
-                              reviewSearchController.text,
-                              reviewPageKey,
-                              pageSize);
-                          if (resp.isNotEmpty) {
-                            reviewExpenses = resp['invoices'];
-                          }
+  @override
+  Widget build(BuildContext context) {
+    Widget getPageContent() {
+      if (reviewExpenses.isEmpty &&
+          processedExpenses.isEmpty &&
+          !showUploadingInvoice) {
+        return noExpenseWidget;
+      }
+      if (widget.tabController.index == 0) {
+        return Container(
+          color: const Color(0xfffbfbfb),
+          padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+          height: MediaQuery.of(context).size.height * 0.8,
+          width: double.maxFinite,
+          child: Column(
+            children: [
+              Expanded(
+                  flex: 1,
+                  child: TextField(
+                    decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: Color(0xfff3f3f3),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide(
+                                color: Colors.transparent, width: 0)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide(
+                                color: Colors.transparent, width: 0)),
+                        focusColor: Color(0XFF8E8E8E),
+                        hintText: 'Search here',
+                        prefixIcon: Icon(Icons.search),
+                        prefixIconColor: Color(0XFF8E8E8E)),
+                    onChanged: (value) async {
+                      reviewDebouncer.debounce(
+                          duration: const Duration(milliseconds: 250),
+                          onDebounce: () async {
+                            final resp = await ApiService.getExpenses(
+                                false,
+                                selectedOrgId,
+                                reviewSearchController.text,
+                                reviewPageKey,
+                                pageSize);
+                            if (resp.isNotEmpty) {
+                              reviewExpenses = resp['invoices'];
+                            }
 
-                          final tempDir = await getTemporaryDirectory();
+                            final tempDir = await getTemporaryDirectory();
 
-                          for (var exp in reviewExpenses) {
-                            if (await File(
-                                        '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
-                                    .exists() ==
-                                true) {
-                              setState(() {
-                                exp['invoice_path'] =
-                                    '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
-                              });
-                            } else if (await File(
-                                        '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
-                                    .exists() ==
-                                true) {
-                              setState(() {
-                                exp['invoice_path'] =
-                                    '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
-                              });
-                            } else {
-                              final invoiceResp =
-                                  await ApiService.downloadInvoice(
-                                      exp['invoicePdfUrl'], selectedOrgId);
-                              setState(() {
-                                exp['invoice_path'] = invoiceResp['path'];
-                              });
-                              if (kDebugMode) {
-                                print(invoiceResp);
+                            for (var exp in reviewExpenses) {
+                              if (await File(
+                                          '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                      .exists() ==
+                                  true) {
+                                setState(() {
+                                  exp['invoice_path'] =
+                                      '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                                });
+                              } else if (await File(
+                                          '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                      .exists() ==
+                                  true) {
+                                setState(() {
+                                  exp['invoice_path'] =
+                                      '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                                });
+                              } else {
+                                final invoiceResp =
+                                    await ApiService.downloadInvoice(
+                                        exp['invoicePdfUrl'], selectedOrgId);
+                                setState(() {
+                                  exp['invoice_path'] = invoiceResp['path'];
+                                });
+                                if (kDebugMode) {
+                                  print(invoiceResp);
+                                }
                               }
                             }
-                          }
-                        });
-                  },
-                  controller: reviewSearchController,
-                )),
-            const SizedBox(height: 10),
-            if (showUploadingInvoice) ...[
-              Card(
-                color: Colors.white,
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                          height: 75,
-                          width: 75,
-                          child: uploadingData['path'] != null
-                              ? Image.file(File(uploadingData['path']))
-                              : CircularProgressIndicator(
-                                  color: clickableColor,
-                                )),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Align(
-                                alignment: Alignment.topLeft,
-                                child: Chip(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24)),
-                                  side: const BorderSide(
-                                    color: Color(0XFFF6CA58),
+                          });
+                    },
+                    controller: reviewSearchController,
+                  )),
+              const SizedBox(height: 10),
+              if (showUploadingInvoice) ...[
+                Card(
+                  color: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                            height: 75,
+                            width: 75,
+                            child: uploadingData['path'] != null
+                                ? Image.file(File(uploadingData['path']))
+                                : appLoader),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Chip(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(24)),
+                                    side: const BorderSide(
+                                      color: Color(0XFFF6CA58),
+                                    ),
+                                    backgroundColor: const Color(0XFFFFFEF4),
+                                    label: const Text('Processing',
+                                        style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0XFF667085))),
                                   ),
-                                  backgroundColor: const Color(0XFFFFFEF4),
-                                  label: const Text('Processing',
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0XFF667085))),
                                 ),
-                              ),
-                              SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.3),
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: Text(uploadingData['size'],
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 10,
-                                        color: Color(0XFF667085))),
-                              )
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: LinearProgressIndicator(
-                                value: Random().nextDouble(),
-                                valueColor:
-                                    AlwaysStoppedAnimation(clickableColor)),
-                          )
-                        ],
-                      )
-                    ],
+                                SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.3),
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Text(uploadingData['size'],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 10,
+                                          color: Color(0XFF667085))),
+                                )
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.6,
+                              child: LinearProgressIndicator(
+                                  value: Random().nextDouble(),
+                                  valueColor:
+                                      AlwaysStoppedAnimation(clickableColor)),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            Expanded(
-                flex: showUploadingInvoice ? 5 : 8,
-                child: PagedListView(
-                    shrinkWrap: true,
-                    pagingController: reviewPagingController,
-                    builderDelegate: PagedChildBuilderDelegate(
-                        itemBuilder: (context, item, index) {
-                      bool isSameDate = true;
-                      DateTime? date;
-                      final item = reviewExpenses[index];
-                      if (index == 0) {
-                        isSameDate = false;
-                      }
-                      if (reviewExpenses[index]['date'] != null) {
-                        final String dateString = reviewExpenses[index]['date'];
-                        date = DateTime.parse(dateString);
+                const SizedBox(height: 10),
+              ],
+              Expanded(
+                  flex: showUploadingInvoice ? 5 : 8,
+                  child: PagedListView(
+                      shrinkWrap: true,
+                      pagingController: reviewPagingController,
+                      builderDelegate: PagedChildBuilderDelegate(
+                          itemBuilder: (context, item, index) {
+                        bool isSameDate = true;
+                        DateTime? date;
+                        final item = reviewExpenses[index];
                         if (index == 0) {
                           isSameDate = false;
-                        } else if (reviewExpenses[index - 1]['date'] != null) {
+                        }
+                        if (reviewExpenses[index]['date'] != null) {
+                          final String dateString =
+                              reviewExpenses[index]['date'];
+                          date = DateTime.parse(dateString);
+                          if (index == 0) {
+                            isSameDate = false;
+                          } else if (reviewExpenses[index - 1]['date'] !=
+                              null) {
+                            final String prevDateString =
+                                reviewExpenses[index - 1]['date'];
+                            final DateTime prevDate =
+                                DateTime.parse(prevDateString);
+                            isSameDate = date.isSameDate(prevDate);
+                          }
+                        }
+                        if (index == 0 || !(isSameDate)) {
+                          return Column(children: [
+                            if (reviewExpenses[index]['date'] != null) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Expanded(child: Divider()),
+                                  Text(' ${date?.formatDate()} ',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 12,
+                                          color: Color(0XFF667085))),
+                                  const Expanded(child: Divider()),
+                                ],
+                              ),
+                              const SizedBox(height: 10)
+                            ],
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    navigatorKey.currentContext!,
+                                    MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                            expense: item,
+                                            imagePath: item['invoice_path'])));
+                              },
+                              child: Card(
+                                color: Colors.white,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      item['invoice_path'] != null
+                                          ? SizedBox(
+                                              height: 75,
+                                              width: 75,
+                                              child: item['invoice_path']
+                                                          .toString()
+                                                          .split('.')
+                                                          .last ==
+                                                      'pdf'
+                                                  ? PdfViewer.openFile(
+                                                      item['invoice_path'])
+                                                  : Image.file(File(
+                                                      item['invoice_path'])))
+                                          : appLoader,
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(item['supplierName'] ?? '',
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0XFF344054))),
+                                            if (item['dueDate'] != null) ...[
+                                              Align(
+                                                alignment: Alignment.topLeft,
+                                                child: Text(
+                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                              )
+                                            ],
+                                            if (item['accountName'] !=
+                                                null) ...[
+                                              Align(
+                                                alignment: Alignment.bottomLeft,
+                                                child: Chip(
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              24)),
+                                                  side: BorderSide(
+                                                    color: clickableColor,
+                                                  ),
+                                                  label:
+                                                      Text(item['accountName']),
+                                                  color:
+                                                      const WidgetStatePropertyAll(
+                                                          Color(0XFFFFFEF4)),
+                                                  labelStyle: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color(0XFF667085)),
+                                                ),
+                                              )
+                                            ]
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                              color: Color(0XFF101828)),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ]);
+                        } else {
+                          return Column(children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    navigatorKey.currentContext!,
+                                    MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                            expense: item,
+                                            imagePath: item['invoice_path'])));
+                              },
+                              child: Card(
+                                color: Colors.white,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      item['invoice_path'] != null
+                                          ? SizedBox(
+                                              height: 75,
+                                              width: 75,
+                                              child: item['invoice_path']
+                                                          .toString()
+                                                          .split('.')
+                                                          .last ==
+                                                      'pdf'
+                                                  ? PdfViewer.openFile(
+                                                      item['invoice_path'])
+                                                  : Image.file(File(
+                                                      item['invoice_path'])))
+                                          : appLoader,
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(item['supplierName'] ?? '',
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0XFF344054))),
+                                            if (item['dueDate'] != null) ...[
+                                              Align(
+                                                alignment: Alignment.topLeft,
+                                                child: Text(
+                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                              )
+                                            ],
+                                            if (item['accountName'] !=
+                                                null) ...[
+                                              Align(
+                                                alignment: Alignment.bottomLeft,
+                                                child: Chip(
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              24)),
+                                                  side: BorderSide(
+                                                    color: clickableColor,
+                                                  ),
+                                                  label:
+                                                      Text(item['accountName']),
+                                                  color:
+                                                      const WidgetStatePropertyAll(
+                                                          Color(0XFFFFFEF4)),
+                                                  labelStyle: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color(0XFF667085)),
+                                                ),
+                                              )
+                                            ]
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                              color: Color(0XFF101828)),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ]);
+                        }
+                      })))
+            ],
+          ),
+        );
+      } else if (widget.tabController.index == 1) {
+        return Container(
+          color: const Color(0xfffbfbfb),
+          padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+          child: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                    filled: true,
+                    fillColor: Color(0xfff3f3f3),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide:
+                            BorderSide(color: Colors.transparent, width: 0)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide:
+                            BorderSide(color: Colors.transparent, width: 0)),
+                    focusColor: Color(0XFF8E8E8E),
+                    hintText: 'Search here',
+                    prefixIcon: Icon(Icons.search),
+                    prefixIconColor: Color(0XFF8E8E8E)),
+                onChanged: (value) async {
+                  processedDebouncer.debounce(
+                      duration: const Duration(milliseconds: 250),
+                      onDebounce: () async {
+                        final resp = await ApiService.getExpenses(
+                            true,
+                            selectedOrgId,
+                            processedSearchController.text,
+                            processedPageKey,
+                            pageSize);
+                        if (resp.isNotEmpty) {
+                          reviewExpenses = resp['invoices'];
+                        }
+
+                        final tempDir = await getTemporaryDirectory();
+
+                        for (var exp in reviewExpenses) {
+                          if (await File(
+                                      '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                  .exists() ==
+                              true) {
+                            setState(() {
+                              exp['invoice_path'] =
+                                  '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                            });
+                          } else if (await File(
+                                      '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                  .exists() ==
+                              true) {
+                            setState(() {
+                              exp['invoice_path'] =
+                                  '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                            });
+                          } else {
+                            final invoiceResp =
+                                await ApiService.downloadInvoice(
+                                    exp['invoicePdfUrl'], selectedOrgId);
+                            setState(() {
+                              exp['invoice_path'] = invoiceResp['path'];
+                            });
+                            if (kDebugMode) {
+                              print(invoiceResp);
+                            }
+                          }
+                        }
+                      });
+                },
+                controller: processedSearchController,
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                  child: PagedListView(
+                      shrinkWrap: true,
+                      pagingController: processedPagingController,
+                      builderDelegate: PagedChildBuilderDelegate(
+                          itemBuilder: (context, item, index) {
+                        bool isSameDate = true;
+                        final String dateString =
+                            processedExpenses[index]['date'];
+                        final DateTime date = DateTime.parse(dateString);
+                        final item = processedExpenses[index];
+                        if (index == 0) {
+                          isSameDate = false;
+                        } else {
                           final String prevDateString =
-                              reviewExpenses[index - 1]['date'];
+                              processedExpenses[index - 1]['date'];
                           final DateTime prevDate =
                               DateTime.parse(prevDateString);
                           isSameDate = date.isSameDate(prevDate);
                         }
-                      }
-                      if (index == 0 || !(isSameDate)) {
-                        return Column(children: [
-                          if (reviewExpenses[index]['date'] != null) ...[
+                        if (index == 0 || !(isSameDate)) {
+                          return Column(children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Expanded(child: Divider()),
-                                Text(' ${date?.formatDate()} ',
+                                Text(' ${date.formatDate()} ',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w400,
                                         fontSize: 12,
@@ -250,524 +568,217 @@ Widget getExpensesWidget(
                                 const Expanded(child: Divider()),
                               ],
                             ),
-                            const SizedBox(height: 10)
-                          ],
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  navigatorKey.currentContext!,
-                                  MaterialPageRoute(
-                                      builder: (context) => UpdateExpenseData(
-                                          expense: item,
-                                          imagePath: item['invoice_path'])));
-                            },
-                            child: Card(
-                              color: Colors.white,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    item['invoice_path'] != null
-                                        ? SizedBox(
-                                            height: 75,
-                                            width: 75,
-                                            child: item['invoice_path']
-                                                        .toString()
-                                                        .split('.')
-                                                        .last ==
-                                                    'pdf'
-                                                ? PdfViewer.openFile(
-                                                    item['invoice_path'])
-                                                : Image.file(
-                                                    File(item['invoice_path'])))
-                                        : CircularProgressIndicator(
-                                            color: clickableColor,
-                                          ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.4,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(item['supplierName'] ?? '',
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0XFF344054))),
-                                          if (item['dueDate'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Text(
-                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                            )
-                                          ],
-                                          if (item['accountName'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.bottomLeft,
-                                              child: Chip(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            24)),
-                                                side: BorderSide(
-                                                  color: clickableColor,
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    navigatorKey.currentContext!,
+                                    MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                            expense: item,
+                                            imagePath: item['invoice_path'])));
+                              },
+                              child: Card(
+                                color: Colors.white,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      item['invoice_path'] != null
+                                          ? SizedBox(
+                                              height: 75,
+                                              width: 75,
+                                              child: item['invoice_path']
+                                                          .toString()
+                                                          .split('.')
+                                                          .last ==
+                                                      'pdf'
+                                                  ? PdfViewer.openFile(
+                                                      item['invoice_path'])
+                                                  : Image.file(File(
+                                                      item['invoice_path'])))
+                                          : appLoader,
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(item['supplierName'] ?? '',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0XFF344054))),
+                                            if (item['dueDate'] != null) ...[
+                                              Align(
+                                                alignment: Alignment.topLeft,
+                                                child: Text(
+                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                              )
+                                            ],
+                                            if (item['accountName'] !=
+                                                null) ...[
+                                              Align(
+                                                alignment: Alignment.bottomLeft,
+                                                child: Chip(
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              24)),
+                                                  side: BorderSide(
+                                                    color: clickableColor,
+                                                  ),
+                                                  label:
+                                                      Text(item['accountName']),
+                                                  color:
+                                                      const WidgetStatePropertyAll(
+                                                          Color(0XFFFFFEF4)),
+                                                  labelStyle: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color(0XFF667085)),
                                                 ),
-                                                label:
-                                                    Text(item['accountName']),
-                                                color:
-                                                    const WidgetStatePropertyAll(
-                                                        Color(0XFFFFFEF4)),
-                                                labelStyle: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)),
-                                              ),
-                                            )
-                                          ]
-                                        ],
+                                              )
+                                            ]
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                            color: Color(0XFF101828)),
-                                      ),
-                                    )
-                                  ],
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                              color: Color(0XFF101828)),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                        ]);
-                      } else {
-                        return Column(children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  navigatorKey.currentContext!,
-                                  MaterialPageRoute(
-                                      builder: (context) => UpdateExpenseData(
-                                          expense: item,
-                                          imagePath: item['invoice_path'])));
-                            },
-                            child: Card(
-                              color: Colors.white,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    item['invoice_path'] != null
-                                        ? SizedBox(
-                                            height: 75,
-                                            width: 75,
-                                            child: item['invoice_path']
-                                                        .toString()
-                                                        .split('.')
-                                                        .last ==
-                                                    'pdf'
-                                                ? PdfViewer.openFile(
-                                                    item['invoice_path'])
-                                                : Image.file(
-                                                    File(item['invoice_path'])))
-                                        : CircularProgressIndicator(
-                                            color: clickableColor,
-                                          ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.4,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(item['supplierName'] ?? '',
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0XFF344054))),
-                                          if (item['dueDate'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Text(
-                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                            )
-                                          ],
-                                          if (item['accountName'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.bottomLeft,
-                                              child: Chip(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            24)),
-                                                side: BorderSide(
-                                                  color: clickableColor,
-                                                ),
-                                                label:
-                                                    Text(item['accountName']),
-                                                color:
-                                                    const WidgetStatePropertyAll(
-                                                        Color(0XFFFFFEF4)),
-                                                labelStyle: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)),
-                                              ),
-                                            )
-                                          ]
-                                        ],
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                            color: Color(0XFF101828)),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ]);
-                      }
-                    })))
-          ],
-        ),
-      );
-    } else if (tabController.index == 1) {
-      return Container(
-        color: const Color(0xfffbfbfb),
-        padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
-        child: Column(
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xfff3f3f3),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide:
-                          BorderSide(color: Colors.transparent, width: 0)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide:
-                          BorderSide(color: Colors.transparent, width: 0)),
-                  focusColor: Color(0XFF8E8E8E),
-                  hintText: 'Search here',
-                  prefixIcon: Icon(Icons.search),
-                  prefixIconColor: Color(0XFF8E8E8E)),
-              onChanged: (value) async {
-                processedDebouncer.debounce(
-                    duration: const Duration(milliseconds: 250),
-                    onDebounce: () async {
-                      final resp = await ApiService.getExpenses(
-                          true,
-                          selectedOrgId,
-                          processedSearchController.text,
-                          processedPageKey,
-                          pageSize);
-                      if (resp.isNotEmpty) {
-                        reviewExpenses = resp['invoices'];
-                      }
-
-                      final tempDir = await getTemporaryDirectory();
-
-                      for (var exp in reviewExpenses) {
-                        if (await File(
-                                    '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
-                                .exists() ==
-                            true) {
-                          setState(() {
-                            exp['invoice_path'] =
-                                '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
-                          });
-                        } else if (await File(
-                                    '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
-                                .exists() ==
-                            true) {
-                          setState(() {
-                            exp['invoice_path'] =
-                                '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
-                          });
+                            const SizedBox(height: 10),
+                          ]);
                         } else {
-                          final invoiceResp = await ApiService.downloadInvoice(
-                              exp['invoicePdfUrl'], selectedOrgId);
-                          setState(() {
-                            exp['invoice_path'] = invoiceResp['path'];
-                          });
-                          if (kDebugMode) {
-                            print(invoiceResp);
-                          }
+                          return Column(children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    navigatorKey.currentContext!,
+                                    MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                            expense: item,
+                                            imagePath: item['invoice_path'])));
+                              },
+                              child: Card(
+                                color: Colors.white,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      item['invoice_path'] != null
+                                          ? SizedBox(
+                                              height: 75,
+                                              width: 75,
+                                              child: item['invoice_path']
+                                                          .toString()
+                                                          .split('.')
+                                                          .last ==
+                                                      'pdf'
+                                                  ? PdfViewer.openFile(
+                                                      item['invoice_path'])
+                                                  : Image.file(File(
+                                                      item['invoice_path'])))
+                                          : appLoader,
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(item['supplierName'] ?? '',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0XFF344054))),
+                                            if (item['dueDate'] != null) ...[
+                                              Align(
+                                                alignment: Alignment.topLeft,
+                                                child: Text(
+                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
+                                              )
+                                            ],
+                                            if (item['accountName'] !=
+                                                null) ...[
+                                              Align(
+                                                alignment: Alignment.bottomLeft,
+                                                child: Chip(
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              24)),
+                                                  side: BorderSide(
+                                                    color: clickableColor,
+                                                  ),
+                                                  label:
+                                                      Text(item['accountName']),
+                                                  color:
+                                                      const WidgetStatePropertyAll(
+                                                          Color(0XFFFFFEF4)),
+                                                  labelStyle: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color(0XFF667085)),
+                                                ),
+                                              )
+                                            ]
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                              color: Color(0XFF101828)),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ]);
                         }
-                      }
-                    });
-              },
-              controller: processedSearchController,
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-                child: PagedListView(
-                    shrinkWrap: true,
-                    pagingController: processedPagingController,
-                    builderDelegate: PagedChildBuilderDelegate(
-                        itemBuilder: (context, item, index) {
-                      bool isSameDate = true;
-                      final String dateString =
-                          processedExpenses[index]['date'];
-                      final DateTime date = DateTime.parse(dateString);
-                      final item = processedExpenses[index];
-                      if (index == 0) {
-                        isSameDate = false;
-                      } else {
-                        final String prevDateString =
-                            processedExpenses[index - 1]['date'];
-                        final DateTime prevDate =
-                            DateTime.parse(prevDateString);
-                        isSameDate = date.isSameDate(prevDate);
-                      }
-                      if (index == 0 || !(isSameDate)) {
-                        return Column(children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Expanded(child: Divider()),
-                              Text(' ${date.formatDate()} ',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12,
-                                      color: Color(0XFF667085))),
-                              const Expanded(child: Divider()),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  navigatorKey.currentContext!,
-                                  MaterialPageRoute(
-                                      builder: (context) => UpdateExpenseData(
-                                          expense: item,
-                                          imagePath: item['invoice_path'])));
-                            },
-                            child: Card(
-                              color: Colors.white,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    item['invoice_path'] != null
-                                        ? SizedBox(
-                                            height: 75,
-                                            width: 75,
-                                            child: item['invoice_path']
-                                                        .toString()
-                                                        .split('.')
-                                                        .last ==
-                                                    'pdf'
-                                                ? PdfViewer.openFile(
-                                                    item['invoice_path'])
-                                                : Image.file(
-                                                    File(item['invoice_path'])))
-                                        : CircularProgressIndicator(
-                                            color: clickableColor,
-                                          ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.4,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(item['supplierName'] ?? '',
-                                              style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0XFF344054))),
-                                          if (item['dueDate'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Text(
-                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                            )
-                                          ],
-                                          if (item['accountName'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.bottomLeft,
-                                              child: Chip(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            24)),
-                                                side: BorderSide(
-                                                  color: clickableColor,
-                                                ),
-                                                label:
-                                                    Text(item['accountName']),
-                                                color:
-                                                    const WidgetStatePropertyAll(
-                                                        Color(0XFFFFFEF4)),
-                                                labelStyle: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)),
-                                              ),
-                                            )
-                                          ]
-                                        ],
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                            color: Color(0XFF101828)),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ]);
-                      } else {
-                        return Column(children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  navigatorKey.currentContext!,
-                                  MaterialPageRoute(
-                                      builder: (context) => UpdateExpenseData(
-                                          expense: item,
-                                          imagePath: item['invoice_path'])));
-                            },
-                            child: Card(
-                              color: Colors.white,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    item['invoice_path'] != null
-                                        ? SizedBox(
-                                            height: 75,
-                                            width: 75,
-                                            child: item['invoice_path']
-                                                        .toString()
-                                                        .split('.')
-                                                        .last ==
-                                                    'pdf'
-                                                ? PdfViewer.openFile(
-                                                    item['invoice_path'])
-                                                : Image.file(
-                                                    File(item['invoice_path'])))
-                                        : CircularProgressIndicator(
-                                            color: clickableColor,
-                                          ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.4,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(item['supplierName'] ?? '',
-                                              style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0XFF344054))),
-                                          if (item['dueDate'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Text(
-                                                  'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                            )
-                                          ],
-                                          if (item['accountName'] != null) ...[
-                                            Align(
-                                              alignment: Alignment.bottomLeft,
-                                              child: Chip(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            24)),
-                                                side: BorderSide(
-                                                  color: clickableColor,
-                                                ),
-                                                label:
-                                                    Text(item['accountName']),
-                                                color:
-                                                    const WidgetStatePropertyAll(
-                                                        Color(0XFFFFFEF4)),
-                                                labelStyle: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)),
-                                              ),
-                                            )
-                                          ]
-                                        ],
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                            color: Color(0XFF101828)),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ]);
-                      }
-                    })))
-          ],
-        ),
-      );
-    } else {
-      return Container();
+                      })))
+            ],
+          ),
+        );
+      } else {
+        return Container();
+      }
     }
-  }
 
-  return getPageContent();
+    return getPageContent();
+  }
 }
 
 const String dateFormatter = "d MMMM y";
