@@ -335,16 +335,16 @@ class _HomeScreenState extends State<HomeScreen>
     final tempDir = await getTemporaryDirectory();
 
     for (var exp in reviewExpenses) {
-      if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf').exists() ==
+      if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.pdf').exists() ==
           true) {
         setState(() {
-          exp['invoice_path'] = '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
         });
-      } else if (await File('$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+      } else if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
               .exists() ==
           true) {
         setState(() {
-          exp['invoice_path'] = '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
         });
       } else {
         ApiService.downloadInvoice(exp['invoicePdfUrl'], selectedOrgId)
@@ -389,16 +389,16 @@ class _HomeScreenState extends State<HomeScreen>
     final tempDir = await getTemporaryDirectory();
 
     for (var exp in processedExpenses) {
-      if (await File('$tempDir.path/${exp['invoicePdfUrl']}.pdf').exists() ==
+      if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.pdf').exists() ==
           true) {
         setState(() {
-          exp['invoice_path'] = '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
         });
-      } else if (await File('$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+      } else if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
               .exists() ==
           true) {
         setState(() {
-          exp['invoice_path'] = '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
         });
       } else {
         ApiService.downloadInvoice(exp['invoicePdfUrl'], selectedOrgId)
@@ -530,9 +530,9 @@ class _HomeScreenState extends State<HomeScreen>
               hideOnScrollSettings:
                   const HideOnScrollSettings(hideNavBarOnScroll: true),
               resizeToAvoidBottomInset: true,
-              stateManagement: true,
+              stateManagement: false,
               hideNavigationBarWhenKeyboardAppears: true,
-              popBehaviorOnSelectedNavBarItemPress: PopBehavior.all,
+              popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
               backgroundColor: Colors.white,
               isVisible: true,
               animationSettings: const NavBarAnimationSettings(
@@ -556,7 +556,9 @@ class _HomeScreenState extends State<HomeScreen>
                 if (_controller.index == 1) {
                   startScan();
                 } else {
-                  setState(() {});
+                  setState(() {
+                    _controller.index = index;
+                  });
                 }
               },
             ),

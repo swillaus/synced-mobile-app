@@ -113,20 +113,20 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
 
                             for (var exp in reviewExpenses) {
                               if (await File(
-                                          '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                          '${tempDir.path}/${exp['invoicePdfUrl']}.pdf')
                                       .exists() ==
                                   true) {
                                 setState(() {
                                   exp['invoice_path'] =
-                                      '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                                      '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
                                 });
                               } else if (await File(
-                                          '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                          '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
                                       .exists() ==
                                   true) {
                                 setState(() {
                                   exp['invoice_path'] =
-                                      '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                                      '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
                                 });
                               } else {
                                 final invoiceResp =
@@ -502,20 +502,20 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
 
                         for (var exp in reviewExpenses) {
                           if (await File(
-                                      '$tempDir.path/${exp['invoicePdfUrl']}.pdf')
+                                      '${tempDir.path}/${exp['invoicePdfUrl']}.pdf')
                                   .exists() ==
                               true) {
                             setState(() {
                               exp['invoice_path'] =
-                                  '$tempDir.path/${exp['invoicePdfUrl']}.pdf';
+                                  '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
                             });
                           } else if (await File(
-                                      '$tempDir.path/${exp['invoicePdfUrl']}.jpeg')
+                                      '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
                                   .exists() ==
                               true) {
                             setState(() {
                               exp['invoice_path'] =
-                                  '$tempDir.path/${exp['invoicePdfUrl']}.jpeg';
+                                  '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
                             });
                           } else {
                             final invoiceResp =

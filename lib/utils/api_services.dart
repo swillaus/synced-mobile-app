@@ -31,7 +31,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('Login API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -58,7 +58,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('Reset pass API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -117,7 +117,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET Org API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -146,7 +146,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET Expenses API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -183,7 +183,7 @@ class ApiService {
       await fileWithExt.writeAsBytes(streamData);
       return {'path': fileWithExt.path};
     } else {
-      print(response.reasonPhrase);
+      print('Download invoice API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -221,7 +221,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('Upload invoice API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -248,7 +248,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET payment accounts API - ${response.reasonPhrase}');
       return [];
     }
   }
@@ -275,7 +275,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET bank accounts API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -298,7 +298,7 @@ class ApiService {
       var jsonRes = {'message': 'Deleted successfully'};
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('DELETE expense API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -346,7 +346,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET Tax rates API - ${response.reasonPhrase}');
       return [];
     }
   }
@@ -392,7 +392,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET suppliers API - ${response.reasonPhrase}');
       return [];
     }
   }
@@ -416,7 +416,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('Get invoice by id API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -443,7 +443,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET org currencies API - ${response.reasonPhrase}');
       return [];
     }
   }
@@ -474,7 +474,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET transactions list API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -500,7 +500,7 @@ class ApiService {
       var jsonRes = jsonDecode(res);
       return jsonRes;
     } else {
-      print(response.reasonPhrase);
+      print('GET reports list API - ${response.reasonPhrase}');
       return [];
     }
   }
@@ -530,7 +530,7 @@ class ApiService {
         return {};
       }
     } else {
-      print(response.reasonPhrase);
+      print('GET related data API - ${response.reasonPhrase}');
       return {};
     }
   }
@@ -554,10 +554,43 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
-      return jsonRes[0];
+      if (jsonRes.isNotEmpty) {
+        return jsonRes[0];
+      } else {
+        return {};
+      }
     } else {
-      print(response.reasonPhrase);
+      print('GET match data API - ${response.reasonPhrase}');
       return {};
+    }
+  }
+
+  static Future<bool> updateSuggestedMatches(
+      String unreconciledReportId, String invoiceId, String orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'POST',
+        Uri.parse(
+            'https://syncedtestingapi.azurewebsites.net/api/Invoices/UpdateSuggestedMatches'));
+    request.body = json.encode({
+      "unreconciledReportIds": unreconciledReportId,
+      "invoiceId": invoiceId,
+      "organizationId": orgId
+    });
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Update suggested match API - ${response.reasonPhrase}');
+      return false;
     }
   }
 }
