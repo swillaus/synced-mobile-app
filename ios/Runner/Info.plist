@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Synced</string>
+	<string>Synced Staging</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,12 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>App needs access to the storage to save images and pdf of invoices</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed to capture new expense pictures</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>App needs access to photo library to add images of saved expenses</string>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>App needs access to the storage to save images and pdf of invoices</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
