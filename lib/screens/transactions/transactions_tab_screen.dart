@@ -52,17 +52,23 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
     setState(() {
       showSpinner = true;
     });
-    ApiService.getUnreconciledReports(selectedOrgId).then((resp) {
+    super.initState();
+    preparePageContent();
+  }
+
+  Future<Widget> preparePageContent() async {
+    final resp = await ApiService.getUnreconciledReports(selectedOrgId);
+    if (mounted) {
       setState(() {
         showSpinner = false;
       });
-      if (resp.isEmpty) {
-        return noTransactionWidget;
-      } else {
-        unreconciledReports = resp;
-      }
-    });
-    super.initState();
+    }
+    if (resp.isEmpty) {
+      return noTransactionWidget;
+    } else {
+      unreconciledReports = resp;
+      return Container();
+    }
   }
 
   @override
