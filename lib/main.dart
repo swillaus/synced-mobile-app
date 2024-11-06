@@ -91,7 +91,7 @@ class _AppState extends State<App> {
       home: widget.firstCall
           ? OnboardingPage(firstCall: widget.firstCall)
           : widget.isLoggedIn
-              ? const HomeScreen(pageIndex: 0)
+              ? const HomeScreen(tabIndex: 0)
               : const LoginPage(),
     );
   }

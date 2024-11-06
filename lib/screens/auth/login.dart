@@ -228,7 +228,7 @@ class _LoginPageState extends State<LoginPage> {
                         context,
                         MaterialPageRoute(
                             builder: (context) =>
-                                const HomeScreen(pageIndex: 0)));
+                                const HomeScreen(tabIndex: 0)));
                   },
                   child: const Text(
                     'Log in',

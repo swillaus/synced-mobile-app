@@ -1134,7 +1134,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                 navigatorKey.currentContext!,
                                 MaterialPageRoute(
                                     builder: (context) =>
-                                        const HomeScreen(pageIndex: 0)));
+                                        const HomeScreen(tabIndex: 0)));
                           } else {
                             setState(() {
                               showSpinner = false;
@@ -1197,7 +1197,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                         MaterialPageRoute(
                                                             builder: (context) =>
                                                                 const HomeScreen(
-                                                                    pageIndex:
+                                                                    tabIndex:
                                                                         0)));
                                                   } else {
                                                     ScaffoldMessenger.of(

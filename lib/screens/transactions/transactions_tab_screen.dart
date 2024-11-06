@@ -49,25 +49,20 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
 
   @override
   void initState() {
-    setState(() {
-      showSpinner = true;
-    });
     super.initState();
     preparePageContent();
   }
 
-  Future<Widget> preparePageContent() async {
+  Future<void> preparePageContent() async {
+    setState(() {
+      showSpinner = true;
+    });
     final resp = await ApiService.getUnreconciledReports(selectedOrgId);
     if (mounted) {
       setState(() {
         showSpinner = false;
+        unreconciledReports = resp;
       });
-    }
-    if (resp.isEmpty) {
-      return noTransactionWidget;
-    } else {
-      unreconciledReports = resp;
-      return Container();
     }
   }
 
@@ -79,159 +74,179 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
             opacity: 1.0,
             inAsyncCall: showSpinner,
             progressIndicator: appLoader,
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: ListView.separated(
-                  separatorBuilder: (context, index) {
-                    return const SizedBox(height: 15);
-                  },
-                  itemCount: unreconciledReports.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        PersistentNavBarNavigator.pushNewScreen(
-                          context,
-                          screen: TransactionsListPage(
-                              reportId: '', report: unreconciledReports[index]),
-                          withNavBar: true,
-                          pageTransitionAnimation:
-                              PageTransitionAnimation.cupertino,
-                        );
-                      },
-                      child: Card(
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side:
-                                BorderSide(color: clickableColor, width: 2.0)),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                    unreconciledReports[index]['reportName'],
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0XFF344054))),
-                              ),
-                              const SizedBox(height: 10),
-                              IntrinsicHeight(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+            child: unreconciledReports.isNotEmpty
+                ? Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(20),
+                    child: ListView.separated(
+                        separatorBuilder: (context, index) {
+                          return const SizedBox(height: 15);
+                        },
+                        itemCount: unreconciledReports.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushDynamicScreen(
+                                context,
+                                screen: MaterialPageRoute(
+                                    builder: (context) => TransactionsListPage(
+                                        reportId: '',
+                                        report: unreconciledReports[index])),
+                                withNavBar: false,
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                      color: clickableColor, width: 2.0)),
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
                                   children: [
-                                    Image.asset('assets/home_icon.png',
-                                        height: 45, width: 45),
-                                    const SizedBox(width: 5),
-                                    Column(
-                                      children: [
-                                        const Text('Total Value',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            unreconciledReports[index]
-                                                    ['totalAmount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                          unreconciledReports[index]
+                                              ['reportName'],
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0XFF344054))),
                                     ),
-                                    const SizedBox(width: 20),
-                                    const VerticalDivider(
-                                      color: Colors.grey,
-                                      width: 2.0,
+                                    const SizedBox(height: 10),
+                                    IntrinsicHeight(
+                                      child: Row(
+                                        children: [
+                                          Image.asset('assets/home_icon.png',
+                                              height: 45, width: 45),
+                                          const SizedBox(width: 5),
+                                          Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Text('Total Value',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      fontSize: 10,
+                                                      color:
+                                                          Color(0XFF667085))),
+                                              Text(
+                                                  unreconciledReports[index]
+                                                          ['totalAmount']
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 14,
+                                                      color:
+                                                          Color(0XFF101828))),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 40),
+                                          const VerticalDivider(
+                                            color: Colors.grey,
+                                            width: 2.0,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Image.asset('assets/tick.png',
+                                              height: 45, width: 45),
+                                          const SizedBox(width: 5),
+                                          Column(
+                                            children: [
+                                              const Text('Total Value',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      fontSize: 10,
+                                                      color:
+                                                          Color(0XFF667085))),
+                                              Text(
+                                                  unreconciledReports[index]
+                                                          ['totalMatchedAmount']
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 14,
+                                                      color:
+                                                          Color(0XFF101828))),
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                    const SizedBox(width: 20),
-                                    Image.asset('assets/tick.png',
-                                        height: 45, width: 45),
-                                    const SizedBox(width: 5),
-                                    Column(
-                                      children: [
-                                        const Text('Total Value',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            unreconciledReports[index]
-                                                    ['totalMatchedAmount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    )
+                                    const SizedBox(height: 10),
+                                    IntrinsicHeight(
+                                      child: Row(
+                                        children: [
+                                          const SizedBox(width: 50),
+                                          Column(
+                                            children: [
+                                              const Text('Total transactions',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      fontSize: 10,
+                                                      color:
+                                                          Color(0XFF667085))),
+                                              Text(
+                                                  unreconciledReports[index]
+                                                          ['totalCount']
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 14,
+                                                      color:
+                                                          Color(0XFF101828))),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 5),
+                                          const VerticalDivider(
+                                            color: Colors.grey,
+                                            width: 2.0,
+                                          ),
+                                          const SizedBox(width: 50),
+                                          Column(
+                                            children: [
+                                              const Text('Total matches',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      fontSize: 10,
+                                                      color:
+                                                          Color(0XFF667085))),
+                                              Text(
+                                                  unreconciledReports[index]
+                                                          ['totalMatched']
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 14,
+                                                      color:
+                                                          Color(0XFF101828))),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              IntrinsicHeight(
-                                child: Row(
-                                  children: [
-                                    Column(
-                                      children: [
-                                        const Text('Total transactions',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            unreconciledReports[index]
-                                                    ['totalCount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 45),
-                                    const VerticalDivider(
-                                      color: Colors.grey,
-                                      width: 2.0,
-                                    ),
-                                    const SizedBox(width: 45),
-                                    Column(
-                                      children: [
-                                        const Text('Total matches',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            unreconciledReports[index]
-                                                    ['totalMatched']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-            )),
+                            ),
+                          );
+                        }),
+                  )
+                : noTransactionWidget),
         onPopInvokedWithResult: (didPop, result) {
           Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => const HomeScreen(pageIndex: 0)));
+                  builder: (context) => const HomeScreen(navbarIndex: 2)));
         });
   }
 }
@@ -351,7 +366,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: clickableColor, width: 2.0)),
       child: Container(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -429,785 +444,818 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
             opacity: 1.0,
             color: Colors.white,
             progressIndicator: appLoader,
-            child: Container(
+            child: Scaffold(
+              appBar: PreferredSize(
+                  preferredSize: const Size(double.maxFinite, 40),
+                  child: AppBar(
+                    centerTitle: true,
+                    surfaceTintColor: Colors.transparent,
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios),
+                      onPressed: () {
+                        Navigator.of(navigatorKey.currentContext!)
+                            .popUntil((route) => route.isFirst);
+                      },
+                    ),
+                    title: Text('Transactions',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: headingColor)),
+                    backgroundColor: Colors.white,
+                  )),
+              body: Container(
                 color: Colors.white,
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Card(
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side:
-                                BorderSide(color: clickableColor, width: 2.0)),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(widget.report['reportName'],
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0XFF344054))),
-                              ),
-                              const SizedBox(height: 10),
-                              IntrinsicHeight(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Image.asset('assets/home_icon.png',
-                                        height: 45, width: 45),
-                                    const SizedBox(width: 5),
-                                    Column(
-                                      children: [
-                                        const Text('Total Value',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            widget.report['totalAmount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 20),
-                                    const VerticalDivider(
-                                      color: Colors.grey,
-                                      width: 2.0,
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Image.asset('assets/tick.png',
-                                        height: 45, width: 45),
-                                    const SizedBox(width: 5),
-                                    Column(
-                                      children: [
-                                        const Text('Total Value',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            widget.report['totalMatchedAmount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              IntrinsicHeight(
-                                child: Row(
-                                  children: [
-                                    Column(
-                                      children: [
-                                        const Text('Total transactions',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            widget.report['totalCount']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 45),
-                                    const VerticalDivider(
-                                      color: Colors.grey,
-                                      width: 2.0,
-                                    ),
-                                    const SizedBox(width: 45),
-                                    Column(
-                                      children: [
-                                        const Text('Total matches',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 10,
-                                                color: Color(0XFF667085))),
-                                        Text(
-                                            widget.report['totalMatched']
-                                                .toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0XFF101828))),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        decoration: const InputDecoration(
-                            filled: true,
-                            fillColor: Color(0xfff3f3f3),
-                            border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12)),
-                                borderSide: BorderSide(
-                                    color: Colors.transparent, width: 0)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12)),
-                                borderSide: BorderSide(
-                                    color: Colors.transparent, width: 0)),
-                            focusColor: Color(0XFF8E8E8E),
-                            hintText: 'Search here',
-                            prefixIcon: Icon(Icons.search),
-                            prefixIconColor: Color(0XFF8E8E8E)),
-                        onChanged: (value) {
-                          filteredTransactions = [];
-                          for (var transaction in transactions) {
-                            if (transaction['description']
-                                .toString()
-                                .toLowerCase()
-                                .contains(value.toLowerCase())) {
-                              filteredTransactions.add(transaction);
-                            }
-                          }
-                          setState(() {});
-                        },
-                        controller: transactionSearchController,
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedFilter = 'All';
-                              });
-                              filteredTransactions = transactions;
-                              setState(() {});
-                            },
-                            child: Chip(
-                              label: const Text('All'),
-                              avatar: const Icon(Icons.filter_list,
-                                  color: Colors.black),
-                              backgroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                      color: selectedFilter == 'All'
-                                          ? clickableColor
-                                          : const Color(0XFFD0D5DD))),
+                          Flexible(
+                              child: Card(
+                            color: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                    color: clickableColor, width: 2.0)),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(widget.report['reportName'],
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0XFF344054))),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      children: [
+                                        Image.asset('assets/home_icon.png',
+                                            height: 45, width: 45),
+                                        const SizedBox(width: 5),
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Text('Total Value',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: 10,
+                                                    color: Color(0XFF667085))),
+                                            Text(
+                                                widget.report['totalAmount']
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: Color(0XFF101828))),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 40),
+                                        const VerticalDivider(
+                                          color: Colors.grey,
+                                          width: 2.0,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Image.asset('assets/tick.png',
+                                            height: 45, width: 45),
+                                        const SizedBox(width: 5),
+                                        Column(
+                                          children: [
+                                            const Text('Total Value',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: 10,
+                                                    color: Color(0XFF667085))),
+                                            Text(
+                                                widget.report[
+                                                        'totalMatchedAmount']
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: Color(0XFF101828))),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 50),
+                                        Column(
+                                          children: [
+                                            const Text('Total transactions',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: 10,
+                                                    color: Color(0XFF667085))),
+                                            Text(
+                                                widget.report['totalCount']
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: Color(0XFF101828))),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 5),
+                                        const VerticalDivider(
+                                          color: Colors.grey,
+                                          width: 2.0,
+                                        ),
+                                        const SizedBox(width: 50),
+                                        Column(
+                                          children: [
+                                            const Text('Total matches',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: 10,
+                                                    color: Color(0XFF667085))),
+                                            Text(
+                                                widget.report['totalMatched']
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: Color(0XFF101828))),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedFilter = 'Matched';
-                              });
+                          )),
+                          const SizedBox(height: 10),
+                          Flexible(
+                              child: TextField(
+                            decoration: const InputDecoration(
+                                filled: true,
+                                fillColor: Color(0xfff3f3f3),
+                                border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(12)),
+                                    borderSide: BorderSide(
+                                        color: Colors.transparent, width: 0)),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(12)),
+                                    borderSide: BorderSide(
+                                        color: Colors.transparent, width: 0)),
+                                focusColor: Color(0XFF8E8E8E),
+                                hintText: 'Search here',
+                                prefixIcon: Icon(Icons.search),
+                                prefixIconColor: Color(0XFF8E8E8E)),
+                            onChanged: (value) {
                               filteredTransactions = [];
-                              transactions.forEach((transaction) {
-                                if (transaction['status'] != 'Unassigned') {
+                              for (var transaction in transactions) {
+                                if (transaction['description']
+                                    .toString()
+                                    .toLowerCase()
+                                    .contains(value.toLowerCase())) {
                                   filteredTransactions.add(transaction);
                                 }
-                              });
+                              }
                               setState(() {});
                             },
-                            child: Chip(
-                              label: const Text('Matched'),
-                              avatar: const Icon(Icons.filter_list,
-                                  color: Colors.black),
-                              backgroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                      color: selectedFilter == 'Matched'
-                                          ? clickableColor
-                                          : const Color(0XFFD0D5DD))),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedFilter = 'Unmatched';
-                              });
-                              filteredTransactions = [];
-                              transactions.forEach((transaction) {
-                                if (transaction['status'] == 'Unassigned') {
-                                  filteredTransactions.add(transaction);
-                                }
-                              });
-                              setState(() {});
-                            },
-                            child: Chip(
-                              label: const Text('Unmatched'),
-                              avatar: const Icon(Icons.filter_list,
-                                  color: Colors.black),
-                              backgroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                      color: selectedFilter == 'Unmatched'
-                                          ? clickableColor
-                                          : const Color(0XFFD0D5DD))),
-                            ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: filteredTransactions.length,
-                            itemBuilder: (context, index) {
-                              return Card(
-                                color: Colors.white,
-                                child: Theme(
-                                  data: Theme.of(context).copyWith(
-                                      dividerColor: Colors.transparent),
-                                  child: ExpansionTile(
-                                      backgroundColor: Colors.white,
-                                      showTrailingIcon: false,
-                                      title: Container(
-                                          color: Colors.white,
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Image.asset(
-                                                  'assets/home_icon.png',
-                                                  height: 50,
-                                                  width: 50),
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceAround,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
-                                                          filteredTransactions[
-                                                                  index]
-                                                              ['description'],
-                                                          style: const TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              fontSize: 14,
-                                                              color: Color(
-                                                                  0XFF344054))),
+                            controller: transactionSearchController,
+                          )),
+                          const SizedBox(height: 10),
+                          Flexible(
+                              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedFilter = 'All';
+                                  });
+                                  filteredTransactions = transactions;
+                                  setState(() {});
+                                },
+                                child: Chip(
+                                  label: const Text('All'),
+                                  avatar: const Icon(Icons.filter_list,
+                                      color: Colors.black),
+                                  backgroundColor: Colors.white,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(
+                                          color: selectedFilter == 'All'
+                                              ? clickableColor
+                                              : const Color(0XFFD0D5DD))),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedFilter = 'Matched';
+                                  });
+                                  filteredTransactions = [];
+                                  transactions.forEach((transaction) {
+                                    if (transaction['status'] != 'Unassigned') {
+                                      filteredTransactions.add(transaction);
+                                    }
+                                  });
+                                  setState(() {});
+                                },
+                                child: Chip(
+                                  label: const Text('Matched'),
+                                  avatar: const Icon(Icons.filter_list,
+                                      color: Colors.black),
+                                  backgroundColor: Colors.white,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(
+                                          color: selectedFilter == 'Matched'
+                                              ? clickableColor
+                                              : const Color(0XFFD0D5DD))),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedFilter = 'Unmatched';
+                                  });
+                                  filteredTransactions = [];
+                                  transactions.forEach((transaction) {
+                                    if (transaction['status'] == 'Unassigned') {
+                                      filteredTransactions.add(transaction);
+                                    }
+                                  });
+                                  setState(() {});
+                                },
+                                child: Chip(
+                                  label: const Text('Unmatched'),
+                                  avatar: const Icon(Icons.filter_list,
+                                      color: Colors.black),
+                                  backgroundColor: Colors.white,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(
+                                          color: selectedFilter == 'Unmatched'
+                                              ? clickableColor
+                                              : const Color(0XFFD0D5DD))),
+                                ),
+                              )
+                            ],
+                          )),
+                          const SizedBox(height: 10),
+                          Flexible(
+                            child: ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filteredTransactions.length,
+                                itemBuilder: (context, index) {
+                                  return Card(
+                                    color: Colors.white,
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                          dividerColor: Colors.transparent),
+                                      child: ExpansionTile(
+                                          backgroundColor: Colors.white,
+                                          showTrailingIcon: false,
+                                          title: Container(
+                                              color: Colors.white,
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  Image.asset(
+                                                      'assets/home_icon.png',
+                                                      height: 50,
+                                                      width: 50),
+                                                  const SizedBox(width: 10),
+                                                  SizedBox(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.5,
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              filteredTransactions[
+                                                                      index][
+                                                                  'description'],
+                                                              style: const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  fontSize: 14,
+                                                                  color: Color(
+                                                                      0XFF344054))),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              'Due: ${DateFormat('d MMM, y').format(DateTime.parse(filteredTransactions[index]['relatedDate'])).toString()}',
+                                                              style: const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w400,
+                                                                  fontSize: 12,
+                                                                  color: Color(
+                                                                      0XFF667085))),
+                                                        )
+                                                      ],
                                                     ),
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
-                                                          'Due: ${DateFormat('d MMM, y').format(DateTime.parse(filteredTransactions[index]['relatedDate'])).toString()}',
-                                                          style: const TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w400,
-                                                              fontSize: 12,
-                                                              color: Color(
-                                                                  0XFF667085))),
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment:
-                                                    Alignment.centerRight,
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: [
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerRight,
-                                                      child: Container(
-                                                        color: filteredTransactions[
-                                                                        index][
-                                                                    'status'] ==
-                                                                'Unassigned'
-                                                            ? const Color(
-                                                                0XFFFFEFEF)
-                                                            : const Color(
-                                                                0XFFE5FFE9),
-                                                        child: Text(
-                                                            filteredTransactions[
+                                                  ),
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerRight,
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Container(
+                                                            height: 20,
+                                                            width: 75,
+                                                            color: filteredTransactions[
                                                                             index]
                                                                         [
                                                                         'status'] ==
                                                                     'Unassigned'
-                                                                ? 'Unmatched'
-                                                                : 'Matched',
-                                                            style: TextStyle(
-                                                                color: filteredTransactions[index]
+                                                                ? const Color(
+                                                                    0XFFFFEFEF)
+                                                                : const Color(
+                                                                    0XFFE5FFE9),
+                                                            child: Center(
+                                                              child: Text(
+                                                                  filteredTransactions[index]
+                                                                              [
+                                                                              'status'] ==
+                                                                          'Unassigned'
+                                                                      ? 'Unmatched'
+                                                                      : 'Matched',
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          10,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      color: filteredTransactions[index]['status'] ==
+                                                                              'Unassigned'
+                                                                          ? const Color(
+                                                                              0XFFFF1B1B)
+                                                                          : const Color(
+                                                                              0XFF009318))),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        filteredTransactions[
+                                                                        index][
+                                                                    'amount'] !=
+                                                                null
+                                                            ? Align(
+                                                                alignment: Alignment
+                                                                    .centerRight,
+                                                                child: Text(
+                                                                    filteredTransactions[index]
                                                                             [
-                                                                            'status'] ==
-                                                                        'Unassigned'
-                                                                    ? const Color(
-                                                                        0XFFFF1B1B)
-                                                                    : const Color(
-                                                                        0XFF009318))),
-                                                      ),
+                                                                            'amount']
+                                                                        .toString(),
+                                                                    style: TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w600,
+                                                                        fontSize:
+                                                                            16,
+                                                                        color: filteredTransactions[index]['amount'].toString().startsWith('-')
+                                                                            ? const Color(0XFFFF1B1B)
+                                                                            : const Color(0XFF009318))),
+                                                              )
+                                                            : const SizedBox()
+                                                      ],
                                                     ),
-                                                    filteredTransactions[index]
-                                                                ['amount'] !=
-                                                            null
-                                                        ? Align(
-                                                            alignment: Alignment
-                                                                .centerRight,
-                                                            child: Text(
-                                                                filteredTransactions[
-                                                                            index]
-                                                                        [
-                                                                        'amount']
-                                                                    .toString(),
-                                                                style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                    fontSize:
-                                                                        16,
-                                                                    color: filteredTransactions[index]['amount']
-                                                                            .toString()
-                                                                            .startsWith(
-                                                                                '-')
-                                                                        ? const Color(
-                                                                            0XFFFF1B1B)
-                                                                        : const Color(
-                                                                            0XFF009318))),
-                                                          )
-                                                        : const SizedBox()
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          )),
-                                      tilePadding: const EdgeInsets.only(
-                                          left: 10, right: 10),
-                                      children: [
-                                        if ((filteredTransactions[index]
-                                                        ['matchData'] !=
-                                                    null &&
-                                                filteredTransactions[index]
-                                                        ['matchData']
-                                                    .isNotEmpty) ||
-                                            (filteredTransactions[index]
-                                                        ['relatedData'] !=
-                                                    null &&
-                                                filteredTransactions[index]
-                                                        ['relatedData']
-                                                    .isNotEmpty)) ...[
-                                          Theme(
-                                            data: Theme.of(context).copyWith(
-                                                dividerColor:
-                                                    Colors.transparent),
-                                            child: ExpansionTile(
-                                              tilePadding:
-                                                  const EdgeInsets.only(
-                                                      left: 10, right: 10),
-                                              backgroundColor: Colors.white,
-                                              showTrailingIcon: false,
-                                              title: Container(
-                                                color: Colors.white,
-                                                child: Column(children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      const Expanded(
-                                                          child: Divider()),
-                                                      Text(
-                                                          filteredTransactions[index]
-                                                                          [
-                                                                          'matchData'] !=
-                                                                      null &&
-                                                                  filteredTransactions[
-                                                                              index]
-                                                                          [
-                                                                          'matchData']
-                                                                      .isNotEmpty
-                                                              ? 'Suggested match'
-                                                              : filteredTransactions[index]
-                                                                              [
-                                                                              'relatedData'] !=
-                                                                          null &&
-                                                                      filteredTransactions[index]
-                                                                              [
-                                                                              'relatedData']
-                                                                          .isNotEmpty
-                                                                  ? 'Matched To'
-                                                                  : '',
-                                                          style: const TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w400,
-                                                              fontSize: 12,
-                                                              color: Color(
-                                                                  0XFF667085))),
-                                                      const Expanded(
-                                                          child: Divider()),
-                                                    ],
                                                   ),
-                                                  const SizedBox(height: 10),
-                                                  filteredTransactions[index][
-                                                                  'matchData'] !=
-                                                              null &&
-                                                          filteredTransactions[index]
-                                                                  ['matchData']
-                                                              .isNotEmpty
-                                                      ? getMatchWidget(
-                                                          filteredTransactions[index]
-                                                              ['matchData'],
-                                                          'match')
-                                                      : filteredTransactions[index]
-                                                                      [
-                                                                      'relatedData'] !=
-                                                                  null &&
-                                                              filteredTransactions[index]
-                                                                      [
-                                                                      'relatedData']
-                                                                  .isNotEmpty
-                                                          ? getMatchWidget(
-                                                              filteredTransactions[
-                                                                      index]
-                                                                  ['relatedData'],
-                                                              'related')
-                                                          : const SizedBox(),
-                                                  const SizedBox(height: 10)
-                                                ]),
-                                              ),
-                                              children: [
-                                                if (filteredTransactions[index]
+                                                ],
+                                              )),
+                                          tilePadding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          children: [
+                                            if ((filteredTransactions[index]
                                                             ['matchData'] !=
                                                         null &&
                                                     filteredTransactions[index]
                                                             ['matchData']
-                                                        .isNotEmpty) ...[
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            10),
-                                                    height: MediaQuery.of(
-                                                                navigatorKey
-                                                                    .currentContext!)
-                                                            .size
-                                                            .height *
-                                                        0.4,
+                                                        .isNotEmpty) ||
+                                                (filteredTransactions[index]
+                                                            ['relatedData'] !=
+                                                        null &&
+                                                    filteredTransactions[index]
+                                                            ['relatedData']
+                                                        .isNotEmpty)) ...[
+                                              Theme(
+                                                data: Theme.of(context)
+                                                    .copyWith(
+                                                        dividerColor:
+                                                            Colors.transparent),
+                                                child: ExpansionTile(
+                                                  tilePadding:
+                                                      const EdgeInsets.only(
+                                                          left: 10, right: 10),
+                                                  backgroundColor: Colors.white,
+                                                  showTrailingIcon: false,
+                                                  title: Container(
                                                     color: Colors.white,
-                                                    child: Column(
-                                                      children: [
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          height: 40,
-                                                          width:
-                                                              double.maxFinite,
-                                                          color: const Color(
-                                                              0XFFF9FAFB),
-                                                          child: const Text(
-                                                              'Reconcile',
-                                                              style: TextStyle(
-                                                                  fontSize: 14,
+                                                    child: Column(children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          const Expanded(
+                                                              child: Divider()),
+                                                          Text(
+                                                              filteredTransactions[index]
+                                                                              [
+                                                                              'matchData'] !=
+                                                                          null &&
+                                                                      filteredTransactions[index]
+                                                                              [
+                                                                              'matchData']
+                                                                          .isNotEmpty
+                                                                  ? ' Suggested match '
+                                                                  : filteredTransactions[index]['relatedData'] !=
+                                                                              null &&
+                                                                          filteredTransactions[index]['relatedData']
+                                                                              .isNotEmpty
+                                                                      ? ' Matched To '
+                                                                      : '',
+                                                              style: const TextStyle(
                                                                   fontWeight:
                                                                       FontWeight
-                                                                          .w600,
+                                                                          .w400,
+                                                                  fontSize: 12,
                                                                   color: Color(
-                                                                      0XFF101828))),
-                                                        ),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          color: Colors.white,
-                                                          height: 40,
-                                                          width:
-                                                              double.maxFinite,
-                                                          child: const Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Expanded(
-                                                                  child:
-                                                                      Divider()),
-                                                              Text(
-                                                                  'Transactions',
-                                                                  style: TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w400,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF667085))),
-                                                              Expanded(
-                                                                  child:
-                                                                      Divider()),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          color: Colors.white,
-                                                          height: 40,
-                                                          width:
-                                                              double.maxFinite,
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(
+                                                                      0XFF667085))),
+                                                          const Expanded(
+                                                              child: Divider()),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      filteredTransactions[index][
+                                                                      'matchData'] !=
+                                                                  null &&
+                                                              filteredTransactions[
+                                                                          index][
+                                                                      'matchData']
+                                                                  .isNotEmpty
+                                                          ? getMatchWidget(
+                                                              filteredTransactions[
+                                                                      index]
+                                                                  ['matchData'],
+                                                              'match')
+                                                          : filteredTransactions[index][
+                                                                          'relatedData'] !=
+                                                                      null &&
+                                                                  filteredTransactions[index]
+                                                                          [
+                                                                          'relatedData']
+                                                                      .isNotEmpty
+                                                              ? getMatchWidget(
                                                                   filteredTransactions[
                                                                           index]
-                                                                      [
-                                                                      'description'],
-                                                                  style: const TextStyle(
+                                                                      ['relatedData'],
+                                                                  'related')
+                                                              : const SizedBox(),
+                                                      const SizedBox(height: 10)
+                                                    ]),
+                                                  ),
+                                                  children: [
+                                                    if (filteredTransactions[
+                                                                    index]
+                                                                ['matchData'] !=
+                                                            null &&
+                                                        filteredTransactions[
+                                                                    index]
+                                                                ['matchData']
+                                                            .isNotEmpty) ...[
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(10),
+                                                        height: MediaQuery.of(
+                                                                    navigatorKey
+                                                                        .currentContext!)
+                                                                .size
+                                                                .height *
+                                                            0.4,
+                                                        color: Colors.white,
+                                                        child: Column(
+                                                          children: [
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              height: 40,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              color: const Color(
+                                                                  0XFFF9FAFB),
+                                                              child: const Text(
+                                                                  'Reconcile',
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          14,
                                                                       fontWeight:
                                                                           FontWeight
-                                                                              .w500,
-                                                                      fontSize:
-                                                                          12,
+                                                                              .w600,
                                                                       color: Color(
-                                                                          0XFF667085))),
-                                                              Text(
-                                                                  filteredTransactions[
+                                                                          0XFF101828))),
+                                                            ),
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              color:
+                                                                  Colors.white,
+                                                              height: 40,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              child: const Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  Expanded(
+                                                                      child:
+                                                                          Divider()),
+                                                                  Text(
+                                                                      ' Transactions ',
+                                                                      style: TextStyle(
+                                                                          fontWeight: FontWeight
+                                                                              .w400,
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF667085))),
+                                                                  Expanded(
+                                                                      child:
+                                                                          Divider()),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              color:
+                                                                  Colors.white,
+                                                              height: 40,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              child: Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  Text(
+                                                                      filteredTransactions[
                                                                               index]
                                                                           [
-                                                                          'amount']
-                                                                      .toString(),
-                                                                  style: const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                          'description'],
+                                                                      style: const TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w500,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF101828))),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          color: Colors.white,
-                                                          height: 40,
-                                                          width:
-                                                              double.maxFinite,
-                                                          child: const Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Expanded(
-                                                                  child:
-                                                                      Divider()),
-                                                              Text('Expense',
-                                                                  style: TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF667085))),
+                                                                  Text(
+                                                                      filteredTransactions[index]
+                                                                              [
+                                                                              'amount']
+                                                                          .toString(),
+                                                                      style: const TextStyle(
+                                                                          fontWeight: FontWeight
+                                                                              .w500,
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF101828))),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              color:
+                                                                  Colors.white,
+                                                              height: 40,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              child: const Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  Expanded(
+                                                                      child:
+                                                                          Divider()),
+                                                                  Text(
+                                                                      ' Expense ',
+                                                                      style: TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w400,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF667085))),
-                                                              Expanded(
-                                                                  child:
-                                                                      Divider()),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          color: Colors.white,
-                                                          height: 40,
-                                                          width:
-                                                              double.maxFinite,
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(
-                                                                  filteredTransactions[index]
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF667085))),
+                                                                  Expanded(
+                                                                      child:
+                                                                          Divider()),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              color:
+                                                                  Colors.white,
+                                                              height: 40,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              child: Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  Text(
+                                                                      filteredTransactions[index]['matchData']
                                                                               [
-                                                                              'matchData']
-                                                                          [
-                                                                          'supplierName'] ??
-                                                                      '',
-                                                                  style: const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                              'supplierName'] ??
+                                                                          '',
+                                                                      style: const TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w500,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF667085))),
-                                                              Text(
-                                                                  filteredTransactions[index]
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF667085))),
+                                                                  Text(
+                                                                      filteredTransactions[index]['matchData']
                                                                               [
-                                                                              'matchData']
-                                                                          [
-                                                                          'amountDue']
-                                                                      .toString(),
-                                                                  style: const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                              'amountDue']
+                                                                          .toString(),
+                                                                      style: const TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w500,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF101828))),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(10),
-                                                          color: const Color(
-                                                              0XFFFFFCDE),
-                                                          height: 50,
-                                                          width:
-                                                              double.maxFinite,
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              const Text(
-                                                                  'Difference',
-                                                                  style: TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF101828))),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(10),
+                                                              color: const Color(
+                                                                  0XFFFFFCDE),
+                                                              height: 50,
+                                                              width: double
+                                                                  .maxFinite,
+                                                              child: Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  const Text(
+                                                                      'Difference',
+                                                                      style: TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w600,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF101828))),
-                                                              Text(
-                                                                  (filteredTransactions[index]['matchData']
-                                                                              [
-                                                                              'amountDue'] +
-                                                                          filteredTransactions[index]
-                                                                              [
-                                                                              'amount'])
-                                                                      .toString(),
-                                                                  style: const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF101828))),
+                                                                  Text(
+                                                                      (filteredTransactions[index]['matchData']['amountDue'] +
+                                                                              filteredTransactions[index][
+                                                                                  'amount'])
+                                                                          .toString(),
+                                                                      style: const TextStyle(
+                                                                          fontWeight: FontWeight
                                                                               .w600,
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0XFF101828))),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                            height: 10),
-                                                        ElevatedButton(
-                                                          style: ButtonStyle(
-                                                              shape: MaterialStateProperty.all<
-                                                                      RoundedRectangleBorder>(
-                                                                  RoundedRectangleBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Color(0XFF101828))),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 10),
+                                                            ElevatedButton(
+                                                              style: ButtonStyle(
+                                                                  shape: MaterialStateProperty.all<
+                                                                          RoundedRectangleBorder>(
+                                                                      RoundedRectangleBorder(
+                                                                          borderRadius: BorderRadius.circular(
                                                                               12.0))),
-                                                              fixedSize: WidgetStateProperty.all(Size(
-                                                                  double
-                                                                      .maxFinite,
-                                                                  MediaQuery.of(context)
-                                                                          .size
-                                                                          .height *
-                                                                      0.06)),
-                                                              backgroundColor:
-                                                                  WidgetStateProperty.all(
-                                                                      clickableColor)),
-                                                          onPressed: () async {
-                                                            setState(() {
-                                                              showSpinner =
-                                                                  true;
-                                                            });
-                                                            final updateResp = await ApiService.updateSuggestedMatches(
-                                                                filteredTransactions[
+                                                                  fixedSize: WidgetStateProperty.all(Size(
+                                                                      double
+                                                                          .maxFinite,
+                                                                      MediaQuery.of(context)
+                                                                              .size
+                                                                              .height *
+                                                                          0.06)),
+                                                                  backgroundColor:
+                                                                      WidgetStateProperty.all(
+                                                                          clickableColor)),
+                                                              onPressed:
+                                                                  () async {
+                                                                setState(() {
+                                                                  showSpinner =
+                                                                      true;
+                                                                });
+                                                                final updateResp = await ApiService.updateSuggestedMatches(
+                                                                    filteredTransactions[index]
+                                                                            [
+                                                                            'matchData']
+                                                                        [
+                                                                        'unreconciledReportId'],
+                                                                    filteredTransactions[
                                                                             index]
                                                                         [
-                                                                        'matchData']
-                                                                    [
-                                                                    'unreconciledReportId'],
-                                                                filteredTransactions[
-                                                                            index]
-                                                                        [
-                                                                        'matchData']
-                                                                    ['id'],
-                                                                selectedOrgId);
-                                                            await preparePageContent();
-                                                            if (updateResp ==
-                                                                false) {
-                                                              ScaffoldMessenger.of(
-                                                                      navigatorKey
-                                                                          .currentContext!)
-                                                                  .showSnackBar(
-                                                                      const SnackBar(
+                                                                        'matchData']['id'],
+                                                                    selectedOrgId);
+                                                                await preparePageContent();
+                                                                if (updateResp ==
+                                                                    false) {
+                                                                  ScaffoldMessenger
+                                                                          .of(navigatorKey
+                                                                              .currentContext!)
+                                                                      .showSnackBar(const SnackBar(
                                                                           content:
                                                                               Text('We were unable to update the transaction, please try again.')));
-                                                            }
-                                                          },
-                                                          child: const Text(
-                                                            'Match',
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 18),
-                                                          ),
+                                                                }
+                                                              },
+                                                              child: const Text(
+                                                                'Match',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        18),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                ]
-                                              ],
-                                            ),
-                                          )
-                                        ]
-                                      ]),
-                                ),
-                              );
-                            }),
-                      )
-                    ]))),
+                                                      )
+                                                    ]
+                                                  ],
+                                                ),
+                                              )
+                                            ]
+                                          ]),
+                                    ),
+                                  );
+                                }),
+                          )
+                        ])),
+              ),
+            )),
         onPopInvokedWithResult: (didPop, result) {
-          Navigator.pop(navigatorKey.currentContext!);
+          Navigator.of(navigatorKey.currentContext!)
+              .popUntil((route) => route.isFirst);
         });
   }
 }

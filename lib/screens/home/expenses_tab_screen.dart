@@ -46,7 +46,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
           onPressed: () => Navigator.pushReplacement(
               navigatorKey.currentContext!,
               MaterialPageRoute(
-                  builder: (context) => const HomeScreen(pageIndex: 0))),
+                  builder: (context) => const HomeScreen(tabIndex: 0))),
           style: ButtonStyle(
               shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0))),

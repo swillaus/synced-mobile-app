@@ -123,7 +123,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => widget.source == 'auth'
-                              ? const HomeScreen(pageIndex: 0)
+                              ? const HomeScreen(tabIndex: 0)
                               : ChangePasswordPage(email: widget.email)));
                 },
                 child: const Text(

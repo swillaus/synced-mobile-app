@@ -11,7 +11,6 @@ import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/expenses_tab_screen.dart';
@@ -27,7 +26,7 @@ List processedExpenses = [];
 TextEditingController notesController = TextEditingController();
 TextEditingController reviewSearchController = TextEditingController();
 TextEditingController processedSearchController = TextEditingController();
-RefreshController refreshController = RefreshController();
+final PersistentTabController _controller = PersistentTabController();
 final Debouncer reviewDebouncer = Debouncer();
 final Debouncer processedDebouncer = Debouncer();
 String fileSize = '';
@@ -41,8 +40,9 @@ int reviewPageKey = 1;
 int processedPageKey = 1;
 
 class HomeScreen extends StatefulWidget {
-  final int pageIndex;
-  const HomeScreen({super.key, required this.pageIndex});
+  final int tabIndex;
+  final int navbarIndex;
+  const HomeScreen({super.key, this.tabIndex = 0, this.navbarIndex = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -50,7 +50,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  final PersistentTabController _controller = PersistentTabController();
   List organisations = [];
   late TabController tabController;
 
@@ -228,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen>
         Navigator.pushAndRemoveUntil(
             navigatorKey.currentContext!,
             MaterialPageRoute(
-                builder: (context) => const HomeScreen(pageIndex: 0)),
+                builder: (context) => const HomeScreen(tabIndex: 0)),
             (Route<dynamic> route) => false);
       }
     } else if (await Permission.camera.isPermanentlyDenied) {
@@ -329,7 +328,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       showSpinner = false;
-      refreshController.refreshCompleted();
     });
 
     final tempDir = await getTemporaryDirectory();
@@ -420,7 +418,8 @@ class _HomeScreenState extends State<HomeScreen>
     tabController.addListener(() {
       setState(() {});
     });
-    tabController.index = widget.pageIndex;
+    tabController.index = widget.tabIndex;
+    _controller.index = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
       reviewPageKey = pageKey;
       getUnprocessedExpenses(pageKey);
@@ -451,7 +450,6 @@ class _HomeScreenState extends State<HomeScreen>
     } else {
       setState(() {
         showSpinner = false;
-        refreshController.refreshCompleted();
       });
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           const SnackBar(
@@ -475,93 +473,91 @@ class _HomeScreenState extends State<HomeScreen>
         opacity: 1.0,
         color: Colors.white,
         progressIndicator: appLoader,
-        child: SmartRefresher(
-          onRefresh: getOrganisations,
-          controller: refreshController,
-          child: Scaffold(
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: const Color(0xfffbfbfb),
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: Colors.white,
+            centerTitle: true,
+            title: DropdownButtonHideUnderline(
+                child: DropdownButton2(
+                    dropdownStyleData: const DropdownStyleData(
+                        elevation: 1,
+                        decoration: BoxDecoration(color: Colors.white)),
+                    menuItemStyleData: const MenuItemStyleData(
+                        overlayColor: WidgetStatePropertyAll(Colors.white)),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedOrgId = value!;
+                      });
+                      getUnprocessedExpenses(1);
+                      getProcessedExpenses(1);
+                    },
+                    items: getDropdownEntries(),
+                    value: selectedOrgId)),
+            bottom: _controller.index == 0
+                ? TabBar(
+                    indicatorColor: clickableColor,
+                    labelColor: clickableColor,
+                    unselectedLabelColor: textColor,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    tabs: const [
+                      Tab(
+                        text: 'For Review',
+                      ),
+                      Tab(
+                        text: 'Processed',
+                      ),
+                    ],
+                    controller: tabController)
+                : null,
+          ),
+          body: PersistentTabView(
+            navigatorKey.currentContext!,
+            controller: _controller,
+            screens: [
+              ExpensesTabScreen(tabController: tabController),
+              Container(),
+              const TransactionsTabScreen()
+            ],
+            items: _navBarsItems(),
+            handleAndroidBackButtonPress: true,
+            hideOnScrollSettings:
+                const HideOnScrollSettings(hideNavBarOnScroll: true),
             resizeToAvoidBottomInset: true,
-            backgroundColor: const Color(0xfffbfbfb),
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              centerTitle: true,
-              title: DropdownButtonHideUnderline(
-                  child: DropdownButton2(
-                      dropdownStyleData: const DropdownStyleData(
-                          elevation: 1,
-                          decoration: BoxDecoration(color: Colors.white)),
-                      menuItemStyleData: const MenuItemStyleData(
-                          overlayColor: WidgetStatePropertyAll(Colors.white)),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedOrgId = value!;
-                        });
-                        getUnprocessedExpenses(1);
-                        getProcessedExpenses(1);
-                      },
-                      items: getDropdownEntries(),
-                      value: selectedOrgId)),
-              bottom: _controller.index == 0
-                  ? TabBar(
-                      indicatorColor: clickableColor,
-                      labelColor: clickableColor,
-                      unselectedLabelColor: textColor,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      tabs: const [
-                        Tab(
-                          text: 'For Review',
-                        ),
-                        Tab(
-                          text: 'Processed',
-                        ),
-                      ],
-                      controller: tabController)
-                  : null,
-            ),
-            body: PersistentTabView(
-              navigatorKey.currentContext!,
-              controller: _controller,
-              screens: [
-                ExpensesTabScreen(tabController: tabController),
-                Container(),
-                const TransactionsTabScreen()
-              ],
-              items: _navBarsItems(),
-              handleAndroidBackButtonPress: false,
-              hideOnScrollSettings:
-                  const HideOnScrollSettings(hideNavBarOnScroll: true),
-              resizeToAvoidBottomInset: true,
-              stateManagement: false,
-              hideNavigationBarWhenKeyboardAppears: true,
-              popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
-              backgroundColor: Colors.white,
-              isVisible: true,
-              animationSettings: const NavBarAnimationSettings(
-                navBarItemAnimation: ItemAnimationSettings(
-                  // Navigation Bar's items animation properties.
-                  duration: Duration(milliseconds: 400),
-                  curve: Curves.ease,
-                ),
-                screenTransitionAnimation: ScreenTransitionAnimationSettings(
-                  // Screen transition animation on change of selected tab.
-                  animateTabTransition: true,
-                  duration: Duration(milliseconds: 200),
-                  screenTransitionAnimationType:
-                      ScreenTransitionAnimationType.fadeIn,
-                ),
+            stateManagement: true,
+            hideNavigationBarWhenKeyboardAppears: true,
+            popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
+            backgroundColor: Colors.white,
+            isVisible: true,
+            animationSettings: const NavBarAnimationSettings(
+              navBarItemAnimation: ItemAnimationSettings(
+                // Navigation Bar's items animation properties.
+                duration: Duration(milliseconds: 400),
+                curve: Curves.ease,
               ),
-              confineToSafeArea: true,
-              navBarHeight: MediaQuery.of(context).size.height * 0.085,
-              navBarStyle: NavBarStyle.style15,
-              onItemSelected: (index) {
-                if (_controller.index == 1) {
-                  startScan();
-                } else {
-                  setState(() {
-                    _controller.index = index;
-                  });
-                }
-              },
+              screenTransitionAnimation: ScreenTransitionAnimationSettings(
+                // Screen transition animation on change of selected tab.
+                animateTabTransition: true,
+                duration: Duration(milliseconds: 200),
+                screenTransitionAnimationType:
+                    ScreenTransitionAnimationType.fadeIn,
+              ),
             ),
+            confineToSafeArea: true,
+            navBarHeight: MediaQuery.of(context).size.height * 0.085,
+            navBarStyle: NavBarStyle.style15,
+            onItemSelected: (index) {
+              if (_controller.index == 1) {
+                startScan();
+              } else {
+                setState(() {
+                  _controller.index = index;
+                });
+              }
+            },
           ),
         ));
   }
