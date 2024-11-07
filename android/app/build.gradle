@@ -5,6 +5,12 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.syncedhq.synced"
     compileSdk = flutter.compileSdkVersion
@@ -30,18 +36,27 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
+    signingConfigs {
         debug {
             keyAlias 'syncedhq'
             keyPassword 'syncedhq'
-            storeFile file('release.keystore')
+            storeFile file('release.jks')
             storePassword 'syncedhq'
         }
         release {
             keyAlias 'syncedhq'
             keyPassword 'syncedhq'
-            storeFile file('release.keystore')
+            storeFile file('release.jks')
             storePassword 'syncedhq'
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
