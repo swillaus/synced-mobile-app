@@ -204,7 +204,11 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                                           Color(0XFF101828))),
                                             ],
                                           ),
-                                          const SizedBox(width: 5),
+                                          SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.03),
                                           const VerticalDivider(
                                             color: Colors.grey,
                                             width: 2.0,
@@ -567,7 +571,11 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                     color: Color(0XFF101828))),
                                           ],
                                         ),
-                                        const SizedBox(width: 5),
+                                        SizedBox(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.03),
                                         const VerticalDivider(
                                           color: Colors.grey,
                                           width: 2.0,
@@ -664,7 +672,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                   });
                                   filteredTransactions = [];
                                   transactions.forEach((transaction) {
-                                    if (transaction['status'] != 'Unassigned' ||
+                                    if (transaction['status'] != 'Unassigned' &&
                                         transaction['status'] != 'Assigned') {
                                       filteredTransactions.add(transaction);
                                     }
@@ -1191,7 +1199,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                 height: 10),
                                                             ElevatedButton(
                                                               style: ButtonStyle(
-                                                                  shape: MaterialStateProperty.all<
+                                                                  shape: WidgetStateProperty.all<
                                                                           RoundedRectangleBorder>(
                                                                       RoundedRectangleBorder(
                                                                           borderRadius: BorderRadius.circular(
