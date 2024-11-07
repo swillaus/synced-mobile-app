@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.syncedhq.synced",
+    "sha256_cert_fingerprints":
+    ["D4:C6:B5:4D:26:12:90:7C:BE:88:42:6A:43:50:42:D1:D5:cd:F3:CF:DF:03:8B:AE:50:FE:17:04:CB:B7:16:42"]
+  }
+}]

@@ -135,7 +135,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            '$hostUrl/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&page=1&pageSize=1000&searchText=$search&page=$page&pageSize=$pageSize'));
+            '$hostUrl/api/Invoices/getInvoicesUploadedByUser?id=$orgId&isProcessed=$isProcessed&searchText=$search&page=$page&pageSize=$pageSize'));
 
     request.headers.addAll(headers);
 

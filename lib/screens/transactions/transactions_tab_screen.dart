@@ -664,7 +664,8 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                   });
                                   filteredTransactions = [];
                                   transactions.forEach((transaction) {
-                                    if (transaction['status'] != 'Unassigned') {
+                                    if (transaction['status'] != 'Unassigned' ||
+                                        transaction['status'] != 'Assigned') {
                                       filteredTransactions.add(transaction);
                                     }
                                   });
@@ -691,7 +692,8 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                   });
                                   filteredTransactions = [];
                                   transactions.forEach((transaction) {
-                                    if (transaction['status'] == 'Unassigned') {
+                                    if (transaction['status'] == 'Unassigned' ||
+                                        transaction['status'] == 'Assigned') {
                                       filteredTransactions.add(transaction);
                                     }
                                   });
@@ -802,21 +804,23 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                           child: Container(
                                                             height: 20,
                                                             width: 75,
-                                                            color: filteredTransactions[
-                                                                            index]
-                                                                        [
-                                                                        'status'] ==
-                                                                    'Unassigned'
+                                                            color: filteredTransactions[index]
+                                                                            [
+                                                                            'status'] ==
+                                                                        'Unassigned' ||
+                                                                    filteredTransactions[index]
+                                                                            [
+                                                                            'status'] ==
+                                                                        'Assigned'
                                                                 ? const Color(
                                                                     0XFFFFEFEF)
                                                                 : const Color(
                                                                     0XFFE5FFE9),
                                                             child: Center(
                                                               child: Text(
-                                                                  filteredTransactions[index]
-                                                                              [
-                                                                              'status'] ==
-                                                                          'Unassigned'
+                                                                  filteredTransactions[index]['status'] == 'Unassigned' ||
+                                                                          filteredTransactions[index]['status'] ==
+                                                                              'Assigned'
                                                                       ? 'Unmatched'
                                                                       : 'Matched',
                                                                   style: TextStyle(
@@ -826,7 +830,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                           FontWeight
                                                                               .w500,
                                                                       color: filteredTransactions[index]['status'] ==
-                                                                              'Unassigned'
+                                                                                  'Unassigned' ||
+                                                                              filteredTransactions[index]['status'] ==
+                                                                                  'Assigned'
                                                                           ? const Color(
                                                                               0XFFFF1B1B)
                                                                           : const Color(

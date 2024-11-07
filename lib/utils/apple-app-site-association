@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "25543Z5PU6.com.syncedhq.syncedstage",
+        ],
+        "components": [
+          {
+            "/": "/auth/xero-sign-in/*",
+            "comment": "Matches any URL with a path that starts with /auth/."
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [ "25543Z5PU6.com.syncedhq.syncedstage" ]
+  }
+}

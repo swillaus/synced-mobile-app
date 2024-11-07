@@ -12,11 +12,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:synced/main.dart';
+import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/expenses_tab_screen.dart';
 import 'package:synced/screens/transactions/transactions_tab_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
+import 'package:synced/utils/database_helper.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 bool showUploadingInvoice = false;
 Map uploadingData = {};
@@ -311,7 +314,9 @@ class _HomeScreenState extends State<HomeScreen>
     final resp =
         await ApiService.getExpenses(false, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
-      reviewExpenses += resp['invoices'];
+      setState(() {
+        reviewExpenses += resp['invoices'];
+      });
     }
 
     try {
@@ -319,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen>
       if (isLastPage) {
         reviewPagingController.appendLastPage(resp['invoices']);
       } else {
-        final nextPageKey = page + resp['invoices'].length;
+        final nextPageKey = page + 1;
         reviewPagingController.appendPage(resp['invoices'], nextPageKey);
       }
     } catch (error) {
@@ -365,7 +370,9 @@ class _HomeScreenState extends State<HomeScreen>
     final resp =
         await ApiService.getExpenses(true, selectedOrgId, '', page, pageSize);
     if (resp.isNotEmpty) {
-      processedExpenses += resp['invoices'];
+      setState(() {
+        processedExpenses += resp['invoices'];
+      });
     }
 
     try {
@@ -373,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen>
       if (isLastPage) {
         processedPagingController.appendLastPage(resp['invoices']);
       } else {
-        final nextPageKey = page + resp['invoices'].length;
+        final nextPageKey = page + 1;
         processedPagingController.appendPage(resp['invoices'], nextPageKey);
       }
     } catch (error) {
@@ -481,22 +488,71 @@ class _HomeScreenState extends State<HomeScreen>
             surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.white,
             centerTitle: true,
-            title: DropdownButtonHideUnderline(
-                child: DropdownButton2(
-                    dropdownStyleData: const DropdownStyleData(
-                        elevation: 1,
-                        decoration: BoxDecoration(color: Colors.white)),
-                    menuItemStyleData: const MenuItemStyleData(
-                        overlayColor: WidgetStatePropertyAll(Colors.white)),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedOrgId = value!;
-                      });
-                      getUnprocessedExpenses(1);
-                      getProcessedExpenses(1);
-                    },
-                    items: getDropdownEntries(),
-                    value: selectedOrgId)),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                DropdownButtonHideUnderline(
+                    child: DropdownButton2(
+                        dropdownStyleData: const DropdownStyleData(
+                            elevation: 1,
+                            decoration: BoxDecoration(color: Colors.white)),
+                        menuItemStyleData: const MenuItemStyleData(
+                            overlayColor: WidgetStatePropertyAll(Colors.white)),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedOrgId = value!;
+                          });
+                          getUnprocessedExpenses(1);
+                          getProcessedExpenses(1);
+                        },
+                        items: getDropdownEntries(),
+                        value: selectedOrgId)),
+                PopupMenuButton<int>(
+                  color: Colors.white,
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (item) async {
+                    switch (item) {
+                      case 0:
+                        if (!await launchUrl(
+                            Uri.parse('https://help.syncedhq.com/en/'))) {
+                          throw Exception('Could not launch help center');
+                        }
+                        break;
+                      case 1:
+                        final DatabaseHelper _db = DatabaseHelper();
+                        await _db.deleteUsers();
+                        selectedOrgId = '';
+                        Navigator.pushReplacement(
+                            navigatorKey.currentContext!,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginPage()));
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<int>(
+                        value: 0,
+                        child: Row(
+                          children: [
+                            Icon(Icons.business_center_outlined),
+                            SizedBox(width: 10),
+                            Text('Help Center')
+                          ],
+                        )),
+                    const PopupMenuItem<int>(
+                        value: 1,
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout),
+                            SizedBox(width: 10),
+                            Text('Logout')
+                          ],
+                        )),
+                  ],
+                ),
+              ],
+            ),
             bottom: _controller.index == 0
                 ? TabBar(
                     indicatorColor: clickableColor,

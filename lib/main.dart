@@ -1,8 +1,10 @@
 import 'dart:math';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:is_first_run/is_first_run.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/login.dart';
@@ -12,6 +14,7 @@ import 'package:synced/utils/database_helper.dart';
 
 String selectedOrgId = '';
 final navigatorKey = GlobalKey<NavigatorState>();
+final appLinks = AppLinks();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,10 +81,24 @@ class _AppState extends State<App> {
       shadeValue(color.green, factor),
       shadeValue(color.blue, factor),
       1);
+
   @override
   Widget build(BuildContext context) {
+    GoRouter(
+      routes: [
+        GoRoute(
+          path: '/auth/xero-sign-in',
+          builder: (context, state) =>
+              const HomeScreen(tabIndex: 0, navbarIndex: 0),
+        )
+      ],
+    );
+
     return MaterialApp(
       navigatorKey: navigatorKey,
+      routes: {
+        '/home': (context) => const HomeScreen(tabIndex: 0, navbarIndex: 0),
+      },
       theme: ThemeData(
           fontFamily: 'Inter',
           primaryColor: clickableColor,

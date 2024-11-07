@@ -55,9 +55,7 @@ class _LoginPageState extends State<LoginPage> {
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
-            leading: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_ios_new)),
+            automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             title: const Text(
               'Login',
@@ -97,6 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
+                      keyboardType: TextInputType.emailAddress,
                       autovalidateMode: AutovalidateMode.onUnfocus,
                       validator: validateEmail,
                       controller: _emailController,
@@ -248,6 +247,49 @@ class _LoginPageState extends State<LoginPage> {
                 //         child: Text('Sign up',
                 //             style: TextStyle(color: clickableColor)))
                 //   ],
+                // ),
+                // const SizedBox(height: 15),
+                // const Center(
+                //   child: Text(
+                //     'or',
+                //     style: TextStyle(
+                //         fontWeight: FontWeight.w600,
+                //         fontSize: 14,
+                //         color: Color(0XFF696969)),
+                //   ),
+                // ),
+                // const SizedBox(height: 15),
+                // ElevatedButton(
+                //   style: ButtonStyle(
+                //       side: const WidgetStatePropertyAll(
+                //           BorderSide(color: Colors.black, width: 0.5)),
+                //       shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                //           borderRadius: BorderRadius.circular(12.0))),
+                //       fixedSize: WidgetStateProperty.all(Size(
+                //           MediaQuery.of(context).size.width * 0.8,
+                //           MediaQuery.of(context).size.height * 0.06)),
+                //       backgroundColor: WidgetStateProperty.all(Colors.white)),
+                //   onPressed: () async {
+                //     if (!await launchUrl(Uri.parse(xeroAuthUrl))) {
+                //       throw Exception(
+                //           'Could not launch ${Uri.parse(xeroAuthUrl)}');
+                //     }
+                //   },
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       Image.asset('assets/xero_logo.png',
+                //           height: 30, width: 30),
+                //       const SizedBox(width: 15),
+                //       const Text(
+                //         'Sign in with Xero',
+                //         style: TextStyle(
+                //             color: Color(0XFF2A2A2A),
+                //             fontSize: 14,
+                //             fontWeight: FontWeight.w500),
+                //       )
+                //     ],
+                //   ),
                 // ),
               ],
             ),
