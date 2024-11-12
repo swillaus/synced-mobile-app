@@ -3,12 +3,10 @@ import 'dart:math';
 
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:synced/main.dart';
@@ -335,32 +333,11 @@ class _HomeScreenState extends State<HomeScreen>
       showSpinner = false;
     });
 
-    final tempDir = await getTemporaryDirectory();
-
     for (var exp in reviewExpenses) {
-      if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.pdf').exists() ==
-          true) {
-        setState(() {
-          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
-        });
-      } else if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
-              .exists() ==
-          true) {
-        setState(() {
-          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
-        });
-      } else {
-        ApiService.downloadInvoice(exp['invoicePdfUrl'], selectedOrgId)
-            .then((invoiceResp) {
-          setState(() {
-            exp['invoice_path'] = invoiceResp['path'];
-          });
-          if (kDebugMode) {
-            print(invoiceResp);
-          }
-        });
-      }
+      exp['invoice_path'] =
+          'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
     }
+    setState(() {});
   }
 
   getProcessedExpenses(page) async {
@@ -391,32 +368,11 @@ class _HomeScreenState extends State<HomeScreen>
       showSpinner = false;
     });
 
-    final tempDir = await getTemporaryDirectory();
-
     for (var exp in processedExpenses) {
-      if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.pdf').exists() ==
-          true) {
-        setState(() {
-          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
-        });
-      } else if (await File('${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
-              .exists() ==
-          true) {
-        setState(() {
-          exp['invoice_path'] = '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
-        });
-      } else {
-        ApiService.downloadInvoice(exp['invoicePdfUrl'], selectedOrgId)
-            .then((invoiceResp) {
-          setState(() {
-            exp['invoice_path'] = invoiceResp['path'];
-          });
-          if (kDebugMode) {
-            print(invoiceResp);
-          }
-        });
-      }
+      exp['invoice_path'] =
+          'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
     }
+    setState(() {});
   }
 
   @override

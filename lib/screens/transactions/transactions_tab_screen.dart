@@ -1,16 +1,13 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class TransactionsTabScreen extends StatefulWidget {
   const TransactionsTabScreen({super.key});
@@ -299,61 +296,12 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         t['relatedData'] = relatedDataResp;
         t['matchData'] = matchDataResp;
 
-        final tempDir = await getTemporaryDirectory();
         if (t['matchData'] != null && t['matchData'].isNotEmpty) {
-          if (await File(
-                      '${tempDir.path}/${t['matchData']['invoicePdfUrl']}.pdf')
-                  .exists() ==
-              true) {
-            setState(() {
-              t['matchData']['invoice_path'] =
-                  '${tempDir.path}/${t['matchData']['invoicePdfUrl']}.pdf';
-            });
-          } else if (await File(
-                      '${tempDir.path}/${t['matchData']['invoicePdfUrl']}.jpeg')
-                  .exists() ==
-              true) {
-            setState(() {
-              t['matchData']['invoice_path'] =
-                  '${tempDir.path}/${t['matchData']['invoicePdfUrl']}.jpeg';
-            });
-          } else {
-            final downloadResp = await ApiService.downloadInvoice(
-                t['matchData']['invoicePdfUrl'], selectedOrgId);
-            setState(() {
-              t['matchData']['invoice_path'] = downloadResp['path'];
-            });
-            if (kDebugMode) {
-              print(downloadResp);
-            }
-          }
+          t['matchData']['invoice_path'] =
+              'https://syncedblobstaging.blob.core.windows.net/invoices/${t['matchData']['invoicePdfUrl']}';
         } else if (t['relatedData'] != null && t['relatedData'].isNotEmpty) {
-          if (await File(
-                      '${tempDir.path}/${t['relatedData']['invoicePdfUrl']}.pdf')
-                  .exists() ==
-              true) {
-            setState(() {
-              t['relatedData']['invoice_path'] =
-                  '${tempDir.path}/${t['relatedData']['invoicePdfUrl']}.pdf';
-            });
-          } else if (await File(
-                      '${tempDir.path}/${t['relatedData']['invoicePdfUrl']}.jpeg')
-                  .exists() ==
-              true) {
-            setState(() {
-              t['relatedData']['invoice_path'] =
-                  '${tempDir.path}/${t['relatedData']['invoicePdfUrl']}.jpeg';
-            });
-          } else {
-            final downloadResp = await ApiService.downloadInvoice(
-                t['relatedData']['invoicePdfUrl'], selectedOrgId);
-            setState(() {
-              t['relatedData']['invoice_path'] = downloadResp['path'];
-            });
-            if (kDebugMode) {
-              print(downloadResp);
-            }
-          }
+          t['relatedData']['invoice_path'] =
+              'https://syncedblobstaging.blob.core.windows.net/invoices/${t['relatedData']['invoicePdfUrl']}';
         }
       });
       setState(() {});
@@ -361,6 +309,24 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     setState(() {
       showSpinner = false;
     });
+  }
+
+  Widget getInvoiceWidget(Map matchData) {
+    late Widget invoiceImage;
+    invoiceImage = CachedNetworkImage(
+      imageUrl: matchData['invoice_path'],
+      errorWidget: (context, url, error) {
+        return SfPdfViewer.network(matchData['invoice_path'],
+            enableDoubleTapZooming: false,
+            enableTextSelection: false,
+            enableDocumentLinkAnnotation: false,
+            enableHyperlinkNavigation: false,
+            canShowPageLoadingIndicator: false,
+            canShowScrollHead: false,
+            canShowScrollStatus: false);
+      },
+    );
+    return invoiceImage;
   }
 
   Widget getMatchWidget(Map matchData, String type) {
@@ -376,13 +342,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
           children: [
             matchData['invoice_path'] != null
                 ? SizedBox(
-                    height: 75,
-                    width: 75,
-                    child:
-                        matchData['invoice_path'].toString().split('.').last ==
-                                'pdf'
-                            ? PdfViewer.openFile(matchData['invoice_path'])
-                            : Image.file(File(matchData['invoice_path'])))
+                    height: 75, width: 75, child: getInvoiceWidget(matchData))
                 : appLoader,
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.4,

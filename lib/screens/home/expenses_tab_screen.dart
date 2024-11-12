@@ -1,17 +1,16 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ExpensesTabScreen extends StatefulWidget {
   final TabController tabController;
@@ -63,6 +62,20 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget getInvoiceWidget(Map matchData) {
+      late Widget invoiceImage;
+      invoiceImage = CachedNetworkImage(
+        imageUrl: matchData['invoice_path'],
+        errorWidget: (context, url, error) {
+          return SfPdfViewer.network(matchData['invoice_path'],
+              canShowPageLoadingIndicator: false,
+              canShowScrollHead: false,
+              canShowScrollStatus: false);
+        },
+      );
+      return invoiceImage;
+    }
+
     Widget getPageContent() {
       if (reviewExpenses.isEmpty &&
           processedExpenses.isEmpty &&
@@ -109,37 +122,11 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               reviewExpenses = resp['invoices'];
                             }
 
-                            final tempDir = await getTemporaryDirectory();
-
                             for (var exp in reviewExpenses) {
-                              if (await File(
-                                          '${tempDir.path}/${exp['invoicePdfUrl']}.pdf')
-                                      .exists() ==
-                                  true) {
-                                setState(() {
-                                  exp['invoice_path'] =
-                                      '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
-                                });
-                              } else if (await File(
-                                          '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
-                                      .exists() ==
-                                  true) {
-                                setState(() {
-                                  exp['invoice_path'] =
-                                      '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
-                                });
-                              } else {
-                                final invoiceResp =
-                                    await ApiService.downloadInvoice(
-                                        exp['invoicePdfUrl'], selectedOrgId);
-                                setState(() {
-                                  exp['invoice_path'] = invoiceResp['path'];
-                                });
-                                if (kDebugMode) {
-                                  print(invoiceResp);
-                                }
-                              }
+                              exp['invoice_path'] =
+                                  'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
                             }
+                            setState(() {});
                           });
                     },
                     controller: reviewSearchController,
@@ -278,15 +265,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                           ? SizedBox(
                                               height: 75,
                                               width: 75,
-                                              child: item['invoice_path']
-                                                          .toString()
-                                                          .split('.')
-                                                          .last ==
-                                                      'pdf'
-                                                  ? PdfViewer.openFile(
-                                                      item['invoice_path'])
-                                                  : Image.file(File(
-                                                      item['invoice_path'])))
+                                              child: getInvoiceWidget(item))
                                           : appLoader,
                                       SizedBox(
                                         width:
@@ -379,15 +358,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                           ? SizedBox(
                                               height: 75,
                                               width: 75,
-                                              child: item['invoice_path']
-                                                          .toString()
-                                                          .split('.')
-                                                          .last ==
-                                                      'pdf'
-                                                  ? PdfViewer.openFile(
-                                                      item['invoice_path'])
-                                                  : Image.file(File(
-                                                      item['invoice_path'])))
+                                              child: getInvoiceWidget(item))
                                           : appLoader,
                                       SizedBox(
                                         width:
@@ -498,37 +469,11 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                           reviewExpenses = resp['invoices'];
                         }
 
-                        final tempDir = await getTemporaryDirectory();
-
                         for (var exp in reviewExpenses) {
-                          if (await File(
-                                      '${tempDir.path}/${exp['invoicePdfUrl']}.pdf')
-                                  .exists() ==
-                              true) {
-                            setState(() {
-                              exp['invoice_path'] =
-                                  '${tempDir.path}/${exp['invoicePdfUrl']}.pdf';
-                            });
-                          } else if (await File(
-                                      '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg')
-                                  .exists() ==
-                              true) {
-                            setState(() {
-                              exp['invoice_path'] =
-                                  '${tempDir.path}/${exp['invoicePdfUrl']}.jpeg';
-                            });
-                          } else {
-                            final invoiceResp =
-                                await ApiService.downloadInvoice(
-                                    exp['invoicePdfUrl'], selectedOrgId);
-                            setState(() {
-                              exp['invoice_path'] = invoiceResp['path'];
-                            });
-                            if (kDebugMode) {
-                              print(invoiceResp);
-                            }
-                          }
+                          exp['invoice_path'] =
+                              'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
                         }
+                        setState(() {});
                       });
                 },
                 controller: processedSearchController,
@@ -590,15 +535,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                           ? SizedBox(
                                               height: 75,
                                               width: 75,
-                                              child: item['invoice_path']
-                                                          .toString()
-                                                          .split('.')
-                                                          .last ==
-                                                      'pdf'
-                                                  ? PdfViewer.openFile(
-                                                      item['invoice_path'])
-                                                  : Image.file(File(
-                                                      item['invoice_path'])))
+                                              child: getInvoiceWidget(item))
                                           : appLoader,
                                       SizedBox(
                                         width:
@@ -690,15 +627,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                           ? SizedBox(
                                               height: 75,
                                               width: 75,
-                                              child: item['invoice_path']
-                                                          .toString()
-                                                          .split('.')
-                                                          .last ==
-                                                      'pdf'
-                                                  ? PdfViewer.openFile(
-                                                      item['invoice_path'])
-                                                  : Image.file(File(
-                                                      item['invoice_path'])))
+                                              child: getInvoiceWidget(item))
                                           : appLoader,
                                       SizedBox(
                                         width:

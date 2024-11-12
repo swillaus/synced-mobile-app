@@ -1,18 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:currency_picker/currency_picker.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
-import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class UpdateExpenseData extends StatefulWidget {
   final Map expense;
@@ -191,56 +191,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             },
             icon: const Icon(Icons.arrow_back_ios)),
         bottom: PreferredSize(
-          preferredSize: const Size(200, 200),
-          child: widget.imagePath != null &&
-                  widget.imagePath!.substring(widget.imagePath!.length - 3) ==
-                      'pdf'
-              ? SizedBox(
-                  height: 200,
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  child: GestureDetector(
-                    onTap: () {
-                      showGeneralDialog(
-                          barrierDismissible: false,
-                          context: context,
-                          pageBuilder: (context, animation,
-                                  secondaryAnimation) =>
-                              Container(
-                                color: Colors.white,
-                                padding: EdgeInsets.zero,
-                                width: MediaQuery.of(context).size.width - 10,
-                                height: MediaQuery.of(context).size.height - 10,
-                                child: Stack(
-                                  children: [
-                                    Expanded(
-                                        child: PdfViewer.openFile(
-                                            widget.imagePath!)),
-                                    Positioned(
-                                        top: 50,
-                                        left: 10,
-                                        child: Align(
-                                          alignment: Alignment.topLeft,
-                                          child: CircleAvatar(
-                                            backgroundColor:
-                                                Colors.grey.shade400,
-                                            child: IconButton(
-                                              icon: const Icon(Icons.close,
-                                                  color: Colors.white),
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                            ),
-                                          ),
-                                        )),
-                                  ],
-                                ),
-                              ));
-                    },
-                    child: PdfViewer.openFile(widget.imagePath!),
-                  ),
-                )
-              : widget.imagePath != null
-                  ? GestureDetector(
+            preferredSize: const Size(200, 200),
+            child: widget.imagePath != null
+                ? SizedBox(
+                    height: 200,
+                    child: GestureDetector(
                       onTap: () {
                         showGeneralDialog(
                             barrierDismissible: false,
@@ -255,10 +210,12 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                       MediaQuery.of(context).size.height - 10,
                                   child: Stack(
                                     children: [
-                                      PhotoView(
+                                      Expanded(
+                                          child: PhotoView(
                                         imageProvider:
-                                            FileImage(File(widget.imagePath!)),
-                                      ),
+                                            CachedNetworkImageProvider(
+                                                widget.imagePath!),
+                                      )),
                                       Positioned(
                                           top: 50,
                                           left: 10,
@@ -280,14 +237,67 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   ),
                                 ));
                       },
-                      child: Image.file(File(widget.imagePath!),
-                          height: 200,
-                          width: MediaQuery.of(context).size.width * 0.85),
-                    )
-                  : Container(
-                      height: 200,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.imagePath!,
+                        errorWidget: (context, url, error) {
+                          return SfPdfViewer.network(widget.imagePath!,
+                              onTap: (details) {
+                            showGeneralDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                pageBuilder: (context, animation,
+                                        secondaryAnimation) =>
+                                    Container(
+                                      color: Colors.white,
+                                      padding: EdgeInsets.zero,
+                                      width: MediaQuery.of(context).size.width -
+                                          10,
+                                      height:
+                                          MediaQuery.of(context).size.height -
+                                              10,
+                                      child: Stack(
+                                        children: [
+                                          Expanded(
+                                              child: SfPdfViewer.network(
+                                                  widget.imagePath!,
+                                                  canShowPageLoadingIndicator:
+                                                      false,
+                                                  canShowScrollHead: false,
+                                                  canShowScrollStatus: false)),
+                                          Positioned(
+                                              top: 50,
+                                              left: 10,
+                                              child: Align(
+                                                alignment: Alignment.topLeft,
+                                                child: CircleAvatar(
+                                                  backgroundColor:
+                                                      Colors.grey.shade400,
+                                                  child: IconButton(
+                                                    icon: const Icon(
+                                                        Icons.close,
+                                                        color: Colors.white),
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                  ),
+                                                ),
+                                              )),
+                                        ],
+                                      ),
+                                    ));
+                          },
+                              enableDoubleTapZooming: false,
+                              enableTextSelection: false,
+                              enableDocumentLinkAnnotation: false,
+                              enableHyperlinkNavigation: false,
+                              canShowPageLoadingIndicator: false,
+                              canShowScrollHead: false,
+                              canShowScrollStatus: false);
+                        },
+                      ),
                     ),
-        ),
+                  )
+                : Container(height: 200)),
       ),
       body: ModalProgressHUD(
           color: Colors.white,

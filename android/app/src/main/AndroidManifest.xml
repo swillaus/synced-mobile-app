@@ -38,8 +38,6 @@
 
                 <data android:scheme="http" />
                 <data android:scheme="https" />
-
-                <!-- Include one or more domains that should be verified. -->
                 <data android:host="syncedtesting.azurewebsites.net" />
             </intent-filter>
         </activity>

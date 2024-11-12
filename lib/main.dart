@@ -1,24 +1,24 @@
 import 'dart:math';
 
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:is_first_run/is_first_run.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
+import 'package:synced/utils/dynamic_link_handler.dart';
 
 String selectedOrgId = '';
 final navigatorKey = GlobalKey<NavigatorState>();
-final appLinks = AppLinks();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  DynamicLinkHandler.instance.initialize();
 
   bool firstCall = await IsFirstRun.isFirstCall();
 
@@ -84,16 +84,6 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    GoRouter(
-      routes: [
-        GoRoute(
-          path: '/auth/xero-sign-in',
-          builder: (context, state) =>
-              const HomeScreen(tabIndex: 0, navbarIndex: 0),
-        )
-      ],
-    );
-
     return MaterialApp(
       navigatorKey: navigatorKey,
       routes: {
