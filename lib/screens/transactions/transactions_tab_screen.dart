@@ -565,39 +565,49 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                             ),
                           )),
                           const SizedBox(height: 10),
-                          Flexible(
+                          SizedBox(
+                              height: 48,
                               child: TextField(
-                            decoration: const InputDecoration(
-                                filled: true,
-                                fillColor: Color(0xfff3f3f3),
-                                border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(12)),
-                                    borderSide: BorderSide(
-                                        color: Colors.transparent, width: 0)),
-                                focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(12)),
-                                    borderSide: BorderSide(
-                                        color: Colors.transparent, width: 0)),
-                                focusColor: Color(0XFF8E8E8E),
-                                hintText: 'Search here',
-                                prefixIcon: Icon(Icons.search),
-                                prefixIconColor: Color(0XFF8E8E8E)),
-                            onChanged: (value) {
-                              filteredTransactions = [];
-                              for (var transaction in transactions) {
-                                if (transaction['description']
-                                    .toString()
-                                    .toLowerCase()
-                                    .contains(value.toLowerCase())) {
-                                  filteredTransactions.add(transaction);
-                                }
-                              }
-                              setState(() {});
-                            },
-                            controller: transactionSearchController,
-                          )),
+                                decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xfff3f3f3),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(5.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent)),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(5.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent)),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(5.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent)),
+                                    focusColor: const Color(0XFF8E8E8E),
+                                    hintText: 'Search here',
+                                    hintStyle: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                        color: Color(0XFF8E8E8E)),
+                                    prefixIcon: const Icon(Icons.search),
+                                    prefixIconColor: const Color(0XFF8E8E8E)),
+                                onChanged: (value) {
+                                  filteredTransactions = [];
+                                  for (var transaction in transactions) {
+                                    if (transaction['description']
+                                        .toString()
+                                        .toLowerCase()
+                                        .contains(value.toLowerCase())) {
+                                      filteredTransactions.add(transaction);
+                                    }
+                                  }
+                                  setState(() {});
+                                },
+                                controller: transactionSearchController,
+                              )),
                           const SizedBox(height: 10),
                           Flexible(
                               child: Row(
@@ -732,6 +742,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                       index][
                                                                   'description'],
                                                               style: const TextStyle(
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600,

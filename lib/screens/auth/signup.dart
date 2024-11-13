@@ -46,6 +46,7 @@ class _SignupPageState extends State<SignupPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.white,
         title: const Text(
           'Sign Up',

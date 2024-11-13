@@ -109,118 +109,125 @@ class _HomeScreenState extends State<HomeScreen>
       if (imagesPath!.isNotEmpty) {
         fileSize = await getFileSize(imagesPath!.first, 1);
         showDialog(
+            barrierDismissible: false,
             context: navigatorKey.currentContext!,
             builder: (context) => StatefulBuilder(
-                builder: (context, setState) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0)),
-                      insetPadding: const EdgeInsets.all(10),
-                      backgroundColor: Colors.white,
-                      title: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                          color: const Color(0XFFF9FAFB),
-                        ),
-                        height: MediaQuery.of(context).size.height * 0.075,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('  Add Note (Optional)',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: headingColor)),
-                        ),
-                      ),
-                      titlePadding: const EdgeInsets.all(0),
-                      content: Container(
-                        color: Colors.white,
-                        height: MediaQuery.of(navigatorKey.currentContext!)
-                                .size
-                                .height *
-                            0.35,
-                        width: MediaQuery.of(navigatorKey.currentContext!)
-                                .size
-                                .width *
-                            0.9,
-                        child: Column(
-                          children: [
-                            TextField(
-                              decoration: InputDecoration(
-                                  hintText: 'Add expense details',
-                                  focusColor: Colors.grey.shade400,
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade400,
-                                          width: 0.4)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade400,
-                                          width: 0.4))),
-                              maxLines: 5,
-                              controller: notesController,
-                              autofocus: true,
-                              enabled: true,
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              style: ButtonStyle(
-                                  shape: WidgetStateProperty.all<
-                                          RoundedRectangleBorder>(
-                                      RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0))),
-                                  fixedSize: WidgetStateProperty.all(Size(
-                                      MediaQuery.of(context).size.width * 0.8,
-                                      MediaQuery.of(context).size.height *
-                                          0.06)),
-                                  backgroundColor: WidgetStateProperty.all(
-                                      const Color(0XFF009318))),
-                              onPressed: _onPressed,
-                              child: const Text(
-                                'Submit',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            TextButton(
-                                onPressed: () async {
-                                  Navigator.pop(navigatorKey.currentContext!);
-                                  setState(() {
-                                    showUploadingInvoice = true;
-                                    uploadingData = {
-                                      'path': imagesPath!.first,
-                                      'size': fileSize
-                                    };
-                                    _controller.index = 0;
-                                  });
-                                  ApiService.uploadInvoice(
-                                          imagesPath!.first, selectedOrgId, '')
-                                      .then((uploadResp) {
-                                    showUploadingInvoice = false;
-                                    uploadingData = {};
-                                    if (uploadResp.isEmpty) {
-                                      ScaffoldMessenger.of(
-                                              navigatorKey.currentContext!)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'We were unable to process the image, please try again.')));
-                                      return;
-                                    } else {
-                                      getUnprocessedExpenses(1);
-                                      getProcessedExpenses(1);
-                                    }
-                                  });
-                                },
-                                child: const Text('Skip',
+                builder: (context, setState) => SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0)),
+                        insetPadding: const EdgeInsets.all(10),
+                        backgroundColor: Colors.white,
+                        title: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10.0),
+                            color: const Color(0XFFF9FAFB),
+                          ),
+                          height: MediaQuery.of(context).size.height * 0.065,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                                padding: EdgeInsets.only(
+                                    left: MediaQuery.of(context).size.width *
+                                        0.075),
+                                child: Text('Add Note (Optional)',
                                     style: TextStyle(
+                                        fontWeight: FontWeight.w600,
                                         fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0XFFFF4E4E))))
-                          ],
+                                        color: headingColor))),
+                          ),
+                        ),
+                        titlePadding: const EdgeInsets.all(0),
+                        content: Container(
+                          color: Colors.white,
+                          height: MediaQuery.of(navigatorKey.currentContext!)
+                                  .size
+                                  .height *
+                              0.35,
+                          width: MediaQuery.of(navigatorKey.currentContext!)
+                                  .size
+                                  .width *
+                              0.9,
+                          child: Column(
+                            children: [
+                              TextField(
+                                decoration: InputDecoration(
+                                    hintText: 'Add expense details',
+                                    focusColor: Colors.grey.shade400,
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade400,
+                                            width: 0.4)),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade400,
+                                            width: 0.4))),
+                                maxLines: 5,
+                                controller: notesController,
+                                autofocus: true,
+                                enabled: true,
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                style: ButtonStyle(
+                                    shape: WidgetStateProperty.all<
+                                            RoundedRectangleBorder>(
+                                        RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0))),
+                                    fixedSize: WidgetStateProperty.all(Size(
+                                        MediaQuery.of(context).size.width * 0.9,
+                                        40)),
+                                    backgroundColor: WidgetStateProperty.all(
+                                        const Color(0XFF009318))),
+                                onPressed: _onPressed,
+                                child: const Text(
+                                  'Submit',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              TextButton(
+                                  onPressed: () async {
+                                    Navigator.pop(navigatorKey.currentContext!);
+                                    setState(() {
+                                      showUploadingInvoice = true;
+                                      uploadingData = {
+                                        'path': imagesPath!.first,
+                                        'size': fileSize
+                                      };
+                                      _controller.index = 0;
+                                    });
+                                    ApiService.uploadInvoice(imagesPath!.first,
+                                            selectedOrgId, '')
+                                        .then((uploadResp) {
+                                      showUploadingInvoice = false;
+                                      uploadingData = {};
+                                      if (uploadResp.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                                navigatorKey.currentContext!)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'We were unable to process the image, please try again.')));
+                                        return;
+                                      } else {
+                                        getUnprocessedExpenses(1);
+                                        getProcessedExpenses(1);
+                                      }
+                                    });
+                                  },
+                                  child: const Text('Skip',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0XFFFF4E4E))))
+                            ],
+                          ),
                         ),
                       ),
                     )));

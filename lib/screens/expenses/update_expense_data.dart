@@ -183,6 +183,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
@@ -191,7 +192,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             },
             icon: const Icon(Icons.arrow_back_ios)),
         bottom: PreferredSize(
-            preferredSize: const Size(200, 200),
+            preferredSize: const Size(200, 150),
             child: widget.imagePath != null
                 ? SizedBox(
                     height: 200,
@@ -205,9 +206,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                 Container(
                                   color: Colors.white,
                                   padding: EdgeInsets.zero,
-                                  width: MediaQuery.of(context).size.width - 10,
-                                  height:
-                                      MediaQuery.of(context).size.height - 10,
+                                  width: 100,
+                                  height: 200,
                                   child: Stack(
                                     children: [
                                       Expanded(

@@ -41,8 +41,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.white,
         title: const Text('Forgot',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -51,119 +52,124 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black)),
       ),
-      body: Container(
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.1),
-          color: Colors.white,
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                    child: Image.asset(
-                  'assets/forgot_pass_img.png',
-                )),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                const Center(
-                  child: Text('Forgot Password?',
-                      style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600)),
-                ),
-                const Center(
-                  child: Text(
-                      'Don’t worry! it happens. Please enter phone number associated with your account',
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500)),
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                Text('Enter your email',
-                    style: TextStyle(
-                        color: headingColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 10),
-                TextFormField(
-                  autovalidateMode: AutovalidateMode.onUnfocus,
-                  validator: validateEmail,
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                      suffixIcon: Icon(
-                        validEmail ? Icons.check_circle : null,
-                        color: validEmail ? clickableColor : null,
+      body: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
+              color: Colors.white,
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                        child: Image.asset(
+                      'assets/forgot_pass_img.png',
+                    )),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                    const Center(
+                      child: Text('Forgot Password?',
+                          style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                    const Center(
+                      child: Text(
+                          'Don’t worry! it happens. Please enter phone number associated with your account',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500)),
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                    Text('Enter your email',
+                        style: TextStyle(
+                            color: headingColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      autovalidateMode: AutovalidateMode.onUnfocus,
+                      validator: validateEmail,
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                          suffixIcon: Icon(
+                            validEmail ? Icons.check_circle : null,
+                            color: validEmail ? clickableColor : null,
+                          ),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(color: subHeadingColor)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(color: subHeadingColor)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(color: subHeadingColor)),
+                          filled: true,
+                          fillColor: Colors.white,
+                          hintText: 'Enter your email',
+                          hintStyle: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: subHeadingColor)),
+                    ),
+                    const SizedBox(height: 15),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.0))),
+                          fixedSize: WidgetStateProperty.all(Size(
+                              double.maxFinite,
+                              MediaQuery.of(context).size.height * 0.06)),
+                          backgroundColor:
+                              WidgetStateProperty.all(clickableColor)),
+                      onPressed: () async {
+                        final resp = await ApiService.resetPassword(
+                            _emailController.text);
+                        if (resp['status'] != 0) {
+                          print('Something went wrong');
+                          return;
+                        }
+                        showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  content: Center(
+                                    child: Container(
+                                      color: Colors.white,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.35,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.6,
+                                      child: Text(resp['message']),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pushAndRemoveUntil(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const LoginPage()),
+                                                (Route<dynamic> route) =>
+                                                    false),
+                                        child: const Text('Ok'))
+                                  ],
+                                ));
+                      },
+                      child: const Text(
+                        'Reset password',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600),
                       ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Enter your email',
-                      hintStyle: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: subHeadingColor)),
-                ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  style: ButtonStyle(
-                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0))),
-                      fixedSize: WidgetStateProperty.all(Size(
-                          MediaQuery.of(context).size.width * 0.8,
-                          MediaQuery.of(context).size.height * 0.06)),
-                      backgroundColor: WidgetStateProperty.all(clickableColor)),
-                  onPressed: () async {
-                    // TODO - call verify OTP API
-                    final resp =
-                        await ApiService.resetPassword(_emailController.text);
-                    if (resp['status'] != 0) {
-                      print('Something went wrong');
-                      return;
-                    }
-                    showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              backgroundColor: Colors.white,
-                              content: Center(
-                                child: Container(
-                                  color: Colors.white,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.35,
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  child: Text(resp['message']),
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () =>
-                                        Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const LoginPage()),
-                                            (Route<dynamic> route) => false),
-                                    child: const Text('Ok'))
-                              ],
-                            ));
-                  },
-                  child: const Text(
-                    'Send OTP code',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ])),
+                    ),
+                  ]))),
     );
   }
 }

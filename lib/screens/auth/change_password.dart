@@ -27,6 +27,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black)),

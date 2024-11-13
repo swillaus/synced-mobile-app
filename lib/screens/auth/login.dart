@@ -56,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
+            surfaceTintColor: Colors.transparent,
             automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             title: const Text(
@@ -95,12 +96,18 @@ class _LoginPageState extends State<LoginPage> {
                               fontWeight: FontWeight.w500)),
                     ),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      keyboardType: TextInputType.emailAddress,
-                      autovalidateMode: AutovalidateMode.onUnfocus,
-                      validator: validateEmail,
-                      controller: _emailController,
-                      decoration: InputDecoration(
+                    SizedBox(
+                      height: 48,
+                      child: TextFormField(
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: headingColor),
+                        keyboardType: TextInputType.emailAddress,
+                        autovalidateMode: AutovalidateMode.onUnfocus,
+                        validator: validateEmail,
+                        controller: _emailController,
+                        decoration: InputDecoration(
                           suffixIcon: _emailController.text.isNotEmpty
                               ? validEmail
                                   ? Icon(
@@ -110,21 +117,23 @@ class _LoginPageState extends State<LoginPage> {
                                   : const Icon(Icons.close, color: Colors.red)
                               : null,
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           filled: true,
                           fillColor: Colors.white,
                           hintText: 'Enter your email',
                           hintStyle: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: subHeadingColor)),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: subHeadingColor),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 15),
                     Align(
@@ -136,41 +145,48 @@ class _LoginPageState extends State<LoginPage> {
                               fontWeight: FontWeight.w500)),
                     ),
                     const SizedBox(height: 5),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              // Based on passwordVisible state choose the icon
-                              !showPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: subHeadingColor,
+                    SizedBox(
+                      height: 48,
+                      child: TextFormField(
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: headingColor),
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                // Based on passwordVisible state choose the icon
+                                !showPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: subHeadingColor,
+                              ),
+                              onPressed: () {
+                                // Update the state i.e. toogle the state of passwordVisible variable
+                                setState(() {
+                                  showPassword = !showPassword;
+                                });
+                              },
                             ),
-                            onPressed: () {
-                              // Update the state i.e. toogle the state of passwordVisible variable
-                              setState(() {
-                                showPassword = !showPassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                              borderSide: BorderSide(color: subHeadingColor)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                              borderSide: BorderSide(color: subHeadingColor)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                              borderSide: BorderSide(color: subHeadingColor)),
-                          filled: true,
-                          fillColor: Colors.white,
-                          hintText: 'Enter your password',
-                          hintStyle: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: subHeadingColor)),
-                      obscureText: !showPassword,
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: 'Enter your password',
+                            hintStyle: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: subHeadingColor)),
+                        obscureText: !showPassword,
+                      ),
                     ),
                   ],
                 )),
@@ -191,9 +207,8 @@ class _LoginPageState extends State<LoginPage> {
                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0))),
-                      fixedSize: WidgetStateProperty.all(Size(
-                          MediaQuery.of(context).size.width * 0.8,
-                          MediaQuery.of(context).size.height * 0.06)),
+                      fixedSize: WidgetStateProperty.all(
+                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     setState(() {
@@ -233,8 +248,11 @@ class _LoginPageState extends State<LoginPage> {
                                 const HomeScreen(tabIndex: 0)));
                   },
                   child: const Text(
-                    'Log in',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    'Login',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
                 // Row(
@@ -267,10 +285,9 @@ class _LoginPageState extends State<LoginPage> {
                       side: const WidgetStatePropertyAll(
                           BorderSide(color: Colors.black, width: 0.5)),
                       shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0))),
-                      fixedSize: WidgetStateProperty.all(Size(
-                          MediaQuery.of(context).size.width * 0.8,
-                          MediaQuery.of(context).size.height * 0.06)),
+                          borderRadius: BorderRadius.circular(15.0))),
+                      fixedSize: WidgetStateProperty.all(
+                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
                       backgroundColor: WidgetStateProperty.all(Colors.white)),
                   onPressed: () async {
                     if (!await launchUrl(Uri.parse(xeroAuthUrl),

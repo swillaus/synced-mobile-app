@@ -32,6 +32,8 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Verify',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,

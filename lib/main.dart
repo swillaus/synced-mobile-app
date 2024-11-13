@@ -117,7 +117,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return OnBoardingSlider(
-      imageVerticalOffset: 50,
+      imageVerticalOffset: -50,
       centerBackground: true,
       hasSkip: true,
       skipFunctionOverride: () => Navigator.pushReplacement(
@@ -150,21 +150,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
       background: [
         Image.asset(
           'assets/onboarding/onboarding_screen_1.png',
-          height: 400,
+          height: 600,
         ),
         Image.asset(
           'assets/onboarding/onboarding_screen_2.png',
-          height: 400,
+          height: 600,
         ),
         Image.asset(
           'assets/onboarding/onboarding_screen_3.png',
-          height: 400,
+          height: 600,
         ),
       ],
       speed: 1.8,
       pageBodies: [
         Container(
-          alignment: Alignment.center,
+          alignment: Alignment.centerLeft,
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
@@ -172,11 +172,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(
-                height: 480,
+                height: 450,
               ),
               Text(
                 'Scan Receipts With Ease',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 24.0,
@@ -188,18 +188,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
               Text(
                 'Quickly capture and upload your receipts directly from your phone.',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 14.0,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
         ),
         Container(
-          alignment: Alignment.center,
+          alignment: Alignment.centerLeft,
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
@@ -207,11 +207,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(
-                height: 480,
+                height: 450,
               ),
               Text(
                 'Organize Your Expenses',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 24.0,
@@ -223,18 +223,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
               Text(
                 'Automatically categorize and consolidate receipts into detailed reports.',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 14.0,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
         ),
         Container(
-          alignment: Alignment.center,
+          alignment: Alignment.centerLeft,
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -242,11 +242,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(
-                height: 480,
+                height: 450,
               ),
               Text(
                 'Submit and Get Reimbursed',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 24.0,
@@ -258,11 +258,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
               Text(
                 'Generate professional reports and send them for approval or payment in just a few taps.',
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 14.0,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

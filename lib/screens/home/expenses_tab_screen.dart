@@ -90,24 +90,32 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
           width: double.maxFinite,
           child: Column(
             children: [
-              Expanded(
-                  flex: 1,
-                  child: TextField(
-                    decoration: const InputDecoration(
+              SizedBox(
+                  height: 48,
+                  child: TextFormField(
+                    decoration: InputDecoration(
                         filled: true,
-                        fillColor: Color(0xfff3f3f3),
+                        fillColor: const Color(0xfff3f3f3),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                            borderSide: BorderSide(
-                                color: Colors.transparent, width: 0)),
+                            borderRadius: BorderRadius.circular(5.0),
+                            borderSide:
+                                const BorderSide(color: Colors.transparent)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5.0),
+                            borderSide:
+                                const BorderSide(color: Colors.transparent)),
                         focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                            borderSide: BorderSide(
-                                color: Colors.transparent, width: 0)),
-                        focusColor: Color(0XFF8E8E8E),
+                            borderRadius: BorderRadius.circular(5.0),
+                            borderSide:
+                                const BorderSide(color: Colors.transparent)),
+                        focusColor: const Color(0XFF8E8E8E),
                         hintText: 'Search here',
-                        prefixIcon: Icon(Icons.search),
-                        prefixIconColor: Color(0XFF8E8E8E)),
+                        hintStyle: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: Color(0XFF8E8E8E)),
+                        prefixIcon: const Icon(Icons.search),
+                        prefixIconColor: const Color(0XFF8E8E8E)),
                     onChanged: (value) async {
                       reviewDebouncer.debounce(
                           duration: const Duration(milliseconds: 250),
@@ -133,67 +141,78 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                   )),
               const SizedBox(height: 10),
               if (showUploadingInvoice) ...[
-                Card(
-                  color: Colors.white,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                            height: 75,
-                            width: 75,
-                            child: uploadingData['path'] != null
-                                ? Image.file(File(uploadingData['path']))
-                                : appLoader),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Chip(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(24)),
-                                    side: const BorderSide(
-                                      color: Color(0XFFF6CA58),
+                SizedBox(
+                  height: 100,
+                  child: Card(
+                    color: Colors.white,
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                          top: 5, left: 10, right: 5, bottom: 12),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                              height: 75,
+                              width: 75,
+                              child: uploadingData['path'] != null
+                                  ? Image.file(File(uploadingData['path']))
+                                  : appLoader),
+                          const SizedBox(width: 20),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Chip(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(100)),
+                                      side: const BorderSide(
+                                        color: Color(0XFFF6CA58),
+                                      ),
+                                      backgroundColor: const Color(0XFFFFFEF4),
+                                      label: const Text('Processing',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0XFF667085))),
                                     ),
-                                    backgroundColor: const Color(0XFFFFFEF4),
-                                    label: const Text('Processing',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0XFF667085))),
                                   ),
+                                  SizedBox(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.25),
+                                  Align(
+                                    alignment: Alignment.topRight,
+                                    child: Text(
+                                        uploadingData['size'] ?? '0.77Mb',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 10,
+                                            color: Color(0XFF667085))),
+                                  )
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.6,
+                                child: Center(
+                                  child: LinearProgressIndicator(
+                                      minHeight: 6,
+                                      value: Random().nextDouble(),
+                                      valueColor: AlwaysStoppedAnimation(
+                                          clickableColor)),
                                 ),
-                                SizedBox(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.3),
-                                Align(
-                                  alignment: Alignment.topRight,
-                                  child: Text(uploadingData['size'],
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 10,
-                                          color: Color(0XFF667085))),
-                                )
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.6,
-                              child: LinearProgressIndicator(
-                                  value: Random().nextDouble(),
-                                  valueColor:
-                                      AlwaysStoppedAnimation(clickableColor)),
-                            )
-                          ],
-                        )
-                      ],
+                              )
+                            ],
+                          )
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -253,82 +272,86 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                             expense: item,
                                             imagePath: item['invoice_path'])));
                               },
-                              child: Card(
-                                color: Colors.white,
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      item['invoice_path'] != null
-                                          ? SizedBox(
-                                              height: 75,
-                                              width: 75,
-                                              child: getInvoiceWidget(item))
-                                          : appLoader,
-                                      SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.4,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(item['supplierName'] ?? '',
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0XFF344054))),
-                                            if (item['dueDate'] != null) ...[
-                                              Align(
-                                                alignment: Alignment.topLeft,
-                                                child: Text(
-                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                              )
-                                            ],
-                                            if (item['accountName'] !=
-                                                null) ...[
-                                              Align(
-                                                alignment: Alignment.bottomLeft,
-                                                child: Chip(
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              24)),
-                                                  side: BorderSide(
-                                                    color: clickableColor,
-                                                  ),
-                                                  label:
-                                                      Text(item['accountName']),
-                                                  color:
-                                                      const WidgetStatePropertyAll(
-                                                          Color(0XFFFFFEF4)),
-                                                  labelStyle: const TextStyle(
-                                                      fontSize: 10,
+                              child: SizedBox(
+                                height: 100,
+                                child: Card(
+                                  color: Colors.white,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        item['invoice_path'] != null
+                                            ? SizedBox(
+                                                height: 75,
+                                                width: 75,
+                                                child: getInvoiceWidget(item))
+                                            : appLoader,
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.4,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item['supplierName'] ?? '',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
                                                       fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Color(0XFF667085)),
-                                                ),
-                                              )
-                                            ]
-                                          ],
+                                                          FontWeight.w600,
+                                                      color:
+                                                          Color(0XFF344054))),
+                                              if (item['accountName'] !=
+                                                  null) ...[
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Chip(
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        24)),
+                                                    side: BorderSide(
+                                                      color: clickableColor,
+                                                    ),
+                                                    label: Text(
+                                                        item['accountName']),
+                                                    color:
+                                                        const WidgetStatePropertyAll(
+                                                            Color(0XFFFFFEF4)),
+                                                    labelStyle: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            Color(0XFF667085)),
+                                                  ),
+                                                )
+                                              ]
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              color: Color(0XFF101828)),
-                                        ),
-                                      )
-                                    ],
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                                color: Color(0XFF101828)),
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -346,82 +369,86 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                             expense: item,
                                             imagePath: item['invoice_path'])));
                               },
-                              child: Card(
-                                color: Colors.white,
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      item['invoice_path'] != null
-                                          ? SizedBox(
-                                              height: 75,
-                                              width: 75,
-                                              child: getInvoiceWidget(item))
-                                          : appLoader,
-                                      SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.4,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(item['supplierName'] ?? '',
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0XFF344054))),
-                                            if (item['dueDate'] != null) ...[
-                                              Align(
-                                                alignment: Alignment.topLeft,
-                                                child: Text(
-                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                              )
-                                            ],
-                                            if (item['accountName'] !=
-                                                null) ...[
-                                              Align(
-                                                alignment: Alignment.bottomLeft,
-                                                child: Chip(
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              24)),
-                                                  side: BorderSide(
-                                                    color: clickableColor,
-                                                  ),
-                                                  label:
-                                                      Text(item['accountName']),
-                                                  color:
-                                                      const WidgetStatePropertyAll(
-                                                          Color(0XFFFFFEF4)),
-                                                  labelStyle: const TextStyle(
-                                                      fontSize: 10,
+                              child: SizedBox(
+                                height: 100,
+                                child: Card(
+                                  color: Colors.white,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        item['invoice_path'] != null
+                                            ? SizedBox(
+                                                height: 75,
+                                                width: 75,
+                                                child: getInvoiceWidget(item))
+                                            : appLoader,
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.4,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item['supplierName'] ?? '',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
                                                       fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Color(0XFF667085)),
-                                                ),
-                                              )
-                                            ]
-                                          ],
+                                                          FontWeight.w600,
+                                                      color:
+                                                          Color(0XFF344054))),
+                                              if (item['accountName'] !=
+                                                  null) ...[
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Chip(
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        24)),
+                                                    side: BorderSide(
+                                                      color: clickableColor,
+                                                    ),
+                                                    label: Text(
+                                                        item['accountName']),
+                                                    color:
+                                                        const WidgetStatePropertyAll(
+                                                            Color(0XFFFFFEF4)),
+                                                    labelStyle: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            Color(0XFF667085)),
+                                                  ),
+                                                )
+                                              ]
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              color: Color(0XFF101828)),
-                                        ),
-                                      )
-                                    ],
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                                color: Color(0XFF101828)),
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -439,44 +466,55 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
           padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
           child: Column(
             children: [
-              TextField(
-                decoration: const InputDecoration(
-                    filled: true,
-                    fillColor: Color(0xfff3f3f3),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide:
-                            BorderSide(color: Colors.transparent, width: 0)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide:
-                            BorderSide(color: Colors.transparent, width: 0)),
-                    focusColor: Color(0XFF8E8E8E),
-                    hintText: 'Search here',
-                    prefixIcon: Icon(Icons.search),
-                    prefixIconColor: Color(0XFF8E8E8E)),
-                onChanged: (value) async {
-                  processedDebouncer.debounce(
-                      duration: const Duration(milliseconds: 250),
-                      onDebounce: () async {
-                        final resp = await ApiService.getExpenses(
-                            true,
-                            selectedOrgId,
-                            processedSearchController.text,
-                            processedPageKey,
-                            pageSize);
-                        if (resp.isNotEmpty) {
-                          reviewExpenses = resp['invoices'];
-                        }
+              SizedBox(
+                height: 48,
+                child: TextField(
+                  decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xfff3f3f3),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5.0),
+                          borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5.0),
+                          borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5.0),
+                          borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                      focusColor: const Color(0XFF8E8E8E),
+                      hintText: 'Search here',
+                      hintStyle: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Color(0XFF8E8E8E)),
+                      prefixIcon: const Icon(Icons.search),
+                      prefixIconColor: const Color(0XFF8E8E8E)),
+                  onChanged: (value) async {
+                    processedDebouncer.debounce(
+                        duration: const Duration(milliseconds: 250),
+                        onDebounce: () async {
+                          final resp = await ApiService.getExpenses(
+                              true,
+                              selectedOrgId,
+                              processedSearchController.text,
+                              processedPageKey,
+                              pageSize);
+                          if (resp.isNotEmpty) {
+                            reviewExpenses = resp['invoices'];
+                          }
 
-                        for (var exp in reviewExpenses) {
-                          exp['invoice_path'] =
-                              'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
-                        }
-                        setState(() {});
-                      });
-                },
-                controller: processedSearchController,
+                          for (var exp in reviewExpenses) {
+                            exp['invoice_path'] =
+                                'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
+                          }
+                          setState(() {});
+                        });
+                  },
+                  controller: processedSearchController,
+                ),
               ),
               const SizedBox(height: 10),
               Expanded(
@@ -523,81 +561,84 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                             expense: item,
                                             imagePath: item['invoice_path'])));
                               },
-                              child: Card(
-                                color: Colors.white,
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      item['invoice_path'] != null
-                                          ? SizedBox(
-                                              height: 75,
-                                              width: 75,
-                                              child: getInvoiceWidget(item))
-                                          : appLoader,
-                                      SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.4,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(item['supplierName'] ?? '',
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0XFF344054))),
-                                            if (item['dueDate'] != null) ...[
-                                              Align(
-                                                alignment: Alignment.topLeft,
-                                                child: Text(
-                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                              )
-                                            ],
-                                            if (item['accountName'] !=
-                                                null) ...[
-                                              Align(
-                                                alignment: Alignment.bottomLeft,
-                                                child: Chip(
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              24)),
-                                                  side: BorderSide(
-                                                    color: clickableColor,
-                                                  ),
-                                                  label:
-                                                      Text(item['accountName']),
-                                                  color:
-                                                      const WidgetStatePropertyAll(
-                                                          Color(0XFFFFFEF4)),
-                                                  labelStyle: const TextStyle(
-                                                      fontSize: 10,
+                              child: SizedBox(
+                                height: 100,
+                                child: Card(
+                                  color: Colors.white,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        item['invoice_path'] != null
+                                            ? SizedBox(
+                                                height: 75,
+                                                width: 75,
+                                                child: getInvoiceWidget(item))
+                                            : appLoader,
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.4,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item['supplierName'] ?? '',
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
                                                       fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Color(0XFF667085)),
-                                                ),
-                                              )
-                                            ]
-                                          ],
+                                                          FontWeight.w600,
+                                                      color:
+                                                          Color(0XFF344054))),
+                                              if (item['accountName'] !=
+                                                  null) ...[
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Chip(
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        24)),
+                                                    side: BorderSide(
+                                                      color: clickableColor,
+                                                    ),
+                                                    label: Text(
+                                                        item['accountName']),
+                                                    color:
+                                                        const WidgetStatePropertyAll(
+                                                            Color(0XFFFFFEF4)),
+                                                    labelStyle: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            Color(0XFF667085)),
+                                                  ),
+                                                )
+                                              ]
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              color: Color(0XFF101828)),
-                                        ),
-                                      )
-                                    ],
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                                color: Color(0XFF101828)),
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -615,81 +656,84 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                             expense: item,
                                             imagePath: item['invoice_path'])));
                               },
-                              child: Card(
-                                color: Colors.white,
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      item['invoice_path'] != null
-                                          ? SizedBox(
-                                              height: 75,
-                                              width: 75,
-                                              child: getInvoiceWidget(item))
-                                          : appLoader,
-                                      SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.4,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(item['supplierName'] ?? '',
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0XFF344054))),
-                                            if (item['dueDate'] != null) ...[
-                                              Align(
-                                                alignment: Alignment.topLeft,
-                                                child: Text(
-                                                    'Due: ${DateFormat('d MMM, y').format(DateTime.parse(item['dueDate'])).toString()}'),
-                                              )
-                                            ],
-                                            if (item['accountName'] !=
-                                                null) ...[
-                                              Align(
-                                                alignment: Alignment.bottomLeft,
-                                                child: Chip(
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              24)),
-                                                  side: BorderSide(
-                                                    color: clickableColor,
-                                                  ),
-                                                  label:
-                                                      Text(item['accountName']),
-                                                  color:
-                                                      const WidgetStatePropertyAll(
-                                                          Color(0XFFFFFEF4)),
-                                                  labelStyle: const TextStyle(
-                                                      fontSize: 10,
+                              child: SizedBox(
+                                height: 100,
+                                child: Card(
+                                  color: Colors.white,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        item['invoice_path'] != null
+                                            ? SizedBox(
+                                                height: 75,
+                                                width: 75,
+                                                child: getInvoiceWidget(item))
+                                            : appLoader,
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.4,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item['supplierName'] ?? '',
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
                                                       fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Color(0XFF667085)),
-                                                ),
-                                              )
-                                            ]
-                                          ],
+                                                          FontWeight.w600,
+                                                      color:
+                                                          Color(0XFF344054))),
+                                              if (item['accountName'] !=
+                                                  null) ...[
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Chip(
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        24)),
+                                                    side: BorderSide(
+                                                      color: clickableColor,
+                                                    ),
+                                                    label: Text(
+                                                        item['accountName']),
+                                                    color:
+                                                        const WidgetStatePropertyAll(
+                                                            Color(0XFFFFFEF4)),
+                                                    labelStyle: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            Color(0XFF667085)),
+                                                  ),
+                                                )
+                                              ]
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              color: Color(0XFF101828)),
-                                        ),
-                                      )
-                                    ],
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                                color: Color(0XFF101828)),
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
