@@ -142,7 +142,11 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                                           Color(0XFF101828))),
                                             ],
                                           ),
-                                          const SizedBox(width: 40),
+                                          SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.1),
                                           const VerticalDivider(
                                             color: Colors.grey,
                                             width: 2.0,
@@ -205,12 +209,12 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
-                                                  0.03),
+                                                  0.035),
                                           const VerticalDivider(
                                             color: Colors.grey,
                                             width: 2.0,
                                           ),
-                                          const SizedBox(width: 50),
+                                          const SizedBox(width: 60),
                                           Column(
                                             children: [
                                               const Text('Total matches',
