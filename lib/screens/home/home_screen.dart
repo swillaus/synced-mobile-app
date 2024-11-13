@@ -415,6 +415,11 @@ class _HomeScreenState extends State<HomeScreen>
       }
     }
     if (selectedOrgId.isNotEmpty) {
+      ApiService.getDefaultCurrency(selectedOrgId).then((resp) {
+        setState(() {
+          defaultCurrency = resp['currency'] ?? 'USD';
+        });
+      });
       getUnprocessedExpenses(1);
       getProcessedExpenses(1);
     } else {
@@ -465,6 +470,12 @@ class _HomeScreenState extends State<HomeScreen>
                         onChanged: (value) {
                           setState(() {
                             selectedOrgId = value!;
+                          });
+                          ApiService.getDefaultCurrency(selectedOrgId)
+                              .then((resp) {
+                            setState(() {
+                              defaultCurrency = resp['currency'] ?? 'USD';
+                            });
                           });
                           getUnprocessedExpenses(1);
                           getProcessedExpenses(1);

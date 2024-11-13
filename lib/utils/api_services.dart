@@ -574,9 +574,7 @@ class ApiService {
       'content-type': 'application/json',
     };
     var request = http.Request(
-        'POST',
-        Uri.parse(
-            'https://syncedtestingapi.azurewebsites.net/api/Invoices/UpdateSuggestedMatches'));
+        'POST', Uri.parse('$hostUrl/api/Invoices/UpdateSuggestedMatches'));
     request.body = json.encode({
       "unreconciledReportIds": unreconciledReportId,
       "invoiceId": invoiceId,
@@ -591,6 +589,32 @@ class ApiService {
     } else {
       print('Update suggested match API - ${response.reasonPhrase}');
       return false;
+    }
+  }
+
+  static Future<Map> getDefaultCurrency(String orgId) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            '$hostUrl/api/Organisation/getOrganizationDefaultCurrency?id=ee437f5b-8067-419e-9492-715314225cd3'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      return jsonRes;
+    } else {
+      print('GET transactions list API - ${response.reasonPhrase}');
+      return {};
     }
   }
 }

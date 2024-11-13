@@ -391,7 +391,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
             Align(
               alignment: Alignment.centerRight,
               child: Text(
-                '${matchData['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(matchData['currency']) : ''}${matchData['amountDue']}',
+                '${matchData['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(matchData['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${matchData['amountDue']}',
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 12,

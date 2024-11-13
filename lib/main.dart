@@ -12,6 +12,7 @@ import 'package:synced/utils/database_helper.dart';
 import 'package:synced/utils/dynamic_link_handler.dart';
 
 String selectedOrgId = '';
+String defaultCurrency = 'USD';
 final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {

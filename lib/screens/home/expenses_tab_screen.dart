@@ -343,7 +343,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 12,
@@ -440,7 +440,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 12,
@@ -630,7 +630,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 12,
@@ -725,7 +725,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : ''}${item['amountDue']}',
+                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 12,
