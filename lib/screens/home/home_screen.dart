@@ -9,7 +9,9 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:synced/main.dart';
+import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/expenses_tab_screen.dart';
@@ -53,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   List organisations = [];
   late TabController tabController;
+  final RefreshController refreshController =
+      RefreshController(initialRefresh: false);
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -343,7 +347,11 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       showSpinner = false;
+      reviewPageKey = 1;
+      processedPageKey = 1;
     });
+    refreshController.loadComplete();
+    refreshController.refreshCompleted();
 
     for (var exp in reviewExpenses) {
       exp['invoice_path'] =
@@ -378,7 +386,11 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       showSpinner = false;
+      reviewPageKey = 1;
+      processedPageKey = 1;
     });
+    refreshController.loadComplete();
+    refreshController.refreshCompleted();
 
     for (var exp in processedExpenses) {
       exp['invoice_path'] =
@@ -430,7 +442,11 @@ class _HomeScreenState extends State<HomeScreen>
     } else {
       setState(() {
         showSpinner = false;
+        reviewPageKey = 1;
+        processedPageKey = 1;
       });
+      refreshController.loadComplete();
+      refreshController.refreshCompleted();
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           const SnackBar(
               content: Text('Please select or create an organization.')));
@@ -443,30 +459,36 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {});
     });
     tabController.dispose();
+    refreshController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ModalProgressHUD(
-        inAsyncCall: showSpinner,
-        opacity: 1.0,
-        color: Colors.white,
-        progressIndicator: appLoader,
-        child: Scaffold(
-          resizeToAvoidBottomInset: true,
-          backgroundColor: const Color(0xfffbfbfb),
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            surfaceTintColor: Colors.transparent,
-            backgroundColor: Colors.white,
-            centerTitle: true,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                DropdownButtonHideUnderline(
+      inAsyncCall: showSpinner,
+      opacity: 1.0,
+      color: Colors.white,
+      progressIndicator: appLoader,
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: const Color(0xfffbfbfb),
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: Colors.white,
+          centerTitle: true,
+          title: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              SizedBox(width: MediaQuery.of(context).size.width * 0.1),
+              Center(
+                child: DropdownButtonHideUnderline(
                     child: DropdownButton2(
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black),
                         dropdownStyleData: const DropdownStyleData(
                             elevation: 1,
                             decoration: BoxDecoration(color: Colors.white)),
@@ -487,18 +509,22 @@ class _HomeScreenState extends State<HomeScreen>
                         },
                         items: getDropdownEntries(),
                         value: selectedOrgId)),
-                PopupMenuButton<int>(
+              ),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+              Align(
+                alignment: Alignment.centerRight,
+                child: PopupMenuButton<int>(
                   color: Colors.white,
-                  icon: const Icon(Icons.more_vert),
+                  icon: const Icon(Icons.account_circle_outlined, size: 30),
                   onSelected: (item) async {
                     switch (item) {
-                      case 0:
+                      case 1:
                         if (!await launchUrl(
                             Uri.parse('https://help.syncedhq.com/en/'))) {
                           throw Exception('Could not launch help center');
                         }
                         break;
-                      case 1:
+                      case 2:
                         final DatabaseHelper _db = DatabaseHelper();
                         await _db.deleteUsers();
                         selectedOrgId = '';
@@ -510,8 +536,21 @@ class _HomeScreenState extends State<HomeScreen>
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem<int>(
+                    PopupMenuItem(
                         value: 0,
+                        child: Container(
+                          color: Colors.grey.shade200,
+                          height: 30,
+                          child: Center(
+                            child: Text(User.name,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black)),
+                          ),
+                        )),
+                    const PopupMenuItem<int>(
+                        value: 1,
                         child: Row(
                           children: [
                             Icon(Icons.business_center_outlined),
@@ -520,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ],
                         )),
                     const PopupMenuItem<int>(
-                        value: 1,
+                        value: 2,
                         child: Row(
                           children: [
                             Icon(Icons.logout),
@@ -530,70 +569,79 @@ class _HomeScreenState extends State<HomeScreen>
                         )),
                   ],
                 ),
-              ],
-            ),
-            bottom: _controller.index == 0
-                ? TabBar(
-                    indicatorColor: clickableColor,
-                    labelColor: clickableColor,
-                    unselectedLabelColor: textColor,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    tabs: const [
-                      Tab(
-                        text: 'For Review',
-                      ),
-                      Tab(
-                        text: 'Processed',
-                      ),
-                    ],
-                    controller: tabController)
-                : null,
-          ),
-          body: PersistentTabView(
-            navigatorKey.currentContext!,
-            controller: _controller,
-            screens: [
-              ExpensesTabScreen(tabController: tabController),
-              Container(),
-              const TransactionsTabScreen()
+              ),
             ],
-            items: _navBarsItems(),
-            handleAndroidBackButtonPress: true,
-            hideOnScrollSettings:
-                const HideOnScrollSettings(hideNavBarOnScroll: true),
-            resizeToAvoidBottomInset: true,
-            stateManagement: true,
-            hideNavigationBarWhenKeyboardAppears: true,
-            popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
-            backgroundColor: Colors.white,
-            isVisible: true,
-            animationSettings: const NavBarAnimationSettings(
-              navBarItemAnimation: ItemAnimationSettings(
-                // Navigation Bar's items animation properties.
-                duration: Duration(milliseconds: 400),
-                curve: Curves.ease,
-              ),
-              screenTransitionAnimation: ScreenTransitionAnimationSettings(
-                // Screen transition animation on change of selected tab.
-                animateTabTransition: true,
-                duration: Duration(milliseconds: 200),
-                screenTransitionAnimationType:
-                    ScreenTransitionAnimationType.fadeIn,
-              ),
-            ),
-            confineToSafeArea: true,
-            navBarHeight: MediaQuery.of(context).size.height * 0.075,
-            navBarStyle: NavBarStyle.style15,
-            onItemSelected: (index) {
-              if (_controller.index == 1) {
-                startScan();
-              } else {
-                setState(() {
-                  _controller.index = index;
-                });
-              }
-            },
           ),
-        ));
+          bottom: _controller.index == 0
+              ? TabBar(
+                  indicatorColor: clickableColor,
+                  labelColor: clickableColor,
+                  unselectedLabelColor: textColor,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  tabs: const [
+                    Tab(
+                      text: 'For Review',
+                    ),
+                    Tab(
+                      text: 'Processed',
+                    ),
+                  ],
+                  controller: tabController)
+              : null,
+        ),
+        body: PersistentTabView(
+          navigatorKey.currentContext!,
+          controller: _controller,
+          decoration: const NavBarDecoration(
+              border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
+          screens: [
+            SmartRefresher(
+              controller: refreshController,
+              onRefresh: getOrganisations,
+              onLoading: getOrganisations,
+              child: ExpensesTabScreen(tabController: tabController),
+            ),
+            Container(),
+            const TransactionsTabScreen()
+          ],
+          items: _navBarsItems(),
+          handleAndroidBackButtonPress: true,
+          hideOnScrollSettings:
+              const HideOnScrollSettings(hideNavBarOnScroll: true),
+          resizeToAvoidBottomInset: true,
+          stateManagement: false,
+          hideNavigationBarWhenKeyboardAppears: true,
+          popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
+          backgroundColor: Colors.white,
+          isVisible: true,
+          animationSettings: const NavBarAnimationSettings(
+            navBarItemAnimation: ItemAnimationSettings(
+              // Navigation Bar's items animation properties.
+              duration: Duration(milliseconds: 400),
+              curve: Curves.ease,
+            ),
+            screenTransitionAnimation: ScreenTransitionAnimationSettings(
+              // Screen transition animation on change of selected tab.
+              animateTabTransition: true,
+              duration: Duration(milliseconds: 200),
+              screenTransitionAnimationType:
+                  ScreenTransitionAnimationType.fadeIn,
+            ),
+          ),
+          confineToSafeArea: true,
+          navBarHeight: MediaQuery.of(context).size.height * 0.075,
+          navBarStyle: NavBarStyle.style15,
+          onItemSelected: (index) {
+            if (_controller.index == 1) {
+              startScan();
+            } else {
+              setState(() {
+                _controller.index = index;
+              });
+            }
+          },
+        ),
+      ),
+    );
   }
 }
