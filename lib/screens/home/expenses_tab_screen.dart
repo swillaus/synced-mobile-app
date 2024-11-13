@@ -78,12 +78,13 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
 
     Widget getInvoiceCardWidget(item) {
       return Card(
+        elevation: 4,
+        shadowColor: Colors.grey,
         color: Colors.white,
         child: Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
           padding: const EdgeInsets.all(5),
-          child: Flexible(
-              child: Row(
+          child: Row(
             children: [
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.2,
@@ -92,7 +93,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                         height: 75, width: 75, child: getInvoiceWidget(item))
                     : appLoader,
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 10),
               Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +103,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.3,
+                        width: MediaQuery.of(context).size.width * 0.4,
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: item['supplierName'] != null
@@ -114,13 +115,13 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: Color(0XFF344054)))
                               : SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6),
+                                  width: MediaQuery.of(context).size.width *
+                                      0.375),
                         ),
                       ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.2),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.1),
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.topRight,
                         child: Text(
                           '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
                           textAlign: TextAlign.end,
@@ -154,7 +155,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                 ],
               ),
             ],
-          )),
+          ),
         ),
       );
     }

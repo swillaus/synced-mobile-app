@@ -263,8 +263,8 @@ class _HomeScreenState extends State<HomeScreen>
             _controller.index == 0
                 ? 'assets/nav_bar/expenses-yellow.png'
                 : 'assets/nav_bar/expenses-grey.png',
-            height: 60,
-            width: 60),
+            height: 50,
+            width: 50),
         scrollController: scrollController1,
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
@@ -277,7 +277,12 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
       PersistentBottomNavBarItem(
-        icon: const Icon(Icons.add, color: Colors.white, size: 35),
+        icon: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 35,
+          shadows: <Shadow>[Shadow(color: Colors.white, blurRadius: 10.0)],
+        ),
         activeColorPrimary: clickableColor,
         inactiveColorPrimary: textColor,
         scrollController: scrollController2,
@@ -296,8 +301,8 @@ class _HomeScreenState extends State<HomeScreen>
             _controller.index == 2
                 ? 'assets/nav_bar/transactions-yellow.png'
                 : 'assets/nav_bar/transactions-grey.png',
-            height: 75,
-            width: 75),
+            height: 60,
+            width: 60),
         scrollController: scrollController3,
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
           initialRoute: "/expenses",
@@ -577,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             confineToSafeArea: true,
-            navBarHeight: MediaQuery.of(context).size.height * 0.085,
+            navBarHeight: MediaQuery.of(context).size.height * 0.075,
             navBarStyle: NavBarStyle.style15,
             onItemSelected: (index) {
               if (_controller.index == 1) {
