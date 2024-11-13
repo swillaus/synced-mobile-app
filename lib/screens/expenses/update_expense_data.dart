@@ -75,8 +75,16 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       selectedCurrency = expense['currency'] != null &&
               expense['currency'].runtimeType == String
           ? expense['currency']
-          : 'USD';
+          : currencies.first ?? 'USD';
+      currencyController.text = selectedCurrency!;
       totalController.text = expense['subTotal'].toString();
+      for (var acc in paymentAccounts) {
+        if (acc['id'] == expense['invoiceLines'][0]['accountId']) {
+          selectedAccount = acc;
+          accountController.text = acc['name'];
+          break;
+        }
+      }
       descriptionController.text = expense['description'] ?? '';
     });
   }
@@ -126,9 +134,6 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     if (resp.isNotEmpty) {
       currencies = resp;
     }
-    setState(() {
-      showSpinner = false;
-    });
   }
 
   Future<void> getSuppliers() async {
@@ -476,24 +481,6 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       fillColor: Colors.white,
                     ),
                     maxLines: 1,
-                    onEditingComplete: () async {
-                      updatedExpense['currency'] = currencyController.text;
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      final resp =
-                          await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
-                      if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                      } else {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
-                      }
-                    },
                     onTap: () {
                       showCurrencyPicker(
                         context: context,
@@ -501,11 +488,27 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         showCurrencyName: true,
                         showCurrencyCode: true,
                         currencyFilter: currencies.cast<String>(),
-                        onSelect: (Currency currency) {
+                        onSelect: (Currency currency) async {
                           setState(() {
                             selectedCurrency = currency.code;
                             currencyController.text = currency.code;
                           });
+                          updatedExpense['currency'] = currencyController.text;
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          final resp =
+                              await ApiService.updateExpense(updatedExpense);
+                          setState(() {
+                            showSpinner = false;
+                          });
+                          if (resp.isNotEmpty) {
+                            ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                .showSnackBar(const SnackBar(
+                                    content: Text('Updated successfully.')));
+                          } else {
+                            ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                .showSnackBar(const SnackBar(
+                                    content: Text('Failed to update.')));
+                          }
                         },
                       );
                     },
@@ -693,11 +696,31 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                         ],
                                       ),
                                     ));
-                          }).whenComplete(() {
+                          }).whenComplete(() async {
                         setState(() {
                           accountSearchController.clear();
                           filteredPaymentAccounts = paymentAccounts;
                         });
+                        updatedExpense['invoiceLines'][0]['accountId'] =
+                            selectedAccount!['id'];
+                        updatedExpense['invoiceLines'][0]['accountName'] =
+                            selectedAccount!['name'];
+
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        final resp =
+                            await ApiService.updateExpense(updatedExpense);
+                        setState(() {
+                          showSpinner = false;
+                        });
+                        if (resp.isNotEmpty) {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Updated successfully.')));
+                        } else {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Failed to update.')));
+                        }
                       });
                     },
                   ),
@@ -999,7 +1022,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       fillColor: Colors.white,
                     ),
                     maxLines: 3,
-                    onEditingComplete: () async {
+                    onTapOutside: (cb) async {
                       updatedExpense['description'] =
                           descriptionController.text;
                       updatedExpense['invoiceLines'][0]['description'] =
