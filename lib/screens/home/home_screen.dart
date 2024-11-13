@@ -8,8 +8,8 @@ import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:synced/main.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/login.dart';
@@ -29,9 +29,10 @@ List processedExpenses = [];
 TextEditingController notesController = TextEditingController();
 TextEditingController reviewSearchController = TextEditingController();
 TextEditingController processedSearchController = TextEditingController();
-final PersistentTabController _controller = PersistentTabController();
+final PageController _controller = PageController();
 final Debouncer reviewDebouncer = Debouncer();
 final Debouncer processedDebouncer = Debouncer();
+int selectedNavBarIndex = 0;
 String fileSize = '';
 List<String>? imagesPath = [];
 const pageSize = 15;
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       showUploadingInvoice = true;
       uploadingData = {'path': imagesPath!.first, 'size': fileSize};
-      _controller.index = 0;
+      selectedNavBarIndex = 0;
     });
     ApiService.uploadInvoice(
             imagesPath!.first, selectedOrgId, notesController.text)
@@ -205,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen>
                                         'path': imagesPath!.first,
                                         'size': fileSize
                                       };
-                                      _controller.index = 0;
+                                      selectedNavBarIndex = 0;
                                     });
                                     ApiService.uploadInvoice(imagesPath!.first,
                                             selectedOrgId, '')
@@ -254,71 +255,6 @@ class _HomeScreenState extends State<HomeScreen>
           value: org['organisationID'], child: Text(org['organisationName'])));
     }
     return entries;
-  }
-
-  List<PersistentBottomNavBarItem> _navBarsItems() {
-    ScrollController scrollController1 = ScrollController();
-    ScrollController scrollController2 = ScrollController();
-    ScrollController scrollController3 = ScrollController();
-
-    return [
-      PersistentBottomNavBarItem(
-        icon: Image.asset(
-            _controller.index == 0
-                ? 'assets/nav_bar/expenses-yellow.png'
-                : 'assets/nav_bar/expenses-grey.png',
-            height: 50,
-            width: 50),
-        scrollController: scrollController1,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/expenses",
-          routes: {
-            "/expenses": (final context) =>
-                ExpensesTabScreen(tabController: tabController),
-            "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => const TransactionsTabScreen()
-          },
-        ),
-      ),
-      PersistentBottomNavBarItem(
-        icon: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 35,
-          shadows: <Shadow>[Shadow(color: Colors.white, blurRadius: 10.0)],
-        ),
-        activeColorPrimary: clickableColor,
-        inactiveColorPrimary: textColor,
-        scrollController: scrollController2,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/expenses",
-          routes: {
-            "/expenses": (final context) =>
-                ExpensesTabScreen(tabController: tabController),
-            "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => const TransactionsTabScreen()
-          },
-        ),
-      ),
-      PersistentBottomNavBarItem(
-        icon: Image.asset(
-            _controller.index == 2
-                ? 'assets/nav_bar/transactions-yellow.png'
-                : 'assets/nav_bar/transactions-grey.png',
-            height: 60,
-            width: 60),
-        scrollController: scrollController3,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/expenses",
-          routes: {
-            "/expenses": (final context) =>
-                ExpensesTabScreen(tabController: tabController),
-            "/create-expense": (final context) => Container(),
-            "/transactions": (final context) => const TransactionsTabScreen()
-          },
-        ),
-      ),
-    ];
   }
 
   getUnprocessedExpenses(page) async {
@@ -406,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {});
     });
     tabController.index = widget.tabIndex;
-    _controller.index = widget.navbarIndex;
+    selectedNavBarIndex = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
       reviewPageKey = pageKey;
       getUnprocessedExpenses(pageKey);
@@ -471,6 +407,7 @@ class _HomeScreenState extends State<HomeScreen>
       color: Colors.white,
       progressIndicator: appLoader,
       child: Scaffold(
+        extendBody: true,
         resizeToAvoidBottomInset: true,
         backgroundColor: const Color(0xfffbfbfb),
         appBar: AppBar(
@@ -572,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-          bottom: _controller.index == 0
+          bottom: selectedNavBarIndex == 0
               ? TabBar(
                   indicatorColor: clickableColor,
                   labelColor: clickableColor,
@@ -589,57 +526,69 @@ class _HomeScreenState extends State<HomeScreen>
                   controller: tabController)
               : null,
         ),
-        body: PersistentTabView(
-          navigatorKey.currentContext!,
-          controller: _controller,
-          decoration: const NavBarDecoration(
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
-          screens: [
+          child: StylishBottomBar(
+            items: [
+              BottomBarItem(
+                icon: Image.asset('assets/nav_bar/expenses-grey.png',
+                    height: 50, width: 50),
+                selectedIcon: Image.asset('assets/nav_bar/expenses-yellow.png',
+                    height: 50, width: 50),
+                title: const SizedBox(height: 0),
+              ),
+              BottomBarItem(
+                icon: Padding(
+                    padding: EdgeInsets.only(
+                        left: MediaQuery.of(context).size.width * 0.25),
+                    child: Image.asset('assets/nav_bar/transactions-grey.png')),
+                selectedIcon: Padding(
+                    padding: EdgeInsets.only(
+                        left: MediaQuery.of(context).size.width * 0.25),
+                    child:
+                        Image.asset('assets/nav_bar/transactions-yellow.png')),
+                title: const SizedBox(height: 0),
+              ),
+            ],
+            option: AnimatedBarOptions(
+                barAnimation: BarAnimation.fade, iconStyle: IconStyle.simple),
+            hasNotch: false,
+            fabLocation: StylishBarFabLocation.end,
+            currentIndex: selectedNavBarIndex,
+            notchStyle: NotchStyle.circle,
+            onTap: (index) {
+              if (index == selectedNavBarIndex) return;
+              setState(() {
+                selectedNavBarIndex = index;
+              });
+              _controller.jumpToPage(index);
+            },
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            startScan();
+          },
+          shape: const CircleBorder(),
+          backgroundColor: clickableColor,
+          child: const Icon(Icons.add,
+              color: Colors.white,
+              size: 35,
+              shadows: <Shadow>[Shadow(color: Colors.white, blurRadius: 10.0)]),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        body: PageView(
+          controller: _controller,
+          children: [
             SmartRefresher(
               controller: refreshController,
               onRefresh: getOrganisations,
               onLoading: getOrganisations,
               child: ExpensesTabScreen(tabController: tabController),
             ),
-            Container(),
             const TransactionsTabScreen()
           ],
-          items: _navBarsItems(),
-          handleAndroidBackButtonPress: true,
-          hideOnScrollSettings:
-              const HideOnScrollSettings(hideNavBarOnScroll: true),
-          resizeToAvoidBottomInset: true,
-          stateManagement: false,
-          hideNavigationBarWhenKeyboardAppears: true,
-          popBehaviorOnSelectedNavBarItemPress: PopBehavior.none,
-          backgroundColor: Colors.white,
-          isVisible: true,
-          animationSettings: const NavBarAnimationSettings(
-            navBarItemAnimation: ItemAnimationSettings(
-              // Navigation Bar's items animation properties.
-              duration: Duration(milliseconds: 400),
-              curve: Curves.ease,
-            ),
-            screenTransitionAnimation: ScreenTransitionAnimationSettings(
-              // Screen transition animation on change of selected tab.
-              animateTabTransition: true,
-              duration: Duration(milliseconds: 200),
-              screenTransitionAnimationType:
-                  ScreenTransitionAnimationType.fadeIn,
-            ),
-          ),
-          confineToSafeArea: true,
-          navBarHeight: MediaQuery.of(context).size.height * 0.075,
-          navBarStyle: NavBarStyle.style15,
-          onItemSelected: (index) {
-            if (_controller.index == 1) {
-              startScan();
-            } else {
-              setState(() {
-                _controller.index = index;
-              });
-            }
-          },
         ),
       ),
     );

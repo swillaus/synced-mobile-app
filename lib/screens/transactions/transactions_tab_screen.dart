@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/home/home_screen.dart';
@@ -98,15 +97,14 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                           itemBuilder: (context, index) {
                             return GestureDetector(
                               onTap: () {
-                                PersistentNavBarNavigator.pushDynamicScreen(
+                                Navigator.push(
                                   context,
-                                  screen: MaterialPageRoute(
+                                  MaterialPageRoute(
                                       builder: (context) =>
                                           TransactionsListPage(
                                               reportId: '',
                                               report:
                                                   unreconciledReports[index])),
-                                  withNavBar: false,
                                 );
                               },
                               child: Card(
