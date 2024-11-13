@@ -275,14 +275,14 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
 
   @override
   void initState() {
-    setState(() {
-      showSpinner = true;
-    });
-    preparePageContent();
     super.initState();
+    preparePageContent();
   }
 
   Future<void> preparePageContent() async {
+    setState(() {
+      showSpinner = true;
+    });
     final resp = await ApiService.getReportsList('', selectedOrgId);
     if (resp.isEmpty) {
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
@@ -291,7 +291,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     } else {
       transactions = resp['data'];
       filteredTransactions = resp['data'];
-      transactions.forEach((t) async {
+      for (var t in filteredTransactions) {
         final relatedDataResp =
             await ApiService.getRelatedData(t['relatedID'], selectedOrgId);
         final matchDataResp = await ApiService.getMatchData(
@@ -300,15 +300,17 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         t['relatedData'] = relatedDataResp;
         t['matchData'] = matchDataResp;
 
-        if (t['matchData'] != null && t['matchData'].isNotEmpty) {
+        if (t['matchData'] != null &&
+            t['matchData'].isNotEmpty &&
+            t['matchData'] != null &&
+            t['relatedData'].isEmpty) {
           t['matchData']['invoice_path'] =
               'https://syncedblobstaging.blob.core.windows.net/invoices/${t['matchData']['invoicePdfUrl']}';
         } else if (t['relatedData'] != null && t['relatedData'].isNotEmpty) {
           t['relatedData']['invoice_path'] =
               'https://syncedblobstaging.blob.core.windows.net/invoices/${t['relatedData']['invoicePdfUrl']}';
         }
-      });
-      setState(() {});
+      }
     }
     setState(() {
       showSpinner = false;
@@ -677,14 +679,15 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                         selectedFilter = 'Matched';
                                       });
                                       filteredTransactions = [];
-                                      transactions.forEach((transaction) {
+                                      for (var transaction in transactions) {
                                         if (transaction['status'] !=
                                                 'Unassigned' &&
                                             transaction['status'] !=
                                                 'Assigned') {
                                           filteredTransactions.add(transaction);
                                         }
-                                      });
+                                      }
+                                      ;
                                       setState(() {});
                                     },
                                     child: Chip(
@@ -708,14 +711,14 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                         selectedFilter = 'Unmatched';
                                       });
                                       filteredTransactions = [];
-                                      transactions.forEach((transaction) {
+                                      for (var transaction in transactions) {
                                         if (transaction['status'] ==
                                                 'Unassigned' ||
                                             transaction['status'] ==
                                                 'Assigned') {
                                           filteredTransactions.add(transaction);
                                         }
-                                      });
+                                      }
                                       setState(() {});
                                     },
                                     child: Chip(
@@ -941,23 +944,21 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                       null &&
                                                   filteredTransactions[index - 1]
                                                           ['matchData']
-                                                      .isNotEmpty
-                                              ? getMatchWidget(
+                                                      .isNotEmpty &&
                                                   filteredTransactions[index - 1]
-                                                      ['matchData'],
+                                                          ['matchData'] !=
+                                                      null &&
+                                                  filteredTransactions[index - 1]
+                                                          ['relatedData']
+                                                      .isEmpty
+                                              ? getMatchWidget(
+                                                  filteredTransactions[
+                                                      index - 1]['matchData'],
                                                   'match')
-                                              : filteredTransactions[index - 1]
-                                                              ['relatedData'] !=
-                                                          null &&
-                                                      filteredTransactions[index - 1]
-                                                              ['relatedData']
-                                                          .isNotEmpty
-                                                  ? getMatchWidget(
-                                                      filteredTransactions[
-                                                              index - 1]
-                                                          ['relatedData'],
-                                                      'related')
-                                                  : const SizedBox(),
+                                              : getMatchWidget(
+                                                  filteredTransactions[
+                                                      index - 1]['relatedData'],
+                                                  'related'),
                                           const SizedBox(height: 10)
                                         ]),
                                       ),
@@ -967,7 +968,13 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                 null &&
                                             filteredTransactions[index - 1]
                                                     ['matchData']
-                                                .isNotEmpty) ...[
+                                                .isNotEmpty &&
+                                            filteredTransactions[index - 1]
+                                                    ['matchData'] !=
+                                                null &&
+                                            filteredTransactions[index - 1]
+                                                    ['relatedData']
+                                                .isEmpty) ...[
                                           Container(
                                             padding: const EdgeInsets.all(10),
                                             height: MediaQuery.of(navigatorKey

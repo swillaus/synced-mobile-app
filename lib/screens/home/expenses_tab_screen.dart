@@ -76,6 +76,89 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
       return invoiceImage;
     }
 
+    Widget getInvoiceCardWidget(item) {
+      return Card(
+        color: Colors.white,
+        child: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
+          padding: const EdgeInsets.all(5),
+          child: Flexible(
+              child: Row(
+            children: [
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.2,
+                child: item['invoice_path'] != null
+                    ? SizedBox(
+                        height: 75, width: 75, child: getInvoiceWidget(item))
+                    : appLoader,
+              ),
+              const SizedBox(width: 15),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.3,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: item['supplierName'] != null
+                              ? Text(item['supplierName'],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0XFF344054)))
+                              : SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6),
+                        ),
+                      ),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.2),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              color: Color(0XFF101828)),
+                        ),
+                      )
+                    ],
+                  ),
+                  if (item['accountName'] != null) ...[
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Chip(
+                        padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100)),
+                        side: BorderSide(
+                          color: clickableColor,
+                        ),
+                        label: Text(item['accountName']),
+                        color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
+                        labelStyle: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0XFF667085)),
+                      ),
+                    )
+                  ]
+                ],
+              ),
+            ],
+          )),
+        ),
+      );
+    }
+
     Widget getPageContent() {
       if (reviewExpenses.isEmpty &&
           processedExpenses.isEmpty &&
@@ -146,6 +229,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                   child: Card(
                     color: Colors.white,
                     child: Container(
+                      decoration:
+                          BoxDecoration(borderRadius: BorderRadius.circular(6)),
                       padding: const EdgeInsets.only(
                           top: 5, left: 10, right: 5, bottom: 12),
                       child: Row(
@@ -274,86 +359,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               },
                               child: SizedBox(
                                 height: 100,
-                                child: Card(
-                                  color: Colors.white,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        item['invoice_path'] != null
-                                            ? SizedBox(
-                                                height: 75,
-                                                width: 75,
-                                                child: getInvoiceWidget(item))
-                                            : appLoader,
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.4,
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(item['supplierName'] ?? '',
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          Color(0XFF344054))),
-                                              if (item['accountName'] !=
-                                                  null) ...[
-                                                Align(
-                                                  alignment:
-                                                      Alignment.bottomLeft,
-                                                  child: Chip(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        24)),
-                                                    side: BorderSide(
-                                                      color: clickableColor,
-                                                    ),
-                                                    label: Text(
-                                                        item['accountName']),
-                                                    color:
-                                                        const WidgetStatePropertyAll(
-                                                            Color(0XFFFFFEF4)),
-                                                    labelStyle: const TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Color(0XFF667085)),
-                                                  ),
-                                                )
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                                color: Color(0XFF101828)),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                child: getInvoiceCardWidget(item),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -371,86 +377,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               },
                               child: SizedBox(
                                 height: 100,
-                                child: Card(
-                                  color: Colors.white,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        item['invoice_path'] != null
-                                            ? SizedBox(
-                                                height: 75,
-                                                width: 75,
-                                                child: getInvoiceWidget(item))
-                                            : appLoader,
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.4,
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(item['supplierName'] ?? '',
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          Color(0XFF344054))),
-                                              if (item['accountName'] !=
-                                                  null) ...[
-                                                Align(
-                                                  alignment:
-                                                      Alignment.bottomLeft,
-                                                  child: Chip(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        24)),
-                                                    side: BorderSide(
-                                                      color: clickableColor,
-                                                    ),
-                                                    label: Text(
-                                                        item['accountName']),
-                                                    color:
-                                                        const WidgetStatePropertyAll(
-                                                            Color(0XFFFFFEF4)),
-                                                    labelStyle: const TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Color(0XFF667085)),
-                                                  ),
-                                                )
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                                color: Color(0XFF101828)),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                child: getInvoiceCardWidget(item),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -464,6 +391,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
         return Container(
           color: const Color(0xfffbfbfb),
           padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+          height: MediaQuery.of(context).size.height * 0.8,
+          width: double.maxFinite,
           child: Column(
             children: [
               SizedBox(
@@ -563,84 +492,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               },
                               child: SizedBox(
                                 height: 100,
-                                child: Card(
-                                  color: Colors.white,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        item['invoice_path'] != null
-                                            ? SizedBox(
-                                                height: 75,
-                                                width: 75,
-                                                child: getInvoiceWidget(item))
-                                            : appLoader,
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.4,
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(item['supplierName'] ?? '',
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          Color(0XFF344054))),
-                                              if (item['accountName'] !=
-                                                  null) ...[
-                                                Align(
-                                                  alignment:
-                                                      Alignment.bottomLeft,
-                                                  child: Chip(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        24)),
-                                                    side: BorderSide(
-                                                      color: clickableColor,
-                                                    ),
-                                                    label: Text(
-                                                        item['accountName']),
-                                                    color:
-                                                        const WidgetStatePropertyAll(
-                                                            Color(0XFFFFFEF4)),
-                                                    labelStyle: const TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Color(0XFF667085)),
-                                                  ),
-                                                )
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                                color: Color(0XFF101828)),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                child: getInvoiceCardWidget(item),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -658,84 +510,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               },
                               child: SizedBox(
                                 height: 100,
-                                child: Card(
-                                  color: Colors.white,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        item['invoice_path'] != null
-                                            ? SizedBox(
-                                                height: 75,
-                                                width: 75,
-                                                child: getInvoiceWidget(item))
-                                            : appLoader,
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.4,
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(item['supplierName'] ?? '',
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          Color(0XFF344054))),
-                                              if (item['accountName'] !=
-                                                  null) ...[
-                                                Align(
-                                                  alignment:
-                                                      Alignment.bottomLeft,
-                                                  child: Chip(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        24)),
-                                                    side: BorderSide(
-                                                      color: clickableColor,
-                                                    ),
-                                                    label: Text(
-                                                        item['accountName']),
-                                                    color:
-                                                        const WidgetStatePropertyAll(
-                                                            Color(0XFFFFFEF4)),
-                                                    labelStyle: const TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Color(0XFF667085)),
-                                                  ),
-                                                )
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                                color: Color(0XFF101828)),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                child: getInvoiceCardWidget(item),
                               ),
                             ),
                             const SizedBox(height: 10),
