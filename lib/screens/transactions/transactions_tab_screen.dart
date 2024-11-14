@@ -318,6 +318,13 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     } else {
       transactions = resp['data'];
       filteredTransactions = resp['data'];
+
+      setState(() {
+        showSpinner = false;
+      });
+      transactionRefreshController.loadComplete();
+      transactionRefreshController.refreshCompleted();
+
       for (var t in filteredTransactions) {
         final relatedDataResp =
             await ApiService.getRelatedData(t['relatedID'], selectedOrgId);
@@ -337,13 +344,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
           t['relatedData']['invoice_path'] =
               'https://syncedblobstaging.blob.core.windows.net/invoices/${t['relatedData']['invoicePdfUrl']}';
         }
+        setState(() {});
       }
     }
-    setState(() {
-      showSpinner = false;
-    });
-    transactionRefreshController.loadComplete();
-    transactionRefreshController.refreshCompleted();
   }
 
   Widget getInvoiceWidget(Map matchData) {
@@ -1198,7 +1201,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                           ['matchData']
                                                                       [
                                                                       'supplierName'] ??
-                                                                  '',
+                                                                  'Supplier',
                                                               style: const TextStyle(
                                                                   fontWeight:
                                                                       FontWeight

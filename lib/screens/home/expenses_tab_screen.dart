@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/home_screen.dart';
-import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
@@ -203,23 +202,11 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                     onChanged: (value) async {
                       reviewDebouncer.debounce(
                           duration: const Duration(milliseconds: 250),
-                          onDebounce: () async {
-                            final resp = await ApiService.getExpenses(
-                                false,
-                                selectedOrgId,
-                                reviewSearchController.text,
-                                reviewPageKey,
-                                pageSize);
-                            if (resp.isNotEmpty) {
-                              reviewExpenses = resp['invoices'];
-                            }
-
-                            for (var exp in reviewExpenses) {
-                              exp['invoice_path'] =
-                                  'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
-                            }
-                            reviewPagingController.nextPageKey = 1;
-                            setState(() {});
+                          onDebounce: () {
+                            setState(() {
+                              reviewSearchTerm = value;
+                            });
+                            reviewPagingController.refresh();
                           });
                     },
                     controller: reviewSearchController,
@@ -428,23 +415,11 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                   onChanged: (value) async {
                     processedDebouncer.debounce(
                         duration: const Duration(milliseconds: 250),
-                        onDebounce: () async {
-                          final resp = await ApiService.getExpenses(
-                              true,
-                              selectedOrgId,
-                              processedSearchController.text,
-                              processedPageKey,
-                              pageSize);
-                          if (resp.isNotEmpty) {
-                            processedExpenses = resp['invoices'];
-                          }
-
-                          for (var exp in processedExpenses) {
-                            exp['invoice_path'] =
-                                'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
-                          }
-                          processedPagingController.nextPageKey = 1;
-                          setState(() {});
+                        onDebounce: () {
+                          setState(() {
+                            processedSearchTerm = value;
+                          });
+                          processedPagingController.refresh();
                         });
                   },
                   controller: processedSearchController,

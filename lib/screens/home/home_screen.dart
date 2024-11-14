@@ -28,6 +28,8 @@ List processedExpenses = [];
 TextEditingController notesController = TextEditingController();
 TextEditingController reviewSearchController = TextEditingController();
 TextEditingController processedSearchController = TextEditingController();
+String reviewSearchTerm = '';
+String processedSearchTerm = '';
 final PageController _controller = PageController();
 final Debouncer reviewDebouncer = Debouncer();
 final Debouncer processedDebouncer = Debouncer();
@@ -220,8 +222,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                     'We were unable to process the image, please try again.')));
                                         return;
                                       } else {
-                                        getUnprocessedExpenses(1);
-                                        getProcessedExpenses(1);
+                                        getUnprocessedExpenses(1, '');
+                                        getProcessedExpenses(1, '');
                                       }
                                     });
                                   },
@@ -256,13 +258,13 @@ class _HomeScreenState extends State<HomeScreen>
     return entries;
   }
 
-  getUnprocessedExpenses(page) async {
+  getUnprocessedExpenses(page, searchTerm) async {
     if (page == 1) {
       reviewExpenses.clear();
       reviewPageKey = 1;
     }
-    final resp =
-        await ApiService.getExpenses(false, selectedOrgId, '', page, pageSize);
+    final resp = await ApiService.getExpenses(
+        false, selectedOrgId, searchTerm, page, pageSize);
     if (resp.isNotEmpty) {
       setState(() {
         reviewExpenses += resp['invoices'];
@@ -293,13 +295,13 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {});
   }
 
-  getProcessedExpenses(page) async {
+  getProcessedExpenses(page, searchTerm) async {
     if (page == 1) {
       processedExpenses.clear();
       processedPageKey = 1;
     }
-    final resp =
-        await ApiService.getExpenses(true, selectedOrgId, '', page, pageSize);
+    final resp = await ApiService.getExpenses(
+        true, selectedOrgId, searchTerm, page, pageSize);
     if (resp.isNotEmpty) {
       setState(() {
         processedExpenses += resp['invoices'];
@@ -341,11 +343,11 @@ class _HomeScreenState extends State<HomeScreen>
     selectedNavBarIndex = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
       reviewPageKey = pageKey;
-      getUnprocessedExpenses(pageKey);
+      getUnprocessedExpenses(pageKey, reviewSearchTerm);
     });
     processedPagingController.addPageRequestListener((pageKey) {
       processedPageKey = pageKey;
-      getProcessedExpenses(pageKey);
+      getProcessedExpenses(pageKey, processedSearchTerm);
     });
     super.initState();
     getOrganisations();
@@ -369,8 +371,8 @@ class _HomeScreenState extends State<HomeScreen>
           defaultCurrency = resp['currency'] ?? 'USD';
         });
       });
-      getUnprocessedExpenses(1);
-      getProcessedExpenses(1);
+      getUnprocessedExpenses(1, '');
+      getProcessedExpenses(1, '');
     } else {
       setState(() {
         showSpinner = false;
@@ -439,8 +441,8 @@ class _HomeScreenState extends State<HomeScreen>
                               defaultCurrency = resp['currency'] ?? 'USD';
                             });
                           });
-                          getUnprocessedExpenses(1);
-                          getProcessedExpenses(1);
+                          getUnprocessedExpenses(1, '');
+                          getProcessedExpenses(1, '');
                         },
                         items: getDropdownEntries(),
                         value: selectedOrgId)),
@@ -568,7 +570,14 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             SmartRefresher(
               controller: refreshController,
-              onRefresh: getOrganisations,
+              onRefresh: () {
+                setState(() {
+                  reviewSearchTerm = '';
+                  processedSearchTerm = '';
+                });
+                reviewPagingController.refresh();
+                processedPagingController.refresh();
+              },
               onLoading: getOrganisations,
               child: ExpensesTabScreen(tabController: tabController),
             ),
