@@ -460,7 +460,7 @@ class ApiService {
     request.body = json.encode({
       "organizationId": orgId,
       "userid": 211,
-      "id": "2aad3793-6ba5-4050-8289-40077d7f474d",
+      "id": reportId,
       "isSavedReport": true,
       "startDate": "1900-01-01",
       "endDate": "2048-01-01",

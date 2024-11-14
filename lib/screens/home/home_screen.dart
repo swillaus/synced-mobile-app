@@ -11,7 +11,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:synced/main.dart';
-import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/expenses_tab_screen.dart';
@@ -260,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen>
   getUnprocessedExpenses(page) async {
     if (page == 1) {
       reviewExpenses.clear();
+      reviewPageKey = 1;
     }
     final resp =
         await ApiService.getExpenses(false, selectedOrgId, '', page, pageSize);
@@ -280,11 +280,8 @@ class _HomeScreenState extends State<HomeScreen>
     } catch (error) {
       reviewPagingController.error = error;
     }
-
     setState(() {
       showSpinner = false;
-      reviewPageKey = 1;
-      processedPageKey = 1;
     });
     refreshController.loadComplete();
     refreshController.refreshCompleted();
@@ -299,6 +296,7 @@ class _HomeScreenState extends State<HomeScreen>
   getProcessedExpenses(page) async {
     if (page == 1) {
       processedExpenses.clear();
+      processedPageKey = 1;
     }
     final resp =
         await ApiService.getExpenses(true, selectedOrgId, '', page, pageSize);
@@ -322,8 +320,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       showSpinner = false;
-      reviewPageKey = 1;
-      processedPageKey = 1;
     });
     refreshController.loadComplete();
     refreshController.refreshCompleted();
@@ -380,6 +376,8 @@ class _HomeScreenState extends State<HomeScreen>
         showSpinner = false;
         reviewPageKey = 1;
         processedPageKey = 1;
+        reviewPagingController.nextPageKey = 1;
+        processedPagingController.nextPageKey = 1;
       });
       refreshController.loadComplete();
       refreshController.refreshCompleted();
@@ -418,12 +416,12 @@ class _HomeScreenState extends State<HomeScreen>
           title: Row(
             mainAxisSize: MainAxisSize.max,
             children: [
-              SizedBox(width: MediaQuery.of(context).size.width * 0.1),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.15),
               Center(
                 child: DropdownButtonHideUnderline(
                     child: DropdownButton2(
                         style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Colors.black),
                         dropdownStyleData: const DropdownStyleData(
@@ -452,16 +450,16 @@ class _HomeScreenState extends State<HomeScreen>
                 alignment: Alignment.centerRight,
                 child: PopupMenuButton<int>(
                   color: Colors.white,
-                  icon: const Icon(Icons.account_circle_outlined, size: 30),
+                  icon: const Icon(Icons.more_vert),
                   onSelected: (item) async {
                     switch (item) {
-                      case 1:
+                      case 0:
                         if (!await launchUrl(
                             Uri.parse('https://help.syncedhq.com/en/'))) {
                           throw Exception('Could not launch help center');
                         }
                         break;
-                      case 2:
+                      case 1:
                         final DatabaseHelper _db = DatabaseHelper();
                         await _db.deleteUsers();
                         selectedOrgId = '';
@@ -473,21 +471,8 @@ class _HomeScreenState extends State<HomeScreen>
                     }
                   },
                   itemBuilder: (context) => [
-                    PopupMenuItem(
-                        value: 0,
-                        child: Container(
-                          color: Colors.grey.shade200,
-                          height: 30,
-                          child: Center(
-                            child: Text(User.name,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.black)),
-                          ),
-                        )),
                     const PopupMenuItem<int>(
-                        value: 1,
+                        value: 0,
                         child: Row(
                           children: [
                             Icon(Icons.business_center_outlined),
@@ -496,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ],
                         )),
                     const PopupMenuItem<int>(
-                        value: 2,
+                        value: 1,
                         child: Row(
                           children: [
                             Icon(Icons.logout),

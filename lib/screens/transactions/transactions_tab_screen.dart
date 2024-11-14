@@ -102,7 +102,9 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                   MaterialPageRoute(
                                       builder: (context) =>
                                           TransactionsListPage(
-                                              reportId: '',
+                                              reportId:
+                                                  unreconciledReports[index]
+                                                      ['id'],
                                               report:
                                                   unreconciledReports[index])),
                                 );
@@ -307,7 +309,8 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     setState(() {
       showSpinner = true;
     });
-    final resp = await ApiService.getReportsList('', selectedOrgId);
+    final resp =
+        await ApiService.getReportsList(widget.reportId, selectedOrgId);
     if (resp.isEmpty) {
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           const SnackBar(
@@ -315,11 +318,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     } else {
       transactions = resp['data'];
       filteredTransactions = resp['data'];
-      setState(() {
-        showSpinner = false;
-      });
-      transactionRefreshController.loadComplete();
-      transactionRefreshController.refreshCompleted();
       for (var t in filteredTransactions) {
         final relatedDataResp =
             await ApiService.getRelatedData(t['relatedID'], selectedOrgId);
@@ -341,6 +339,11 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         }
       }
     }
+    setState(() {
+      showSpinner = false;
+    });
+    transactionRefreshController.loadComplete();
+    transactionRefreshController.refreshCompleted();
   }
 
   Widget getInvoiceWidget(Map matchData) {
@@ -366,7 +369,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
       color: Colors.white,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: clickableColor, width: 2.0)),
+          side: type == 'match'
+              ? BorderSide(color: clickableColor, width: 2.0)
+              : const BorderSide(color: Colors.transparent, width: 0.0)),
       child: Container(
         padding: const EdgeInsets.all(10),
         child: Row(
@@ -662,7 +667,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                 borderSide: const BorderSide(
                                                     color: Colors.transparent)),
                                             focusColor: const Color(0XFF8E8E8E),
-                                            hintText: 'Search here',
+                                            hintText: 'Search',
                                             hintStyle: const TextStyle(
                                                 fontWeight: FontWeight.w500,
                                                 fontSize: 14,
@@ -914,20 +919,20 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                         alignment: Alignment
                                                             .centerRight,
                                                         child: Text(
-                                                            filteredTransactions[
-                                                                        index -
-                                                                            1]
-                                                                    ['amount']
-                                                                .toString(),
+                                                            filteredTransactions[index - 1]['amount']
+                                                                    .toString()
+                                                                    .startsWith(
+                                                                        '-')
+                                                                ? '(${(filteredTransactions[index - 1]['amount']).abs().toString()})'
+                                                                : filteredTransactions[index - 1][
+                                                                        'amount']
+                                                                    .toString(),
                                                             style: TextStyle(
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w600,
                                                                 fontSize: 16,
-                                                                color: filteredTransactions[index -
-                                                                                1]
-                                                                            [
-                                                                            'amount']
+                                                                color: filteredTransactions[index - 1]['amount']
                                                                         .toString()
                                                                         .startsWith(
                                                                             '-')
@@ -1131,10 +1136,12 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                   color: Color(
                                                                       0XFF667085))),
                                                           Text(
-                                                              filteredTransactions[
+                                                              (filteredTransactions[
                                                                           index -
                                                                               1]
-                                                                      ['amount']
+                                                                      [
+                                                                      'amount'])
+                                                                  .abs()
                                                                   .toString(),
                                                               style: const TextStyle(
                                                                   fontWeight:
@@ -1200,11 +1207,12 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                                   color: Color(
                                                                       0XFF667085))),
                                                           Text(
-                                                              filteredTransactions[index -
+                                                              (filteredTransactions[index -
                                                                               1]
                                                                           ['matchData']
                                                                       [
-                                                                      'amountDue']
+                                                                      'amountDue'])
+                                                                  .abs()
                                                                   .toString(),
                                                               style: const TextStyle(
                                                                   fontWeight:

@@ -193,7 +193,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                             borderSide:
                                 const BorderSide(color: Colors.transparent)),
                         focusColor: const Color(0XFF8E8E8E),
-                        hintText: 'Search here',
+                        hintText: 'Search',
                         hintStyle: const TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 14,
@@ -218,6 +218,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               exp['invoice_path'] =
                                   'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
                             }
+                            reviewPagingController.nextPageKey = 1;
                             setState(() {});
                           });
                     },
@@ -356,7 +357,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                     MaterialPageRoute(
                                         builder: (context) => UpdateExpenseData(
                                             expense: item,
-                                            imagePath: item['invoice_path'])));
+                                            imagePath: item['invoice_path'],
+                                            isProcessed: false)));
                               },
                               child: SizedBox(
                                 height: 100,
@@ -374,7 +376,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                     MaterialPageRoute(
                                         builder: (context) => UpdateExpenseData(
                                             expense: item,
-                                            imagePath: item['invoice_path'])));
+                                            imagePath: item['invoice_path'],
+                                            isProcessed: false)));
                               },
                               child: SizedBox(
                                 height: 100,
@@ -415,7 +418,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                           borderSide:
                               const BorderSide(color: Colors.transparent)),
                       focusColor: const Color(0XFF8E8E8E),
-                      hintText: 'Search here',
+                      hintText: 'Search',
                       hintStyle: const TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
@@ -433,13 +436,14 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                               processedPageKey,
                               pageSize);
                           if (resp.isNotEmpty) {
-                            reviewExpenses = resp['invoices'];
+                            processedExpenses = resp['invoices'];
                           }
 
-                          for (var exp in reviewExpenses) {
+                          for (var exp in processedExpenses) {
                             exp['invoice_path'] =
                                 'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
                           }
+                          processedPagingController.nextPageKey = 1;
                           setState(() {});
                         });
                   },
@@ -489,7 +493,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                     MaterialPageRoute(
                                         builder: (context) => UpdateExpenseData(
                                             expense: item,
-                                            imagePath: item['invoice_path'])));
+                                            imagePath: item['invoice_path'],
+                                            isProcessed: true)));
                               },
                               child: SizedBox(
                                 height: 100,
@@ -507,7 +512,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                     MaterialPageRoute(
                                         builder: (context) => UpdateExpenseData(
                                             expense: item,
-                                            imagePath: item['invoice_path'])));
+                                            imagePath: item['invoice_path'],
+                                            isProcessed: true)));
                               },
                               child: SizedBox(
                                 height: 100,
