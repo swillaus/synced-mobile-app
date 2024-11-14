@@ -292,6 +292,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
   TextEditingController transactionSearchController = TextEditingController();
   RefreshController transactionRefreshController =
       RefreshController(initialRefresh: false);
+  int? expandedTileIndex;
 
   @override
   void initState() {
@@ -367,73 +368,96 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
     return invoiceImage;
   }
 
-  Widget getMatchWidget(Map matchData, String type) {
+  Widget getMatchWidget(Map matchData, String type, int index) {
     return Card(
+      elevation: 4,
+      shadowColor: Colors.grey,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: type == 'match'
+          borderRadius: BorderRadius.circular(6),
+          side: type == 'match' && expandedTileIndex == index
               ? BorderSide(color: clickableColor, width: 2.0)
               : const BorderSide(color: Colors.transparent, width: 0.0)),
       child: Container(
+        height: 100,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
         padding: const EdgeInsets.all(10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            matchData['invoice_path'] != null
-                ? SizedBox(
-                    height: 75, width: 75, child: getInvoiceWidget(matchData))
-                : appLoader,
             SizedBox(
-              width: MediaQuery.of(context).size.width * 0.4,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(matchData['supplierName'] ?? '',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0XFF344054))),
-                  if (matchData['date'] != null) ...[
+              width: MediaQuery.of(context).size.width * 0.2,
+              child: matchData['invoice_path'] != null
+                  ? SizedBox(
+                      height: 75, width: 75, child: getInvoiceWidget(matchData))
+                  : appLoader,
+            ),
+            const SizedBox(width: 10),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: matchData['supplierName'] != null
+                            ? Text(matchData['supplierName'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0XFF344054)))
+                            : SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.3),
+                      ),
+                    ),
+                    SizedBox(width: MediaQuery.of(context).size.width * 0.04),
                     Align(
-                      alignment: Alignment.topLeft,
+                      alignment: Alignment.topRight,
                       child: Text(
-                          'Due: ${DateFormat('d MMM, y').format(DateTime.parse(matchData['date'])).toString()}'),
-                    )
-                  ],
-                  if (matchData['accountName'] != null) ...[
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Chip(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        side: BorderSide(
-                          color: clickableColor,
-                        ),
-                        label: Text(matchData['accountName']),
-                        color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
-                        labelStyle: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0XFF667085)),
+                        '${matchData['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(matchData['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${matchData['amountDue']}',
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: Color(0XFF101828)),
                       ),
                     )
-                  ]
+                  ],
+                ),
+                if (matchData['date'] != null) ...[
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                        'Due: ${DateFormat('d MMM, y').format(DateTime.parse(matchData['date'])).toString()}'),
+                  )
                 ],
-              ),
+                if (matchData['accountName'] != null) ...[
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Chip(
+                      padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100)),
+                      side: BorderSide(
+                        color: clickableColor,
+                      ),
+                      label: Text(matchData['accountName']),
+                      color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
+                      labelStyle: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0XFF667085)),
+                    ),
+                  )
+                ]
+              ],
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '${matchData['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(matchData['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${matchData['amountDue']}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    color: Color(0XFF101828)),
-              ),
-            )
           ],
         ),
       ),
@@ -973,6 +997,15 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                               left: 10, right: 10),
                                           backgroundColor: Colors.white,
                                           showTrailingIcon: false,
+                                          onExpansionChanged: (selected) {
+                                            if (selected) {
+                                              expandedTileIndex = index;
+                                            } else if (expandedTileIndex ==
+                                                index) {
+                                              expandedTileIndex = null;
+                                            }
+                                            setState(() {});
+                                          },
                                           title: Container(
                                             color: Colors.white,
                                             child: Column(children: [
@@ -1033,14 +1066,16 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                               ['relatedData']
                                                           .isEmpty
                                                   ? getMatchWidget(
-                                                      filteredTransactions[
-                                                              index - 1]
+                                                      filteredTransactions[index - 1]
                                                           ['matchData'],
-                                                      'match')
+                                                      'match',
+                                                      index)
                                                   : getMatchWidget(
                                                       filteredTransactions[
-                                                          index - 1]['relatedData'],
-                                                      'related'),
+                                                              index - 1]
+                                                          ['relatedData'],
+                                                      'related',
+                                                      index),
                                               const SizedBox(height: 10)
                                             ]),
                                           ),

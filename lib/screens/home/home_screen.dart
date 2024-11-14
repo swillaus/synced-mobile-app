@@ -514,32 +514,54 @@ class _HomeScreenState extends State<HomeScreen>
               : null,
         ),
         bottomNavigationBar: Container(
+          padding: EdgeInsets.zero,
+          margin: EdgeInsets.zero,
           decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
           child: StylishBottomBar(
             items: [
               BottomBarItem(
                 icon: Image.asset('assets/nav_bar/expenses-grey.png',
-                    height: 50, width: 50),
+                    height: 30, width: 30),
                 selectedIcon: Image.asset('assets/nav_bar/expenses-yellow.png',
-                    height: 50, width: 50),
-                title: const SizedBox(height: 0),
+                    height: 30, width: 30),
+                title: Text('Expenses',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: selectedNavBarIndex == 0
+                            ? clickableColor
+                            : const Color(0XFF888888))),
               ),
               BottomBarItem(
                 icon: Padding(
                     padding: EdgeInsets.only(
                         left: MediaQuery.of(context).size.width * 0.25),
-                    child: Image.asset('assets/nav_bar/transactions-grey.png')),
+                    child: Image.asset('assets/nav_bar/transactions-grey.png',
+                        height: 30, width: 30)),
                 selectedIcon: Padding(
                     padding: EdgeInsets.only(
                         left: MediaQuery.of(context).size.width * 0.25),
-                    child:
-                        Image.asset('assets/nav_bar/transactions-yellow.png')),
-                title: const SizedBox(height: 0),
+                    child: Image.asset('assets/nav_bar/transactions-yellow.png',
+                        height: 30, width: 30)),
+                title: Padding(
+                  padding: EdgeInsets.only(
+                      left: MediaQuery.of(context).size.width * 0.225),
+                  child: FittedBox(
+                      child: Text('Transaction',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: selectedNavBarIndex == 1
+                                  ? clickableColor
+                                  : const Color(0XFF888888)))),
+                ),
               ),
             ],
             option: AnimatedBarOptions(
-                barAnimation: BarAnimation.fade, iconStyle: IconStyle.simple),
+                barAnimation: BarAnimation.fade,
+                iconStyle: IconStyle.Default,
+                iconSize: 15),
             hasNotch: false,
             fabLocation: StylishBarFabLocation.end,
             currentIndex: selectedNavBarIndex,
