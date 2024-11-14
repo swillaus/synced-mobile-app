@@ -116,7 +116,7 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                     side: BorderSide(
                                         color: clickableColor, width: 2.0)),
                                 child: Container(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: const EdgeInsets.all(15),
                                   child: Column(
                                     children: [
                                       Align(
@@ -132,126 +132,168 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
                                       const SizedBox(height: 10),
                                       IntrinsicHeight(
                                         child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Image.asset('assets/home_icon.png',
-                                                height: 45, width: 45),
-                                            const SizedBox(width: 5),
                                             Column(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.center,
+                                                  MainAxisAlignment.start,
                                               children: [
-                                                const Text('Total Value',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        fontSize: 10,
-                                                        color:
-                                                            Color(0XFF667085))),
-                                                Text(
-                                                    unreconciledReports[index]
-                                                            ['totalAmount']
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color:
-                                                            Color(0XFF101828))),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.1,
+                                                  child: Image.asset(
+                                                      'assets/home_icon.png'),
+                                                )
                                               ],
-                                            ),
-                                            SizedBox(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.1),
-                                            const VerticalDivider(
-                                              color: Colors.grey,
-                                              width: 2.0,
                                             ),
                                             const SizedBox(width: 10),
-                                            Image.asset('assets/tick.png',
-                                                height: 45, width: 45),
-                                            const SizedBox(width: 5),
-                                            Column(
-                                              children: [
-                                                const Text('Total Value',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        fontSize: 10,
-                                                        color:
-                                                            Color(0XFF667085))),
-                                                Text(
-                                                    unreconciledReports[index][
-                                                            'totalMatchedAmount']
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color:
-                                                            Color(0XFF101828))),
-                                              ],
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      IntrinsicHeight(
-                                        child: Row(
-                                          children: [
-                                            const SizedBox(width: 50),
-                                            Column(
-                                              children: [
-                                                const Text('Total transactions',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        fontSize: 10,
-                                                        color:
-                                                            Color(0XFF667085))),
-                                                Text(
-                                                    unreconciledReports[index]
-                                                            ['totalCount']
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color:
-                                                            Color(0XFF101828))),
-                                              ],
+                                            SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.25,
+                                              child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    const Text('Total Value',
+                                                        textAlign:
+                                                            TextAlign.start,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w400,
+                                                            fontSize: 10,
+                                                            color: Color(
+                                                                0XFF667085))),
+                                                    Text(
+                                                        unreconciledReports[
+                                                                        index][
+                                                                    'totalAmount']
+                                                                .toString()
+                                                                .startsWith('-')
+                                                            ? '(${(unreconciledReports[index]['totalAmount']).abs().toString()})'
+                                                            : unreconciledReports[
+                                                                        index][
+                                                                    'totalAmount']
+                                                                .toString(),
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0XFF101828))),
+                                                    const SizedBox(height: 10),
+                                                    const Text(
+                                                        'Total transactions',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w400,
+                                                            fontSize: 10,
+                                                            color: Color(
+                                                                0XFF667085))),
+                                                    Text(
+                                                        unreconciledReports[
+                                                                    index]
+                                                                ['totalCount']
+                                                            .toString(),
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0XFF101828))),
+                                                  ]),
                                             ),
                                             SizedBox(
                                                 width: MediaQuery.of(context)
                                                         .size
                                                         .width *
-                                                    0.035),
+                                                    0.025),
                                             const VerticalDivider(
                                               color: Colors.grey,
                                               width: 2.0,
                                             ),
-                                            const SizedBox(width: 60),
+                                            SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.025),
                                             Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
                                               children: [
-                                                const Text('Total matches',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        fontSize: 10,
-                                                        color:
-                                                            Color(0XFF667085))),
-                                                Text(
-                                                    unreconciledReports[index]
-                                                            ['totalMatched']
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color:
-                                                            Color(0XFF101828))),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.1,
+                                                  child: Image.asset(
+                                                      'assets/tick.png'),
+                                                )
                                               ],
+                                            ),
+                                            const SizedBox(width: 10),
+                                            SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.25,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Text('Total Value',
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          fontSize: 10,
+                                                          color: Color(
+                                                              0XFF667085))),
+                                                  Text(
+                                                      unreconciledReports[index]
+                                                                  [
+                                                                  'totalMatchedAmount']
+                                                              .toString()
+                                                              .startsWith('-')
+                                                          ? '(${(unreconciledReports[index]['totalMatchedAmount']).abs().toString()})'
+                                                          : unreconciledReports[
+                                                                      index][
+                                                                  'totalMatchedAmount']
+                                                              .toString(),
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 14,
+                                                          color: Color(
+                                                              0XFF101828))),
+                                                  const SizedBox(height: 10),
+                                                  const Text('Total matches',
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          fontSize: 10,
+                                                          color: Color(
+                                                              0XFF667085))),
+                                                  Text(
+                                                      unreconciledReports[index]
+                                                              ['totalMatched']
+                                                          .toString(),
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 14,
+                                                          color: Color(
+                                                              0XFF101828))),
+                                                ],
+                                              ),
                                             )
                                           ],
                                         ),
@@ -515,7 +557,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                         side: BorderSide(
                                             color: clickableColor, width: 2.0)),
                                     child: Container(
-                                      padding: const EdgeInsets.all(20),
+                                      padding: const EdgeInsets.all(15),
                                       child: Column(
                                         children: [
                                           Align(
@@ -530,98 +572,155 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                           const SizedBox(height: 10),
                                           IntrinsicHeight(
                                             child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Image.asset(
-                                                    'assets/home_icon.png',
-                                                    height: 45,
-                                                    width: 45),
-                                                const SizedBox(width: 5),
                                                 Column(
                                                   mainAxisAlignment:
-                                                      MainAxisAlignment.center,
+                                                      MainAxisAlignment.start,
                                                   children: [
-                                                    const Text('Total Value',
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            fontSize: 10,
-                                                            color: Color(
-                                                                0XFF667085))),
-                                                    Text(
-                                                        widget
-                                                            .report[
-                                                                'totalAmount']
-                                                            .toString(),
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 14,
-                                                            color: Color(
-                                                                0XFF101828))),
+                                                    SizedBox(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.1,
+                                                      child: Image.asset(
+                                                          'assets/home_icon.png'),
+                                                    )
                                                   ],
+                                                ),
+                                                const SizedBox(width: 10),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Text(
+                                                            'Total Value',
+                                                            textAlign:
+                                                                TextAlign.start,
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w400,
+                                                                fontSize: 10,
+                                                                color: Color(
+                                                                    0XFF667085))),
+                                                        Text(
+                                                            widget.report[
+                                                                        'totalAmount']
+                                                                    .toString()
+                                                                    .startsWith(
+                                                                        '-')
+                                                                ? '(${(widget.report['totalAmount']).abs().toString()})'
+                                                                : widget.report[
+                                                                        'totalAmount']
+                                                                    .toString(),
+                                                            style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                fontSize: 14,
+                                                                color: Color(
+                                                                    0XFF101828))),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        const Text(
+                                                            'Total transactions',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w400,
+                                                                fontSize: 10,
+                                                                color: Color(
+                                                                    0XFF667085))),
+                                                        Text(
+                                                            widget
+                                                                .report[
+                                                                    'totalCount']
+                                                                .toString(),
+                                                            style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                fontSize: 14,
+                                                                color: Color(
+                                                                    0XFF101828))),
+                                                      ]),
                                                 ),
                                                 SizedBox(
                                                     width:
                                                         MediaQuery.of(context)
                                                                 .size
                                                                 .width *
-                                                            0.1),
+                                                            0.025),
                                                 const VerticalDivider(
                                                   color: Colors.grey,
                                                   width: 2.0,
                                                 ),
-                                                const SizedBox(width: 10),
-                                                Image.asset('assets/tick.png',
-                                                    height: 45, width: 45),
-                                                const SizedBox(width: 5),
+                                                SizedBox(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.025),
                                                 Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
                                                   children: [
-                                                    const Text('Total Value',
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            fontSize: 10,
-                                                            color: Color(
-                                                                0XFF667085))),
-                                                    Text(
-                                                        widget.report[
-                                                                'totalMatchedAmount']
-                                                            .toString(),
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 14,
-                                                            color: Color(
-                                                                0XFF101828))),
+                                                    SizedBox(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.1,
+                                                      child: Image.asset(
+                                                          'assets/tick.png'),
+                                                    )
                                                   ],
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          IntrinsicHeight(
-                                            child: Row(
-                                              children: [
-                                                const SizedBox(width: 50),
-                                                Column(
-                                                  children: [
-                                                    const Text(
-                                                        'Total transactions',
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            fontSize: 10,
-                                                            color: Color(
-                                                                0XFF667085))),
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
+                                                ),
+                                                const SizedBox(width: 10),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      const Text('Total Value',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                              fontSize: 10,
+                                                              color: Color(
+                                                                  0XFF667085))),
+                                                      Text(
                                                           widget.report[
-                                                                  'totalCount']
-                                                              .toString(),
-                                                          textAlign:
-                                                              TextAlign.start,
+                                                                      'totalMatchedAmount']
+                                                                  .toString()
+                                                                  .startsWith(
+                                                                      '-')
+                                                              ? '(${(widget.report['totalMatchedAmount']).abs().toString()})'
+                                                              : widget.report[
+                                                                      'totalMatchedAmount']
+                                                                  .toString(),
                                                           style: const TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -629,40 +728,30 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                               fontSize: 14,
                                                               color: Color(
                                                                   0XFF101828))),
-                                                    ),
-                                                  ],
-                                                ),
-                                                SizedBox(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.04),
-                                                const VerticalDivider(
-                                                  color: Colors.grey,
-                                                  width: 2.0,
-                                                ),
-                                                const SizedBox(width: 60),
-                                                Column(
-                                                  children: [
-                                                    const Text('Total matches',
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            fontSize: 10,
-                                                            color: Color(
-                                                                0XFF667085))),
-                                                    Text(
-                                                        widget.report[
-                                                                'totalMatched']
-                                                            .toString(),
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 14,
-                                                            color: Color(
-                                                                0XFF101828))),
-                                                  ],
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      const Text(
+                                                          'Total matches',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                              fontSize: 10,
+                                                              color: Color(
+                                                                  0XFF667085))),
+                                                      Text(
+                                                          widget.report[
+                                                                  'totalMatched']
+                                                              .toString(),
+                                                          style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              fontSize: 14,
+                                                              color: Color(
+                                                                  0XFF101828))),
+                                                    ],
+                                                  ),
                                                 )
                                               ],
                                             ),

@@ -522,9 +522,9 @@ class _HomeScreenState extends State<HomeScreen>
             items: [
               BottomBarItem(
                 icon: Image.asset('assets/nav_bar/expenses-grey.png',
-                    height: 30, width: 30),
+                    height: 25, width: 25),
                 selectedIcon: Image.asset('assets/nav_bar/expenses-yellow.png',
-                    height: 30, width: 30),
+                    height: 25, width: 25),
                 title: Text('Expenses',
                     style: TextStyle(
                         fontSize: 11,
@@ -536,17 +536,20 @@ class _HomeScreenState extends State<HomeScreen>
               BottomBarItem(
                 icon: Padding(
                     padding: EdgeInsets.only(
-                        left: MediaQuery.of(context).size.width * 0.25),
+                        left: MediaQuery.of(context).size.width * 0.225,
+                        right: 0),
                     child: Image.asset('assets/nav_bar/transactions-grey.png',
-                        height: 30, width: 30)),
+                        height: 25, width: 25)),
                 selectedIcon: Padding(
                     padding: EdgeInsets.only(
-                        left: MediaQuery.of(context).size.width * 0.25),
+                        left: MediaQuery.of(context).size.width * 0.225,
+                        right: 0),
                     child: Image.asset('assets/nav_bar/transactions-yellow.png',
-                        height: 30, width: 30)),
+                        height: 25, width: 25)),
                 title: Padding(
                   padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width * 0.225),
+                      left: MediaQuery.of(context).size.width * 0.225,
+                      right: 0),
                   child: FittedBox(
                       child: Text('Transaction',
                           style: TextStyle(
