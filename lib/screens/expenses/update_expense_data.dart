@@ -221,12 +221,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   height: 200,
                                   child: Stack(
                                     children: [
-                                      Expanded(
-                                          child: PhotoView(
+                                      PhotoView(
                                         imageProvider:
                                             CachedNetworkImageProvider(
                                                 widget.imagePath!),
-                                      )),
+                                      ),
                                       Positioned(
                                           top: 50,
                                           left: 10,
@@ -268,13 +267,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                               10,
                                       child: Stack(
                                         children: [
-                                          Expanded(
-                                              child: SfPdfViewer.network(
-                                                  widget.imagePath!,
-                                                  canShowPageLoadingIndicator:
-                                                      false,
-                                                  canShowScrollHead: false,
-                                                  canShowScrollStatus: false)),
+                                          SfPdfViewer.network(widget.imagePath!,
+                                              canShowPageLoadingIndicator:
+                                                  false,
+                                              canShowScrollHead: false,
+                                              canShowScrollStatus: false),
                                           Positioned(
                                               top: 50,
                                               left: 10,
@@ -329,6 +326,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     controller: supplierController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
@@ -371,6 +369,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     keyboardType: TextInputType.none,
                     controller: dateController,
                     decoration: InputDecoration(
@@ -471,6 +470,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     keyboardType: TextInputType.none,
                     controller: currencyController,
                     decoration: InputDecoration(
@@ -527,6 +527,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     controller: refController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
@@ -569,6 +570,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     keyboardType: TextInputType.none,
                     controller: accountController,
                     decoration: InputDecoration(
@@ -738,6 +740,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     controller: totalController,
@@ -800,208 +803,219 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                 fontWeight: FontWeight.w400,
                                 color: Color(0XFF009318))),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          showDialog(
-                              context: navigatorKey.currentContext!,
-                              builder: (context) => AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0)),
-                                    insetPadding: const EdgeInsets.all(10),
-                                    backgroundColor: Colors.white,
-                                    title: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                        color: const Color(0XFFF9FAFB),
+                      if (widget.isProcessed == false) ...[
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                                context: navigatorKey.currentContext!,
+                                builder: (context) => AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0)),
+                                      insetPadding: const EdgeInsets.all(10),
+                                      backgroundColor: Colors.white,
+                                      title: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color(0XFFF9FAFB),
+                                        ),
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.075,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text('  Tax Amount',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color: headingColor)),
+                                        ),
                                       ),
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.075,
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text('  Tax Amount',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: headingColor)),
-                                      ),
-                                    ),
-                                    titlePadding: const EdgeInsets.all(0),
-                                    contentPadding: const EdgeInsets.all(10),
-                                    content: StatefulBuilder(
-                                        builder: (context, setState) =>
-                                            Container(
-                                              color: Colors.white,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.3,
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.95,
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  DropdownButtonHideUnderline(
-                                                      child: DropdownButton2(
-                                                    isExpanded: true,
-                                                    value: selectedTaxRate,
-                                                    items:
-                                                        getTaxRateDropdownItems(),
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        selectedTaxRate = value;
-                                                      });
-                                                    },
-                                                    buttonStyleData:
-                                                        ButtonStyleData(
-                                                      height: 55,
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              left: 14,
-                                                              right: 14),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(14),
-                                                        border: Border.all(
-                                                          strokeAlign: 0,
-                                                          color: Colors.black26,
+                                      titlePadding: const EdgeInsets.all(0),
+                                      contentPadding: const EdgeInsets.all(10),
+                                      content: StatefulBuilder(
+                                          builder: (context, setState) =>
+                                              Container(
+                                                color: Colors.white,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.3,
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.95,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    DropdownButtonHideUnderline(
+                                                        child: DropdownButton2(
+                                                      isExpanded: true,
+                                                      value: selectedTaxRate,
+                                                      items:
+                                                          getTaxRateDropdownItems(),
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          selectedTaxRate =
+                                                              value;
+                                                        });
+                                                      },
+                                                      buttonStyleData:
+                                                          ButtonStyleData(
+                                                        height: 55,
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                left: 14,
+                                                                right: 14),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(14),
+                                                          border: Border.all(
+                                                            strokeAlign: 0,
+                                                            color:
+                                                                Colors.black26,
+                                                          ),
                                                         ),
                                                       ),
+                                                      dropdownStyleData:
+                                                          const DropdownStyleData(
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                      color: Colors
+                                                                          .white)),
+                                                    )),
+                                                    const SizedBox(height: 30),
+                                                    Center(
+                                                      child: ElevatedButton(
+                                                          style: ButtonStyle(
+                                                              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                                                                  RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              12.0))),
+                                                              fixedSize: WidgetStateProperty.all(Size(
+                                                                  MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width,
+                                                                  MediaQuery.of(context)
+                                                                          .size
+                                                                          .height *
+                                                                      0.06)),
+                                                              backgroundColor:
+                                                                  WidgetStateProperty.all(
+                                                                      const Color(0XFF009318))),
+                                                          onPressed: () async {
+                                                            setState(() {
+                                                              showSpinner =
+                                                                  true;
+                                                            });
+                                                            // call updateInvoice API with new tax data
+                                                            updatedExpense[
+                                                                        'invoiceLines']
+                                                                    [
+                                                                    0]['taxId'] =
+                                                                selectedTaxRate?[
+                                                                    'id'];
+                                                            double totalAmount = updatedExpense[
+                                                                    'subTotal'] +
+                                                                updatedExpense[
+                                                                        'subTotal'] *
+                                                                    selectedTaxRate?[
+                                                                        'rate'] /
+                                                                    100;
+                                                            double totalTax =
+                                                                updatedExpense[
+                                                                        'subTotal'] *
+                                                                    selectedTaxRate?[
+                                                                        'rate'] /
+                                                                    100;
+                                                            updatedExpense['invoiceLines']
+                                                                        [0][
+                                                                    'totalTax'] =
+                                                                totalTax;
+                                                            updatedExpense[
+                                                                    'amountDue'] =
+                                                                totalAmount;
+                                                            final resp =
+                                                                await ApiService
+                                                                    .updateExpense(
+                                                                        updatedExpense);
+                                                            setState(() {
+                                                              showSpinner =
+                                                                  false;
+                                                            });
+                                                            Navigator.pop(
+                                                                context);
+                                                            if (resp
+                                                                .isNotEmpty) {
+                                                              ScaffoldMessenger.of(
+                                                                      navigatorKey
+                                                                          .currentContext!)
+                                                                  .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('Updated successfully.')));
+                                                            } else {
+                                                              ScaffoldMessenger.of(
+                                                                      navigatorKey
+                                                                          .currentContext!)
+                                                                  .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('Failed to update.')));
+                                                            }
+                                                          },
+                                                          child: const Text(
+                                                            'Save',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                fontSize: 14,
+                                                                color: Colors
+                                                                    .white),
+                                                          )),
                                                     ),
-                                                    dropdownStyleData:
-                                                        const DropdownStyleData(
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                    color: Colors
-                                                                        .white)),
-                                                  )),
-                                                  const SizedBox(height: 30),
-                                                  Center(
-                                                    child: ElevatedButton(
-                                                        style: ButtonStyle(
-                                                            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                                                                RoundedRectangleBorder(
-                                                                    borderRadius: BorderRadius.circular(
-                                                                        12.0))),
-                                                            fixedSize: WidgetStateProperty.all(Size(
-                                                                MediaQuery.of(
-                                                                        context)
-                                                                    .size
-                                                                    .width,
-                                                                MediaQuery.of(context)
-                                                                        .size
-                                                                        .height *
-                                                                    0.06)),
-                                                            backgroundColor:
-                                                                WidgetStateProperty.all(
-                                                                    const Color(0XFF009318))),
+                                                    TextButton(
                                                         onPressed: () async {
-                                                          setState(() {
-                                                            showSpinner = true;
-                                                          });
-                                                          // call updateInvoice API with new tax data
-                                                          updatedExpense[
-                                                                      'invoiceLines']
-                                                                  [0]['taxId'] =
-                                                              selectedTaxRate?[
-                                                                  'id'];
-                                                          double totalAmount = updatedExpense[
-                                                                  'subTotal'] +
-                                                              updatedExpense[
-                                                                      'subTotal'] *
-                                                                  selectedTaxRate?[
-                                                                      'rate'] /
-                                                                  100;
-                                                          double totalTax =
-                                                              updatedExpense[
-                                                                      'subTotal'] *
-                                                                  selectedTaxRate?[
-                                                                      'rate'] /
-                                                                  100;
-                                                          updatedExpense[
-                                                                      'invoiceLines']
-                                                                  [
-                                                                  0]['totalTax'] =
-                                                              totalTax;
-                                                          updatedExpense[
-                                                                  'amountDue'] =
-                                                              totalAmount;
-                                                          final resp =
-                                                              await ApiService
-                                                                  .updateExpense(
-                                                                      updatedExpense);
-                                                          setState(() {
-                                                            showSpinner = false;
-                                                          });
-                                                          Navigator.pop(
-                                                              context);
-                                                          if (resp.isNotEmpty) {
-                                                            ScaffoldMessenger.of(
-                                                                    navigatorKey
-                                                                        .currentContext!)
-                                                                .showSnackBar(
-                                                                    const SnackBar(
-                                                                        content:
-                                                                            Text('Updated successfully.')));
-                                                          } else {
-                                                            ScaffoldMessenger.of(
-                                                                    navigatorKey
-                                                                        .currentContext!)
-                                                                .showSnackBar(
-                                                                    const SnackBar(
-                                                                        content:
-                                                                            Text('Failed to update.')));
-                                                          }
+                                                          Navigator.pop(navigatorKey
+                                                              .currentContext!);
                                                         },
                                                         child: const Text(
-                                                          'Save',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              fontSize: 14,
-                                                              color:
-                                                                  Colors.white),
-                                                        )),
-                                                  ),
-                                                  TextButton(
-                                                      onPressed: () async {
-                                                        Navigator.pop(navigatorKey
-                                                            .currentContext!);
-                                                      },
-                                                      child: const Text(
-                                                          'Discard',
-                                                          style: TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color: Color(
-                                                                  0XFFFF4E4E))))
-                                                ],
-                                              ),
-                                            )),
-                                  ));
-                        },
-                        child: const Chip(
-                            shape: CircleBorder(
-                                side: BorderSide(
-                              color: Color(0XFF009318),
-                            )),
-                            backgroundColor: Color(0XFFF2FFF5),
-                            label: Icon(
-                              Icons.edit_outlined,
-                              color: Color(0XFF009318),
-                              size: 22,
-                            )),
-                      )
+                                                            'Discard',
+                                                            style: TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Color(
+                                                                    0XFFFF4E4E))))
+                                                  ],
+                                                ),
+                                              )),
+                                    ));
+                          },
+                          child: const Chip(
+                              shape: CircleBorder(
+                                  side: BorderSide(
+                                color: Color(0XFF009318),
+                              )),
+                              backgroundColor: Color(0XFFF2FFF5),
+                              label: Icon(
+                                Icons.edit_outlined,
+                                color: Color(0XFF009318),
+                                size: 22,
+                              )),
+                        )
+                      ]
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -1012,6 +1026,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           color: headingColor)),
                   const SizedBox(height: 10),
                   TextField(
+                    enabled: !widget.isProcessed!,
                     textInputAction: TextInputAction.done,
                     controller: descriptionController,
                     decoration: InputDecoration(
@@ -1057,48 +1072,56 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           fontWeight: FontWeight.w500,
                           color: headingColor)),
                   const SizedBox(height: 10),
-                  DropdownButtonHideUnderline(
-                      child: DropdownButton2(
-                    isExpanded: true,
-                    value: selectedCard,
-                    items: getBankDetailsDropdownItems(),
-                    onChanged: (value) async {
-                      setState(() {
-                        selectedCard = value;
-                        showSpinner = true;
-                      });
-                      // call updateInvoice API with new tax data
-                      updatedExpense['paymentAccountNumber'] =
-                          selectedCard?['accountID'];
-                      final resp =
-                          await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
-                      if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                      } else {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
-                      }
-                    },
-                    buttonStyleData: ButtonStyleData(
-                      height: 55,
-                      padding: const EdgeInsets.only(left: 14, right: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          strokeAlign: 0,
-                          color: Colors.black26,
+                  if (widget.isProcessed == false) ...[
+                    DropdownButtonHideUnderline(
+                        child: DropdownButton2(
+                      isExpanded: true,
+                      value: selectedCard,
+                      items: getBankDetailsDropdownItems(),
+                      onChanged: (value) async {
+                        setState(() {
+                          selectedCard = value;
+                          showSpinner = true;
+                        });
+                        // call updateInvoice API with new tax data
+                        updatedExpense['paymentAccountNumber'] =
+                            selectedCard?['accountID'];
+                        final resp =
+                            await ApiService.updateExpense(updatedExpense);
+                        setState(() {
+                          showSpinner = false;
+                        });
+                        if (resp.isNotEmpty) {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Updated successfully.')));
+                        } else {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Failed to update.')));
+                        }
+                      },
+                      buttonStyleData: ButtonStyleData(
+                        height: 55,
+                        padding: const EdgeInsets.only(left: 14, right: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            strokeAlign: 0,
+                            color: Colors.black26,
+                          ),
                         ),
                       ),
-                    ),
-                    dropdownStyleData: const DropdownStyleData(
-                        decoration: BoxDecoration(color: Colors.white)),
-                  )),
+                      dropdownStyleData: const DropdownStyleData(
+                          decoration: BoxDecoration(color: Colors.white)),
+                    ))
+                  ] else ...[
+                    Text(selectedCard?['name'] ?? '',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: headingColor)),
+                  ],
                   const SizedBox(height: 15),
                   if (widget.isProcessed == false) ...[
                     Center(

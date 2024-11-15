@@ -423,17 +423,17 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
       child: Container(
         height: 100,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
         child: Row(
           children: [
             SizedBox(
-              width: MediaQuery.of(context).size.width * 0.2,
+              width: MediaQuery.of(context).size.width * 0.175,
               child: matchData['invoice_path'] != null
                   ? SizedBox(
                       height: 75, width: 75, child: getInvoiceWidget(matchData))
                   : appLoader,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +443,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.4,
+                      width: MediaQuery.of(context).size.width * 0.375,
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: matchData['supplierName'] != null
@@ -455,10 +455,11 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                     fontWeight: FontWeight.w600,
                                     color: Color(0XFF344054)))
                             : SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.3),
+                                width:
+                                    MediaQuery.of(context).size.width * 0.375),
                       ),
                     ),
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+                    SizedBox(width: MediaQuery.of(context).size.width * 0.05),
                     Align(
                       alignment: Alignment.topRight,
                       child: Text(
@@ -475,8 +476,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                 if (matchData['date'] != null) ...[
                   Align(
                     alignment: Alignment.topLeft,
-                    child: Text(
-                        'Due: ${DateFormat('d MMM, y').format(DateTime.parse(matchData['date'])).toString()}'),
+                    child: Text(DateFormat('d MMM, y')
+                        .format(DateTime.parse(matchData['date']))
+                        .toString()),
                   )
                 ],
                 if (matchData['accountName'] != null) ...[
@@ -493,7 +495,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                       color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
                       labelStyle: const TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           color: Color(0XFF667085)),
                     ),
                   )
@@ -964,7 +966,13 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                   alignment:
                                                       Alignment.centerLeft,
                                                   child: Text(
-                                                      'Due: ${DateFormat('d MMM, y').format(DateTime.parse(filteredTransactions[index - 1]['relatedDate'])).toString()}',
+                                                      DateFormat('d MMM, y')
+                                                          .format(DateTime.parse(
+                                                              filteredTransactions[
+                                                                      index - 1]
+                                                                  [
+                                                                  'relatedDate']))
+                                                          .toString(),
                                                       style: const TextStyle(
                                                           fontWeight:
                                                               FontWeight.w400,
@@ -1402,13 +1410,13 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                               RoundedRectangleBorder(
                                                                   borderRadius:
                                                                       BorderRadius.circular(
-                                                                          12.0))),
-                                                          fixedSize: WidgetStateProperty.all(Size(
-                                                              double.maxFinite,
-                                                              MediaQuery.of(context)
-                                                                      .size
-                                                                      .height *
-                                                                  0.06)),
+                                                                          8.0))),
+                                                          fixedSize:
+                                                              WidgetStateProperty
+                                                                  .all(const Size(
+                                                                      double
+                                                                          .maxFinite,
+                                                                      48)),
                                                           backgroundColor:
                                                               WidgetStateProperty.all(
                                                                   clickableColor)),
@@ -1445,7 +1453,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                         'Match',
                                                         style: TextStyle(
                                                             color: Colors.white,
-                                                            fontSize: 18),
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 14),
                                                       ),
                                                     ),
                                                   ],

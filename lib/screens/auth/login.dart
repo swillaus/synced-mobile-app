@@ -235,6 +235,7 @@ class _LoginPageState extends State<LoginPage> {
                       return;
                     }
                     await _db.deleteUsers();
+                    User.userId = resp['data']['user']['userId'];
                     User.email = _emailController.text;
                     User.password = _passwordController.text;
                     User.name = resp['data']['user']['name'];

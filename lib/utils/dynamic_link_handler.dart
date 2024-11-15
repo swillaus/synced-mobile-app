@@ -42,6 +42,7 @@ final class DynamicLinkHandler {
       print(json.decode(queryParams['data']!));
       final DatabaseHelper _db = DatabaseHelper();
       await _db.deleteUsers();
+      User.userId = json.decode(queryParams['data']!)['Data']['user']['userId'];
       User.email = json.decode(queryParams['data']!)['Data']['user']['Email'];
       User.name = json.decode(queryParams['data']!)['Data']['user']['Name'];
       User.authToken =
