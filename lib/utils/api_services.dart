@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -189,7 +191,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> uploadInvoice(
-      String invoicePath, orgId, notes) async {
+      String invoicePath, orgId, notes, onUploadProgress) async {
     var headers = {
       'Accept': 'application/json, text/plain, */*',
       'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -201,27 +203,30 @@ class ApiService {
     final mimeTypeData =
         lookupMimeType(invoicePath, headerBytes: [0xFF, 0xD8])?.split('/');
 
-    var request = http.MultipartRequest(
-        'POST',
-        Uri.parse(
-            '$hostUrl/api/Invoices/uploadInvoiceByMobileUpload?notes=$notes'));
-    request.fields.addAll({
+    FormData formData = FormData.fromMap({
+      "invoice": await MultipartFile.fromFile(invoicePath,
+          contentType: MediaType(mimeTypeData![0], mimeTypeData[1])),
       'organisationId': orgId,
       'recordId': '',
       'isBankTransMode': 'false',
     });
-    request.files.add(await http.MultipartFile.fromPath('invoice', invoicePath,
-        contentType: MediaType(mimeTypeData![0], mimeTypeData[1])));
-    request.headers.addAll(headers);
 
-    http.StreamedResponse response = await request.send();
+    final dio = Dio();
+
+    Response response = await dio.request(
+      '$hostUrl/api/Invoices/uploadInvoiceByMobileUpload?notes=$notes',
+      data: formData,
+      options: Options(method: 'POST', headers: headers),
+      onSendProgress: (int sent, int total) {
+        onUploadProgress(sent, total);
+      },
+    );
 
     if (response.statusCode == 200) {
-      var res = await response.stream.bytesToString();
-      var jsonRes = jsonDecode(res);
-      return jsonRes;
+      return response.data;
     } else {
-      print('Upload invoice API - ${response.reasonPhrase}');
+      print(
+          'Upload invoice API - ${response.statusCode} ${response.statusMessage}');
       return {};
     }
   }

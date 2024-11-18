@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -278,7 +277,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                                 child: Center(
                                   child: LinearProgressIndicator(
                                       minHeight: 6,
-                                      value: Random().nextDouble(),
+                                      value: uploadingData['uploadProgress'],
                                       valueColor: AlwaysStoppedAnimation(
                                           clickableColor)),
                                 ),

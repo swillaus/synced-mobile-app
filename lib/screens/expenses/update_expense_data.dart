@@ -198,7 +198,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         backgroundColor: const Color(0XFFECECEC),
         leading: IconButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.push(
+                  navigatorKey.currentContext!,
+                  MaterialPageRoute(
+                      builder: (context) => const HomeScreen(tabIndex: 0)));
             },
             icon: const Icon(Icons.arrow_back_ios)),
         title: const SizedBox(height: 10),
@@ -1228,22 +1231,12 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   return StatefulBuilder(
                                       builder: (context, setState) =>
                                           AlertDialog(
-                                            content: Container(
-                                              color: Colors.white,
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                      'Are you sure you want to delete the invoice?',
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 14,
-                                                          color: headingColor))
-                                                ],
-                                              ),
-                                            ),
+                                            title: Text(
+                                                'Are you sure you want to delete the invoice?',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14,
+                                                    color: headingColor)),
                                             actions: [
                                               TextButton(
                                                   onPressed: () async {
@@ -1265,6 +1258,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                               builder: (context) =>
                                                                   const HomeScreen(
                                                                       tabIndex:
+                                                                          0,
+                                                                      navbarIndex:
                                                                           0)));
                                                     } else {
                                                       ScaffoldMessenger.of(

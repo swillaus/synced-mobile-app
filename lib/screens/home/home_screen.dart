@@ -21,7 +21,7 @@ import 'package:synced/utils/database_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 bool showUploadingInvoice = false;
-Map uploadingData = {};
+Map<String, dynamic> uploadingData = {};
 bool showSpinner = false;
 List reviewExpenses = [];
 List processedExpenses = [];
@@ -36,13 +36,10 @@ final Debouncer processedDebouncer = Debouncer();
 int selectedNavBarIndex = 0;
 String fileSize = '';
 List<String>? imagesPath = [];
-const pageSize = 15;
 final PagingController reviewPagingController =
     PagingController(firstPageKey: 1);
 final PagingController processedPagingController =
     PagingController(firstPageKey: 1);
-int reviewPageKey = 1;
-int processedPageKey = 1;
 
 class HomeScreen extends StatefulWidget {
   final int tabIndex;
@@ -59,6 +56,9 @@ class _HomeScreenState extends State<HomeScreen>
   late TabController tabController;
   final RefreshController refreshController =
       RefreshController(initialRefresh: false);
+  final pageSize = 15;
+  int reviewPageKey = 1;
+  int processedPageKey = 1;
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -69,15 +69,25 @@ class _HomeScreenState extends State<HomeScreen>
     return '${(bytes / pow(1024, i)).toStringAsFixed(decimals)} ${suffixes[i]}';
   }
 
+  uploadCallback(byteCount, totalByteLength) {
+    setState(() {
+      uploadingData['uploadProgress'] = byteCount / totalByteLength;
+    });
+  }
+
   _onPressed() {
     Navigator.pop(navigatorKey.currentContext!);
     setState(() {
       showUploadingInvoice = true;
-      uploadingData = {'path': imagesPath!.first, 'size': fileSize};
+      uploadingData = {
+        'path': imagesPath!.first,
+        'size': fileSize,
+        'uploadProgress': 0.0
+      };
       selectedNavBarIndex = 0;
     });
-    ApiService.uploadInvoice(
-            imagesPath!.first, selectedOrgId, notesController.text)
+    ApiService.uploadInvoice(imagesPath!.first, selectedOrgId,
+            notesController.text, uploadCallback)
         .then((uploadResp) {
       setState(() {
         showUploadingInvoice = false;
@@ -95,7 +105,10 @@ class _HomeScreenState extends State<HomeScreen>
             navigatorKey.currentContext!,
             MaterialPageRoute(
                 builder: (context) => UpdateExpenseData(
-                    expense: uploadResp, imagePath: imagesPath!.first)));
+                    expense: uploadResp,
+                    imagePath:
+                        'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
+                    isProcessed: false)));
       }
     });
   }
@@ -210,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       selectedNavBarIndex = 0;
                                     });
                                     ApiService.uploadInvoice(imagesPath!.first,
-                                            selectedOrgId, '')
+                                            selectedOrgId, '', uploadCallback)
                                         .then((uploadResp) {
                                       showUploadingInvoice = false;
                                       uploadingData = {};
@@ -222,8 +235,15 @@ class _HomeScreenState extends State<HomeScreen>
                                                     'We were unable to process the image, please try again.')));
                                         return;
                                       } else {
-                                        getUnprocessedExpenses(1, '');
-                                        getProcessedExpenses(1, '');
+                                        Navigator.push(
+                                            navigatorKey.currentContext!,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    UpdateExpenseData(
+                                                        expense: uploadResp,
+                                                        imagePath:
+                                                            'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
+                                                        isProcessed: false)));
                                       }
                                     });
                                   },
