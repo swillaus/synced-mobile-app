@@ -36,10 +36,6 @@ final Debouncer processedDebouncer = Debouncer();
 int selectedNavBarIndex = 0;
 String fileSize = '';
 List<String>? imagesPath = [];
-final PagingController reviewPagingController =
-    PagingController(firstPageKey: 1);
-final PagingController processedPagingController =
-    PagingController(firstPageKey: 1);
 
 class HomeScreen extends StatefulWidget {
   final int tabIndex;
@@ -59,6 +55,10 @@ class _HomeScreenState extends State<HomeScreen>
   final pageSize = 15;
   int reviewPageKey = 1;
   int processedPageKey = 1;
+  final PagingController reviewPagingController =
+      PagingController(firstPageKey: 1);
+  final PagingController processedPagingController =
+      PagingController(firstPageKey: 1);
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -436,38 +436,45 @@ class _HomeScreenState extends State<HomeScreen>
           backgroundColor: Colors.white,
           centerTitle: true,
           title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.max,
             children: [
-              SizedBox(width: MediaQuery.of(context).size.width * 0.15),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.1),
               Center(
-                child: DropdownButtonHideUnderline(
-                    child: DropdownButton2(
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black),
-                        dropdownStyleData: const DropdownStyleData(
-                            elevation: 1,
-                            decoration: BoxDecoration(color: Colors.white)),
-                        menuItemStyleData: const MenuItemStyleData(
-                            overlayColor: WidgetStatePropertyAll(Colors.white)),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOrgId = value!;
-                          });
-                          ApiService.getDefaultCurrency(selectedOrgId)
-                              .then((resp) {
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  child: DropdownButtonHideUnderline(
+                      child: DropdownButtonFormField2(
+                          decoration: const InputDecoration(
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none)),
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black),
+                          dropdownStyleData: const DropdownStyleData(
+                              elevation: 1,
+                              decoration: BoxDecoration(color: Colors.white)),
+                          menuItemStyleData: const MenuItemStyleData(
+                              overlayColor:
+                                  WidgetStatePropertyAll(Colors.white)),
+                          onChanged: (value) {
                             setState(() {
-                              defaultCurrency = resp['currency'] ?? 'USD';
+                              selectedOrgId = value!;
                             });
-                          });
-                          getUnprocessedExpenses(1, '');
-                          getProcessedExpenses(1, '');
-                        },
-                        items: getDropdownEntries(),
-                        value: selectedOrgId)),
+                            ApiService.getDefaultCurrency(selectedOrgId)
+                                .then((resp) {
+                              setState(() {
+                                defaultCurrency = resp['currency'] ?? 'USD';
+                              });
+                            });
+                            getUnprocessedExpenses(1, '');
+                            getProcessedExpenses(1, '');
+                          },
+                          items: getDropdownEntries(),
+                          value: selectedOrgId)),
+                ),
               ),
-              SizedBox(width: MediaQuery.of(context).size.width * 0.04),
               Align(
                 alignment: Alignment.centerRight,
                 child: PopupMenuButton<int>(
@@ -624,7 +631,10 @@ class _HomeScreenState extends State<HomeScreen>
                 processedPagingController.refresh();
               },
               onLoading: getOrganisations,
-              child: ExpensesTabScreen(tabController: tabController),
+              child: ExpensesTabScreen(
+                  tabController: tabController,
+                  reviewPagingController: reviewPagingController,
+                  processedPagingController: processedPagingController),
             ),
             const TransactionsTabScreen()
           ],

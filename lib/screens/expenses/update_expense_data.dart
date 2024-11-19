@@ -6,6 +6,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:synced/main.dart';
@@ -37,6 +38,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   TextEditingController dateController = TextEditingController();
   TextEditingController accountController = TextEditingController();
   TextEditingController accountSearchController = TextEditingController();
+  FocusNode keyboardFocusNode = FocusNode();
   Map updatedExpense = {};
   DateTime? selectedDate;
   String? selectedCurrency;
@@ -742,50 +744,91 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           fontWeight: FontWeight.w500,
                           color: headingColor)),
                   const SizedBox(height: 10),
-                  TextField(
-                    enabled: !widget.isProcessed!,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    controller: totalController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      filled: true,
-                      fillColor: Colors.white,
+                  KeyboardActions(
+                    bottomAvoiderScrollPhysics:
+                        const NeverScrollableScrollPhysics(),
+                    disableScroll: true,
+                    config: KeyboardActionsConfig(
+                      nextFocus: false,
+                      keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+                      keyboardBarColor:
+                          const Color(0xFFCAD1D9), //Apple keyboard color
+                      actions: [
+                        KeyboardActionsItem(
+                          focusNode: keyboardFocusNode,
+                          toolbarButtons: [
+                            (node) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  node.unfocus();
+                                  setState(() {
+                                    showSpinner = true;
+                                  });
+                                  // call updateInvoice API with new tax data
+                                  updatedExpense['invoiceLines'][0]
+                                          ['subTotal'] =
+                                      double.parse(totalController.text);
+                                  updatedExpense['subTotal'] =
+                                      double.parse(totalController.text);
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  final resp = await ApiService.updateExpense(
+                                      updatedExpense);
+                                  setState(() {
+                                    showSpinner = false;
+                                  });
+                                  if (resp.isNotEmpty) {
+                                    ScaffoldMessenger.of(
+                                            navigatorKey.currentContext!)
+                                        .showSnackBar(const SnackBar(
+                                            content:
+                                                Text('Updated successfully.')));
+                                  } else {
+                                    ScaffoldMessenger.of(
+                                            navigatorKey.currentContext!)
+                                        .showSnackBar(const SnackBar(
+                                            content:
+                                                Text('Failed to update.')));
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: const Text(
+                                    'Done',
+                                    style: TextStyle(
+                                      color:
+                                          Color(0xFF0978ED), //Done button color
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          ],
+                        ),
+                      ],
                     ),
-                    onEditingComplete: () async {
-                      setState(() {
-                        showSpinner = true;
-                      });
-                      // call updateInvoice API with new tax data
-                      updatedExpense['invoiceLines'][0]['subTotal'] =
-                          double.parse(totalController.text);
-                      updatedExpense['subTotal'] =
-                          double.parse(totalController.text);
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      final resp =
-                          await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
-                      if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                      } else {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
-                      }
-                    },
-                    maxLines: 1,
+                    child: TextField(
+                      focusNode: keyboardFocusNode,
+                      enabled: !widget.isProcessed!,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
+                      controller: totalController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      maxLines: 1,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(

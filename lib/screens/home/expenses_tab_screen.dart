@@ -12,7 +12,12 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ExpensesTabScreen extends StatefulWidget {
   final TabController tabController;
-  const ExpensesTabScreen({super.key, required this.tabController});
+  final PagingController reviewPagingController, processedPagingController;
+  const ExpensesTabScreen(
+      {super.key,
+      required this.tabController,
+      required this.reviewPagingController,
+      required this.processedPagingController});
 
   @override
   State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
@@ -205,7 +210,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                             setState(() {
                               reviewSearchTerm = value;
                             });
-                            reviewPagingController.refresh();
+                            widget.reviewPagingController.refresh();
                           });
                     },
                     controller: reviewSearchController,
@@ -295,7 +300,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                   flex: showUploadingInvoice ? 5 : 8,
                   child: PagedListView(
                       shrinkWrap: true,
-                      pagingController: reviewPagingController,
+                      pagingController: widget.reviewPagingController,
                       builderDelegate: PagedChildBuilderDelegate(
                           itemBuilder: (context, item, index) {
                         bool isSameDate = true;
@@ -418,7 +423,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                           setState(() {
                             processedSearchTerm = value;
                           });
-                          processedPagingController.refresh();
+                          widget.processedPagingController.refresh();
                         });
                   },
                   controller: processedSearchController,
@@ -428,7 +433,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
               Expanded(
                   child: PagedListView(
                       shrinkWrap: true,
-                      pagingController: processedPagingController,
+                      pagingController: widget.processedPagingController,
                       builderDelegate: PagedChildBuilderDelegate(
                           itemBuilder: (context, item, index) {
                         bool isSameDate = true;
