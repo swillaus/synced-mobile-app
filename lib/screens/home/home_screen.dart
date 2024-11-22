@@ -4,12 +4,10 @@ import 'dart:math';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:synced/main.dart';
 import 'package:synced/screens/auth/login.dart';
 import 'package:synced/screens/expenses/update_expense_data.dart';
@@ -22,20 +20,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 bool showUploadingInvoice = false;
 Map<String, dynamic> uploadingData = {};
-bool showSpinner = false;
-List reviewExpenses = [];
-List processedExpenses = [];
-TextEditingController notesController = TextEditingController();
 TextEditingController reviewSearchController = TextEditingController();
 TextEditingController processedSearchController = TextEditingController();
 String reviewSearchTerm = '';
 String processedSearchTerm = '';
-final PageController _controller = PageController();
-final Debouncer reviewDebouncer = Debouncer();
-final Debouncer processedDebouncer = Debouncer();
-int selectedNavBarIndex = 0;
-String fileSize = '';
-List<String>? imagesPath = [];
 
 class HomeScreen extends StatefulWidget {
   final int tabIndex;
@@ -49,16 +37,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   List organisations = [];
-  late TabController tabController;
+  List reviewExpenses = [];
+  List processedExpenses = [];
   final RefreshController refreshController =
       RefreshController(initialRefresh: false);
   final pageSize = 15;
-  int reviewPageKey = 1;
-  int processedPageKey = 1;
-  final PagingController reviewPagingController =
+  PagingController reviewPagingController = PagingController(firstPageKey: 1);
+  PagingController processedPagingController =
       PagingController(firstPageKey: 1);
-  final PagingController processedPagingController =
-      PagingController(firstPageKey: 1);
+  List<String>? imagesPath = [];
+  int selectedNavBarIndex = 0;
+  String fileSize = '';
+  bool showSpinner = false;
+  TextEditingController notesController = TextEditingController();
+  late TabController tabController;
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -125,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen>
             content: Text(
                 'You have scanned ${imagesPath?.length} pages, only the first page will be saved')));
       }
-      if (imagesPath!.isNotEmpty) {
+      if (imagesPath?.isNotEmpty ?? false) {
         fileSize = await getFileSize(imagesPath!.first, 1);
         showDialog(
             barrierDismissible: false,
@@ -257,12 +249,6 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     )));
-      } else if (imagesPath!.isEmpty) {
-        Navigator.pushAndRemoveUntil(
-            navigatorKey.currentContext!,
-            MaterialPageRoute(
-                builder: (context) => const HomeScreen(tabIndex: 0)),
-            (Route<dynamic> route) => false);
       }
     } else if (await Permission.camera.isPermanentlyDenied) {
       openAppSettings();
@@ -273,7 +259,11 @@ class _HomeScreenState extends State<HomeScreen>
     List<DropdownMenuItem> entries = [];
     for (var org in organisations) {
       entries.add(DropdownMenuItem(
-          value: org['organisationID'], child: Text(org['organisationName'])));
+          value: org['organisationID'],
+          child: Text(
+            org['organisationName'],
+            overflow: TextOverflow.ellipsis,
+          )));
     }
     return entries;
   }
@@ -281,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen>
   getUnprocessedExpenses(page, searchTerm) async {
     if (page == 1) {
       reviewExpenses.clear();
-      reviewPageKey = 1;
+      reviewPagingController.refresh();
     }
     final resp = await ApiService.getExpenses(
         false, selectedOrgId, searchTerm, page, pageSize);
@@ -318,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen>
   getProcessedExpenses(page, searchTerm) async {
     if (page == 1) {
       processedExpenses.clear();
-      processedPageKey = 1;
+      processedPagingController.refresh();
     }
     final resp = await ApiService.getExpenses(
         true, selectedOrgId, searchTerm, page, pageSize);
@@ -355,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void initState() {
+    super.initState();
     tabController = TabController(length: 2, vsync: this);
     tabController.addListener(() {
       setState(() {});
@@ -362,14 +353,11 @@ class _HomeScreenState extends State<HomeScreen>
     tabController.index = widget.tabIndex;
     selectedNavBarIndex = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
-      reviewPageKey = pageKey;
       getUnprocessedExpenses(pageKey, reviewSearchTerm);
     });
     processedPagingController.addPageRequestListener((pageKey) {
-      processedPageKey = pageKey;
       getProcessedExpenses(pageKey, processedSearchTerm);
     });
-    super.initState();
     getOrganisations();
   }
 
@@ -386,18 +374,15 @@ class _HomeScreenState extends State<HomeScreen>
       }
     }
     if (selectedOrgId.isNotEmpty) {
-      ApiService.getDefaultCurrency(selectedOrgId).then((resp) {
-        setState(() {
-          defaultCurrency = resp['currency'] ?? 'USD';
-        });
+      final resp = await ApiService.getDefaultCurrency(selectedOrgId);
+      setState(() {
+        defaultCurrency = resp['currency'] ?? 'USD';
       });
-      getUnprocessedExpenses(1, '');
-      getProcessedExpenses(1, '');
+      await getUnprocessedExpenses(1, '');
+      await getProcessedExpenses(1, '');
     } else {
       setState(() {
         showSpinner = false;
-        reviewPageKey = 1;
-        processedPageKey = 1;
         reviewPagingController.nextPageKey = 1;
         processedPagingController.nextPageKey = 1;
       });
@@ -416,6 +401,8 @@ class _HomeScreenState extends State<HomeScreen>
     });
     tabController.dispose();
     refreshController.dispose();
+    reviewPagingController.dispose();
+    processedPagingController.dispose();
     super.dispose();
   }
 
@@ -427,219 +414,209 @@ class _HomeScreenState extends State<HomeScreen>
       color: Colors.white,
       progressIndicator: appLoader,
       child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: true,
-        backgroundColor: const Color(0xfffbfbfb),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          surfaceTintColor: Colors.transparent,
-          backgroundColor: Colors.white,
-          centerTitle: true,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              SizedBox(width: MediaQuery.of(context).size.width * 0.1),
-              Center(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.7,
-                  child: DropdownButtonHideUnderline(
-                      child: DropdownButtonFormField2(
-                          decoration: const InputDecoration(
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none)),
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black),
-                          dropdownStyleData: const DropdownStyleData(
-                              elevation: 1,
-                              decoration: BoxDecoration(color: Colors.white)),
-                          menuItemStyleData: const MenuItemStyleData(
-                              overlayColor:
-                                  WidgetStatePropertyAll(Colors.white)),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedOrgId = value!;
-                            });
-                            ApiService.getDefaultCurrency(selectedOrgId)
-                                .then((resp) {
+          extendBody: true,
+          resizeToAvoidBottomInset: true,
+          backgroundColor: const Color(0xfffbfbfb),
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: Colors.white,
+            centerTitle: true,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                SizedBox(width: MediaQuery.of(context).size.width * 0.1),
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    child: DropdownButtonHideUnderline(
+                        child: DropdownButtonFormField2(
+                            decoration: const InputDecoration(
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none)),
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black),
+                            dropdownStyleData: const DropdownStyleData(
+                                elevation: 1,
+                                decoration: BoxDecoration(color: Colors.white)),
+                            menuItemStyleData: const MenuItemStyleData(
+                                overlayColor:
+                                    WidgetStatePropertyAll(Colors.white)),
+                            onChanged: (value) async {
+                              setState(() {
+                                showSpinner = true;
+                                selectedOrgId = value!;
+                              });
+                              final resp = await ApiService.getDefaultCurrency(
+                                  selectedOrgId);
                               setState(() {
                                 defaultCurrency = resp['currency'] ?? 'USD';
                               });
-                            });
-                            getUnprocessedExpenses(1, '');
-                            getProcessedExpenses(1, '');
-                          },
-                          items: getDropdownEntries(),
-                          value: selectedOrgId)),
+                              await getUnprocessedExpenses(1, '');
+                              await getProcessedExpenses(1, '');
+                            },
+                            items: getDropdownEntries(),
+                            value: selectedOrgId)),
+                  ),
                 ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: PopupMenuButton<int>(
-                  color: Colors.white,
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (item) async {
-                    switch (item) {
-                      case 0:
-                        if (!await launchUrl(
-                            Uri.parse('https://help.syncedhq.com/en/'))) {
-                          throw Exception('Could not launch help center');
-                        }
-                        break;
-                      case 1:
-                        final DatabaseHelper _db = DatabaseHelper();
-                        await _db.deleteUsers();
-                        selectedOrgId = '';
-                        Navigator.pushReplacement(
-                            navigatorKey.currentContext!,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()));
-                        break;
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: PopupMenuButton<int>(
+                    color: Colors.white,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (item) async {
+                      switch (item) {
+                        case 0:
+                          if (!await launchUrl(
+                              Uri.parse('https://help.syncedhq.com/en/'))) {
+                            throw Exception('Could not launch help center');
+                          }
+                          break;
+                        case 1:
+                          final DatabaseHelper _db = DatabaseHelper();
+                          await _db.deleteUsers();
+                          selectedOrgId = '';
+                          Navigator.pushReplacement(
+                              navigatorKey.currentContext!,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()));
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<int>(
+                          value: 0,
+                          child: Row(
+                            children: [
+                              Icon(Icons.business_center_outlined),
+                              SizedBox(width: 10),
+                              Text('Help Center')
+                            ],
+                          )),
+                      const PopupMenuItem<int>(
+                          value: 1,
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout),
+                              SizedBox(width: 10),
+                              Text('Logout')
+                            ],
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            bottom: selectedNavBarIndex == 0
+                ? TabBar(
+                    indicatorColor: clickableColor,
+                    labelColor: clickableColor,
+                    unselectedLabelColor: textColor,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    tabs: const [
+                      Tab(
+                        text: 'For Review',
+                      ),
+                      Tab(
+                        text: 'Processed',
+                      ),
+                    ],
+                    controller: tabController)
+                : null,
+          ),
+          bottomNavigationBar: Container(
+            padding: EdgeInsets.zero,
+            margin: EdgeInsets.zero,
+            decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
+            child: BottomNavigationBar(
+              items: [
+                BottomNavigationBarItem(
+                    icon: Image.asset('assets/nav_bar/expenses-grey.png',
+                        height: 25, width: 25),
+                    activeIcon: Image.asset(
+                        'assets/nav_bar/expenses-yellow.png',
+                        height: 25,
+                        width: 25),
+                    label: 'Expenses'),
+                BottomNavigationBarItem(
+                    icon: Image.asset('assets/nav_bar/transactions-grey.png',
+                        height: 30, width: 30),
+                    activeIcon: Image.asset(
+                        'assets/nav_bar/transactions-yellow.png',
+                        height: 30,
+                        width: 30),
+                    label: 'Transactions'),
+              ],
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: clickableColor,
+              unselectedItemColor: const Color(0XFF888888),
+              selectedFontSize: 11,
+              unselectedFontSize: 11,
+              selectedLabelStyle: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  color: clickableColor),
+              unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  color: Color(0XFF888888)),
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              currentIndex: selectedNavBarIndex,
+              onTap: (index) {
+                if (index == selectedNavBarIndex) return;
+                setState(() {
+                  selectedNavBarIndex = index;
+                });
+              },
+            ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              startScan();
+            },
+            shape: const CircleBorder(),
+            backgroundColor: clickableColor,
+            child: const Icon(Icons.add,
+                color: Colors.white,
+                size: 35,
+                shadows: <Shadow>[
+                  Shadow(color: Colors.white, blurRadius: 10.0)
+                ]),
+          ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          body: selectedNavBarIndex == 0
+              ? SmartRefresher(
+                  controller: refreshController,
+                  onRefresh: () async {
+                    if (tabController.index == 0) {
+                      setState(() {
+                        reviewSearchTerm = '';
+                      });
+                      reviewPagingController.refresh();
+                    } else {
+                      setState(() {
+                        processedSearchTerm = '';
+                      });
+                      processedPagingController.refresh();
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<int>(
-                        value: 0,
-                        child: Row(
-                          children: [
-                            Icon(Icons.business_center_outlined),
-                            SizedBox(width: 10),
-                            Text('Help Center')
-                          ],
-                        )),
-                    const PopupMenuItem<int>(
-                        value: 1,
-                        child: Row(
-                          children: [
-                            Icon(Icons.logout),
-                            SizedBox(width: 10),
-                            Text('Logout')
-                          ],
-                        )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          bottom: selectedNavBarIndex == 0
-              ? TabBar(
-                  indicatorColor: clickableColor,
-                  labelColor: clickableColor,
-                  unselectedLabelColor: textColor,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  tabs: const [
-                    Tab(
-                      text: 'For Review',
-                    ),
-                    Tab(
-                      text: 'Processed',
-                    ),
-                  ],
-                  controller: tabController)
-              : null,
-        ),
-        bottomNavigationBar: Container(
-          padding: EdgeInsets.zero,
-          margin: EdgeInsets.zero,
-          decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
-          child: StylishBottomBar(
-            items: [
-              BottomBarItem(
-                icon: Image.asset('assets/nav_bar/expenses-grey.png',
-                    height: 25, width: 25),
-                selectedIcon: Image.asset('assets/nav_bar/expenses-yellow.png',
-                    height: 25, width: 25),
-                title: Text('Expenses',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: selectedNavBarIndex == 0
-                            ? clickableColor
-                            : const Color(0XFF888888))),
-              ),
-              BottomBarItem(
-                icon: Padding(
-                    padding: EdgeInsets.only(
-                        left: MediaQuery.of(context).size.width * 0.225,
-                        right: 0),
-                    child: Image.asset('assets/nav_bar/transactions-grey.png',
-                        height: 25, width: 25)),
-                selectedIcon: Padding(
-                    padding: EdgeInsets.only(
-                        left: MediaQuery.of(context).size.width * 0.225,
-                        right: 0),
-                    child: Image.asset('assets/nav_bar/transactions-yellow.png',
-                        height: 25, width: 25)),
-                title: Padding(
-                  padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width * 0.225,
-                      right: 0),
-                  child: FittedBox(
-                      child: Text('Transaction',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                              color: selectedNavBarIndex == 1
-                                  ? clickableColor
-                                  : const Color(0XFF888888)))),
-                ),
-              ),
-            ],
-            option: AnimatedBarOptions(
-                barAnimation: BarAnimation.fade,
-                iconStyle: IconStyle.Default,
-                iconSize: 15),
-            hasNotch: false,
-            fabLocation: StylishBarFabLocation.end,
-            currentIndex: selectedNavBarIndex,
-            notchStyle: NotchStyle.circle,
-            onTap: (index) {
-              if (index == selectedNavBarIndex) return;
-              setState(() {
-                selectedNavBarIndex = index;
-              });
-              _controller.jumpToPage(index);
-            },
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            startScan();
-          },
-          shape: const CircleBorder(),
-          backgroundColor: clickableColor,
-          child: const Icon(Icons.add,
-              color: Colors.white,
-              size: 35,
-              shadows: <Shadow>[Shadow(color: Colors.white, blurRadius: 10.0)]),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        body: PageView(
-          controller: _controller,
-          children: [
-            SmartRefresher(
-              controller: refreshController,
-              onRefresh: () {
-                setState(() {
-                  reviewSearchTerm = '';
-                  processedSearchTerm = '';
-                });
-                reviewPagingController.refresh();
-                processedPagingController.refresh();
-              },
-              onLoading: getOrganisations,
-              child: ExpensesTabScreen(
-                  tabController: tabController,
-                  reviewPagingController: reviewPagingController,
-                  processedPagingController: processedPagingController),
-            ),
-            const TransactionsTabScreen()
-          ],
-        ),
-      ),
+                  onLoading: getOrganisations,
+                  child: ExpensesTabScreen(
+                    tabController: tabController,
+                    reviewPagingController: reviewPagingController,
+                    processedPagingController: processedPagingController,
+                    reviewExpenses: reviewExpenses,
+                    processedExpenses: processedExpenses,
+                  ),
+                )
+              : const TransactionsTabScreen()),
     );
   }
 }
