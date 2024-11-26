@@ -676,7 +676,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                   itemBuilder:
                                                       (context, index) {
                                                     return GestureDetector(
-                                                      onTap: () {
+                                                      onTap: () async {
                                                         setState(() {
                                                           selectedAccount =
                                                               filteredPaymentAccounts[
@@ -686,55 +686,106 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                               filteredPaymentAccounts[
                                                                       index]
                                                                   ['name'];
+                                                          accountSearchController
+                                                              .clear();
+                                                          filteredPaymentAccounts =
+                                                              paymentAccounts;
                                                         });
+
+                                                        updatedExpense[
+                                                                    'invoiceLines']
+                                                                [
+                                                                0]['accountId'] =
+                                                            selectedAccount![
+                                                                'id'];
+                                                        updatedExpense['invoiceLines']
+                                                                    [0][
+                                                                'accountName'] =
+                                                            selectedAccount![
+                                                                'name'];
+
+                                                        FocusManager.instance
+                                                            .primaryFocus
+                                                            ?.unfocus();
+                                                        final resp =
+                                                            await ApiService
+                                                                .updateExpense(
+                                                                    updatedExpense);
+                                                        setState(() {
+                                                          showSpinner = false;
+                                                        });
+                                                        if (resp.isNotEmpty) {
+                                                          ScaffoldMessenger.of(
+                                                                  navigatorKey
+                                                                      .currentContext!)
+                                                              .showSnackBar(
+                                                                  const SnackBar(
+                                                                      content: Text(
+                                                                          'Updated successfully.')));
+                                                        } else {
+                                                          ScaffoldMessenger.of(
+                                                                  navigatorKey
+                                                                      .currentContext!)
+                                                              .showSnackBar(
+                                                                  const SnackBar(
+                                                                      content: Text(
+                                                                          'Failed to update.')));
+                                                        }
+
                                                         Navigator.pop(context);
                                                       },
                                                       child: Container(
                                                         padding:
                                                             const EdgeInsets
-                                                                .all(10),
+                                                                .fromLTRB(
+                                                                10, 10, 10, 0),
                                                         height: 50,
-                                                        child: Text(
-                                                          filteredPaymentAccounts[
-                                                              index]['name'],
-                                                          style: const TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500),
-                                                        ),
+                                                        child: selectedAccount?[
+                                                                    'id'] ==
+                                                                filteredPaymentAccounts[
+                                                                    index]['id']
+                                                            ? Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  Text(
+                                                                    filteredPaymentAccounts[
+                                                                            index]
+                                                                        [
+                                                                        'name'],
+                                                                    style: const TextStyle(
+                                                                        fontSize:
+                                                                            14,
+                                                                        fontWeight:
+                                                                            FontWeight.w500),
+                                                                  ),
+                                                                  const Icon(
+                                                                      Icons
+                                                                          .check_circle_outline,
+                                                                      color: Colors
+                                                                          .green,
+                                                                      size: 25)
+                                                                ],
+                                                              )
+                                                            : Text(
+                                                                filteredPaymentAccounts[
+                                                                        index]
+                                                                    ['name'],
+                                                                style: const TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
+                                                              ),
                                                       ),
                                                     );
                                                   }))
                                         ],
                                       ),
                                     ));
-                          }).whenComplete(() async {
-                        setState(() {
-                          accountSearchController.clear();
-                          filteredPaymentAccounts = paymentAccounts;
-                        });
-                        updatedExpense['invoiceLines'][0]['accountId'] =
-                            selectedAccount!['id'];
-                        updatedExpense['invoiceLines'][0]['accountName'] =
-                            selectedAccount!['name'];
-
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        final resp =
-                            await ApiService.updateExpense(updatedExpense);
-                        setState(() {
-                          showSpinner = false;
-                        });
-                        if (resp.isNotEmpty) {
-                          ScaffoldMessenger.of(navigatorKey.currentContext!)
-                              .showSnackBar(const SnackBar(
-                                  content: Text('Updated successfully.')));
-                        } else {
-                          ScaffoldMessenger.of(navigatorKey.currentContext!)
-                              .showSnackBar(const SnackBar(
-                                  content: Text('Failed to update.')));
-                        }
-                      });
+                          });
                     },
                   ),
                   const SizedBox(height: 15),
