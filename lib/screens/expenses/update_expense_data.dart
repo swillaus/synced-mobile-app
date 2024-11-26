@@ -31,6 +31,7 @@ class UpdateExpenseData extends StatefulWidget {
 
 class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   TextEditingController supplierController = TextEditingController();
+  TextEditingController supplierSearchController = TextEditingController();
   TextEditingController refController = TextEditingController();
   TextEditingController totalController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
@@ -43,6 +44,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   DateTime? selectedDate;
   String? selectedCurrency;
   Map? selectedAccount;
+  Map? selectedSupplier;
   Map? selectedCard;
   Map<String, dynamic>? selectedTaxRate;
   List paymentAccounts = [];
@@ -50,6 +52,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   List bankDetails = [];
   List taxRates = [];
   List suppliers = [];
+  List filteredSuppliers = [];
   List currencies = [];
   Map expense = {};
   bool showSpinner = false;
@@ -147,6 +150,16 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     final resp = await ApiService.getSuppliers(selectedOrgId);
     if (resp.isNotEmpty) {
       suppliers = resp;
+      if (suppliers
+          .where((element) => element['name'] == expense['supplierName'])
+          .isNotEmpty) {
+        selectedSupplier = suppliers
+            .where((element) => element['name'] == expense['supplierName'])
+            .first;
+      } else {
+        filteredSuppliers.add({'name': "+ Add ${expense['supplierName']}"});
+      }
+      filteredSuppliers = resp;
     }
     setState(() {
       showSpinner = false;
@@ -331,42 +344,485 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           fontWeight: FontWeight.w500,
                           color: headingColor)),
                   const SizedBox(height: 10),
-                  TextField(
-                    enabled: !widget.isProcessed!,
-                    controller: supplierController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    onEditingComplete: () async {
-                      updatedExpense['supplierName'] = supplierController.text;
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      final resp =
-                          await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
-                      if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                      } else {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
-                      }
-                    },
-                    maxLines: 1,
-                  ),
+                  suppliers
+                          .where((element) =>
+                              element['name'] == expense['supplierName'])
+                          .isEmpty
+                      ? TextField(
+                          enabled: !widget.isProcessed!,
+                          controller: supplierController,
+                          keyboardType: TextInputType.none,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide(color: subHeadingColor)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          onTap: () {
+                            showModalBottomSheet(
+                                isScrollControlled: true,
+                                backgroundColor: Colors.white,
+                                context: context,
+                                builder: (context) {
+                                  return StatefulBuilder(
+                                      builder: (context, setState) => Container(
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(20)),
+                                            padding: const EdgeInsets.all(20),
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.9,
+                                            width: double.maxFinite,
+                                            child: Column(
+                                              children: [
+                                                TextField(
+                                                  controller:
+                                                      supplierSearchController,
+                                                  decoration: InputDecoration(
+                                                    hintText: 'Search',
+                                                    prefixIcon: const Icon(
+                                                        Icons.search),
+                                                    border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12.0),
+                                                        borderSide: BorderSide(
+                                                            color:
+                                                                subHeadingColor)),
+                                                    enabledBorder: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12.0),
+                                                        borderSide: BorderSide(
+                                                            color:
+                                                                subHeadingColor)),
+                                                    focusedBorder: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12.0),
+                                                        borderSide: BorderSide(
+                                                            color:
+                                                                subHeadingColor)),
+                                                    filled: true,
+                                                    fillColor: Colors.white,
+                                                  ),
+                                                  maxLines: 1,
+                                                  onChanged: (query) {
+                                                    filteredSuppliers = [];
+                                                    filteredSuppliers.add({
+                                                      'name': '+ Add $query'
+                                                    });
+                                                    if (supplierSearchController
+                                                        .text.isNotEmpty) {
+                                                      for (var acc
+                                                          in suppliers) {
+                                                        if (acc['name']
+                                                            .toString()
+                                                            .toLowerCase()
+                                                            .contains(
+                                                                supplierSearchController
+                                                                    .text
+                                                                    .toLowerCase())) {
+                                                          filteredSuppliers
+                                                              .add(acc);
+                                                        }
+                                                      }
+                                                    } else {
+                                                      filteredSuppliers =
+                                                          suppliers;
+                                                    }
+                                                    setState(() {});
+                                                  },
+                                                ),
+                                                const SizedBox(height: 30),
+                                                Expanded(
+                                                    child: ListView.separated(
+                                                        separatorBuilder:
+                                                            (context, index) =>
+                                                                const Divider(),
+                                                        shrinkWrap: true,
+                                                        itemCount:
+                                                            filteredSuppliers
+                                                                .length,
+                                                        itemBuilder:
+                                                            (context, index) {
+                                                          return GestureDetector(
+                                                            onTap: () async {
+                                                              if (filteredSuppliers[
+                                                                          index]
+                                                                      ['name']
+                                                                  .startsWith(
+                                                                      '+ Add ')) {
+                                                                final resp = await ApiService
+                                                                    .createSupplier(
+                                                                        supplierSearchController
+                                                                            .text);
+                                                                selectedSupplier =
+                                                                    {
+                                                                  'id': resp[
+                                                                      'supplierId'],
+                                                                  'name':
+                                                                      supplierSearchController
+                                                                          .text
+                                                                };
+                                                              } else {
+                                                                selectedSupplier =
+                                                                    filteredSuppliers[
+                                                                        index];
+                                                              }
+
+                                                              setState(() {
+                                                                supplierController
+                                                                        .text =
+                                                                    filteredSuppliers[
+                                                                            index]
+                                                                        [
+                                                                        'name'];
+                                                                supplierSearchController
+                                                                    .clear();
+                                                                filteredSuppliers =
+                                                                    suppliers;
+                                                              });
+
+                                                              updatedExpense[
+                                                                      'supplierName'] =
+                                                                  selectedSupplier![
+                                                                      'name'];
+                                                              updatedExpense[
+                                                                      'supplierId'] =
+                                                                  selectedSupplier![
+                                                                      'id'];
+
+                                                              FocusManager
+                                                                  .instance
+                                                                  .primaryFocus
+                                                                  ?.unfocus();
+                                                              final resp =
+                                                                  await ApiService
+                                                                      .updateExpense(
+                                                                          updatedExpense);
+                                                              setState(() {
+                                                                showSpinner =
+                                                                    false;
+                                                              });
+                                                              if (resp
+                                                                  .isNotEmpty) {
+                                                                ScaffoldMessenger.of(
+                                                                        navigatorKey
+                                                                            .currentContext!)
+                                                                    .showSnackBar(
+                                                                        const SnackBar(
+                                                                            content:
+                                                                                Text('Updated successfully.')));
+                                                              } else {
+                                                                ScaffoldMessenger.of(
+                                                                        navigatorKey
+                                                                            .currentContext!)
+                                                                    .showSnackBar(
+                                                                        const SnackBar(
+                                                                            content:
+                                                                                Text('Failed to update.')));
+                                                              }
+
+                                                              Navigator.pop(
+                                                                  context);
+                                                              preparePage();
+                                                            },
+                                                            child: Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .fromLTRB(
+                                                                      10,
+                                                                      10,
+                                                                      10,
+                                                                      0),
+                                                              height: 50,
+                                                              child: selectedSupplier?[
+                                                                          'id'] ==
+                                                                      filteredSuppliers[
+                                                                              index]
+                                                                          ['id']
+                                                                  ? Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        Text(
+                                                                          filteredSuppliers[index]
+                                                                              [
+                                                                              'name'],
+                                                                          style: const TextStyle(
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.w500),
+                                                                        ),
+                                                                        const Icon(
+                                                                            Icons
+                                                                                .check_circle_outline,
+                                                                            color:
+                                                                                Colors.green,
+                                                                            size: 25)
+                                                                      ],
+                                                                    )
+                                                                  : Text(
+                                                                      filteredSuppliers[
+                                                                              index]
+                                                                          [
+                                                                          'name'],
+                                                                      style: const TextStyle(
+                                                                          fontSize:
+                                                                              14,
+                                                                          fontWeight:
+                                                                              FontWeight.w500),
+                                                                    ),
+                                                            ),
+                                                          );
+                                                        }))
+                                              ],
+                                            ),
+                                          ));
+                                }).whenComplete(() {
+                              setState(() {
+                                supplierSearchController.clear();
+                                filteredSuppliers = suppliers;
+                              });
+                            });
+                          },
+                          maxLines: 1,
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: TextField(
+                                enabled: !widget.isProcessed!,
+                                controller: supplierController,
+                                keyboardType: TextInputType.none,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: subHeadingColor)),
+                                  enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: subHeadingColor)),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: subHeadingColor)),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                                onTap: () {
+                                  showModalBottomSheet(
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.white,
+                                      context: context,
+                                      builder: (context) {
+                                        return StatefulBuilder(
+                                            builder:
+                                                (context, setState) =>
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                          color: Colors.white,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      20)),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              20),
+                                                      height:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .height *
+                                                              0.9,
+                                                      width: double.maxFinite,
+                                                      child: Column(
+                                                        children: [
+                                                          TextField(
+                                                            controller:
+                                                                supplierSearchController,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              hintText:
+                                                                  'Search',
+                                                              prefixIcon:
+                                                                  const Icon(Icons
+                                                                      .search),
+                                                              border: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              enabledBorder: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              focusedBorder: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              filled: true,
+                                                              fillColor:
+                                                                  Colors.white,
+                                                            ),
+                                                            maxLines: 1,
+                                                            onChanged: (query) {
+                                                              filteredSuppliers =
+                                                                  [];
+                                                              filteredSuppliers
+                                                                  .add({
+                                                                'name':
+                                                                    '+ Add $query'
+                                                              });
+                                                              if (supplierSearchController
+                                                                  .text
+                                                                  .isNotEmpty) {
+                                                                for (var acc
+                                                                    in suppliers) {
+                                                                  if (acc['name']
+                                                                      .toString()
+                                                                      .toLowerCase()
+                                                                      .contains(supplierSearchController
+                                                                          .text
+                                                                          .toLowerCase())) {
+                                                                    filteredSuppliers
+                                                                        .add(
+                                                                            acc);
+                                                                  }
+                                                                }
+                                                              } else {
+                                                                filteredSuppliers =
+                                                                    suppliers;
+                                                              }
+                                                              setState(() {});
+                                                            },
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 30),
+                                                          Expanded(
+                                                              child: ListView
+                                                                  .separated(
+                                                                      separatorBuilder:
+                                                                          (context, index) =>
+                                                                              const Divider(),
+                                                                      shrinkWrap:
+                                                                          true,
+                                                                      itemCount:
+                                                                          filteredSuppliers
+                                                                              .length,
+                                                                      itemBuilder:
+                                                                          (context,
+                                                                              index) {
+                                                                        return GestureDetector(
+                                                                          onTap:
+                                                                              () async {
+                                                                            if (filteredSuppliers[index]['name'].startsWith('+ Add ')) {
+                                                                              final resp = await ApiService.createSupplier(supplierSearchController.text);
+                                                                              selectedSupplier = {
+                                                                                'id': resp['supplierId'],
+                                                                                'name': supplierSearchController.text
+                                                                              };
+                                                                            } else {
+                                                                              selectedSupplier = filteredSuppliers[index];
+                                                                            }
+
+                                                                            setState(() {
+                                                                              supplierController.text = filteredSuppliers[index]['name'];
+                                                                              supplierSearchController.clear();
+                                                                              filteredSuppliers = suppliers;
+                                                                            });
+
+                                                                            updatedExpense['supplierName'] =
+                                                                                selectedSupplier!['name'];
+                                                                            updatedExpense['supplierId'] =
+                                                                                selectedSupplier!['id'];
+
+                                                                            FocusManager.instance.primaryFocus?.unfocus();
+                                                                            final resp =
+                                                                                await ApiService.updateExpense(updatedExpense);
+                                                                            setState(() {
+                                                                              showSpinner = false;
+                                                                            });
+                                                                            if (resp.isNotEmpty) {
+                                                                              ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                                                                            } else {
+                                                                              ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                                                                            }
+
+                                                                            Navigator.pop(context);
+                                                                            preparePage();
+                                                                          },
+                                                                          child:
+                                                                              Container(
+                                                                            padding: const EdgeInsets.fromLTRB(
+                                                                                10,
+                                                                                10,
+                                                                                10,
+                                                                                0),
+                                                                            height:
+                                                                                50,
+                                                                            child: selectedSupplier?['id'] == filteredSuppliers[index]['id']
+                                                                                ? Row(
+                                                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                    children: [
+                                                                                      Text(
+                                                                                        filteredSuppliers[index]['name'],
+                                                                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                                                                      ),
+                                                                                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 25)
+                                                                                    ],
+                                                                                  )
+                                                                                : Text(
+                                                                                    filteredSuppliers[index]['name'],
+                                                                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                                                                  ),
+                                                                          ),
+                                                                        );
+                                                                      }))
+                                                        ],
+                                                      ),
+                                                    ));
+                                      }).whenComplete(() {
+                                    setState(() {
+                                      supplierSearchController.clear();
+                                      filteredSuppliers = suppliers;
+                                    });
+                                  });
+                                },
+                                maxLines: 1,
+                              ),
+                            ),
+                            const Icon(Icons.check_circle_outline,
+                                color: Colors.green, size: 25)
+                          ],
+                        ),
                   const SizedBox(height: 15),
                   Text('Date',
                       style: TextStyle(

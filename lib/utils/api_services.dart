@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:synced/main.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/utils/constants.dart';
 
@@ -619,6 +620,56 @@ class ApiService {
       return jsonRes;
     } else {
       print('GET transactions list API - ${response.reasonPhrase}');
+      return {};
+    }
+  }
+
+  static Future<Map> createSupplier(String supplierName) async {
+    var headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Access-Control-Expose-Headers': 'authorization',
+      'authorization': 'Bearer ${User.authToken}',
+      'content-type': 'application/json',
+    };
+    var request = http.Request(
+        'POST', Uri.parse('$hostUrl/api/Suppliers/createSupplier'));
+    request.body = json.encode({
+      "organizationId": selectedOrgId,
+      "name": supplierName,
+      "taxNumber": "",
+      "groupId": "",
+      "defaultAccount": {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "",
+        "code": ""
+      },
+      "firstName": "",
+      "lastName": "",
+      "email": "",
+      "currency": defaultCurrency,
+      "accountName": "",
+      "bsb": "",
+      "accountNumber": "",
+      "bankAccountRequestModel": null,
+      "aliases": null,
+      "hexColorClass": "sup_img_box_1",
+      "accountsPayableTaxType": "",
+      "accountsPayableTaxName": "",
+      "routingNumber": "",
+      "accountNumberUS": "",
+      "IsSupplier": true,
+      "OrganizationId": selectedOrgId
+    });
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var res = await response.stream.bytesToString();
+      var jsonRes = jsonDecode(res);
+      return jsonRes;
+    } else {
+      print('POST create supplier API - ${response.reasonPhrase}');
       return {};
     }
   }
