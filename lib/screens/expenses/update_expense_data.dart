@@ -91,7 +91,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           break;
         }
       }
-      descriptionController.text = expense['description'] ?? '';
+      descriptionController.text =
+          expense['invoiceLines'][0]['description'] ?? '';
     });
   }
 
