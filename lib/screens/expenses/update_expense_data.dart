@@ -147,6 +147,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> getSuppliers() async {
+    suppliers.clear();
+    filteredSuppliers.clear();
     final resp = await ApiService.getSuppliers(selectedOrgId);
     if (resp.isNotEmpty) {
       suppliers = resp;
@@ -159,7 +161,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       } else {
         filteredSuppliers.add({'name': "+ Add ${expense['supplierName']}"});
       }
-      filteredSuppliers = resp;
+      filteredSuppliers.addAll(resp);
     }
     setState(() {
       showSpinner = false;
