@@ -421,11 +421,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                   maxLines: 1,
                                                   onChanged: (query) {
                                                     filteredSuppliers = [];
-                                                    filteredSuppliers.add({
-                                                      'name': '+ Add $query'
-                                                    });
                                                     if (supplierSearchController
                                                         .text.isNotEmpty) {
+                                                      filteredSuppliers.add({
+                                                        'name': '+ Add $query'
+                                                      });
                                                       for (var acc
                                                           in suppliers) {
                                                         if (acc['name']
@@ -440,8 +440,19 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                         }
                                                       }
                                                     } else {
-                                                      filteredSuppliers =
-                                                          suppliers;
+                                                      if (suppliers
+                                                          .where((element) =>
+                                                              element['name'] ==
+                                                              expense[
+                                                                  'supplierName'])
+                                                          .isEmpty) {
+                                                        filteredSuppliers.add({
+                                                          'name':
+                                                              "+ Add ${expense['supplierName']}"
+                                                        });
+                                                      }
+                                                      filteredSuppliers
+                                                          .addAll(suppliers);
                                                     }
                                                     setState(() {});
                                                   },
@@ -550,10 +561,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                                       0),
                                                               height: 50,
                                                               child: selectedSupplier?[
-                                                                          'id'] ==
-                                                                      filteredSuppliers[
-                                                                              index]
-                                                                          ['id']
+                                                                              'id'] ==
+                                                                          filteredSuppliers[index]
+                                                                              [
+                                                                              'id'] &&
+                                                                      !filteredSuppliers[index]
+                                                                              [
+                                                                              'name']
+                                                                          .startsWith(
+                                                                              '+ Add')
                                                                   ? Row(
                                                                       mainAxisAlignment:
                                                                           MainAxisAlignment
