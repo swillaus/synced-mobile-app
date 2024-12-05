@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -423,50 +422,40 @@ class _HomeScreenState extends State<HomeScreen>
             backgroundColor: Colors.white,
             centerTitle: true,
             title: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               mainAxisSize: MainAxisSize.max,
               children: [
-                SizedBox(width: MediaQuery.of(context).size.width * 0.1),
-                Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.7,
-                    child: DropdownButtonHideUnderline(
-                        child: DropdownButtonFormField2(
-                            decoration: const InputDecoration(
-                                border: OutlineInputBorder(
-                                    borderSide: BorderSide.none)),
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black),
-                            dropdownStyleData: const DropdownStyleData(
-                                elevation: 1,
-                                decoration: BoxDecoration(color: Colors.white)),
-                            menuItemStyleData: const MenuItemStyleData(
-                                overlayColor:
-                                    WidgetStatePropertyAll(Colors.white)),
-                            onChanged: (value) async {
-                              setState(() {
-                                showSpinner = true;
-                                selectedOrgId = value!;
-                              });
-                              final resp = await ApiService.getDefaultCurrency(
-                                  selectedOrgId);
-                              setState(() {
-                                defaultCurrency = resp['currency'] ?? 'USD';
-                              });
-                              await getUnprocessedExpenses(1, '');
-                              await getProcessedExpenses(1, '');
-                            },
-                            items: getDropdownEntries(),
-                            value: selectedOrgId)),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
+                const SizedBox(width: 25),
+                DropdownButtonHideUnderline(
+                    child: DropdownButton(
+                        alignment: Alignment.center,
+                        dropdownColor: Colors.white,
+                        isExpanded: false,
+                        isDense: true,
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black),
+                        onChanged: (value) async {
+                          setState(() {
+                            showSpinner = true;
+                            selectedOrgId = value!;
+                          });
+                          final resp = await ApiService.getDefaultCurrency(
+                              selectedOrgId);
+                          setState(() {
+                            defaultCurrency = resp['currency'] ?? 'USD';
+                          });
+                          await getUnprocessedExpenses(1, '');
+                          await getProcessedExpenses(1, '');
+                        },
+                        items: getDropdownEntries(),
+                        value: selectedOrgId)),
+                SizedBox(
+                  width: 25,
                   child: PopupMenuButton<int>(
                     color: Colors.white,
-                    icon: const Icon(Icons.more_vert),
+                    icon: const Icon(Icons.more_vert, size: 25),
                     onSelected: (item) async {
                       switch (item) {
                         case 0:

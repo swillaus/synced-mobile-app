@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:currency_picker/currency_picker.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
@@ -886,60 +885,28 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       }
                     },
                     onTap: () {
-                      showDialog(
-                          context: context,
-                          builder: (context) => Container(
-                                height: double.maxFinite,
-                                width: double.maxFinite,
-                                color: Colors.white,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.6,
-                                      width: double.maxFinite,
-                                      child: CupertinoDatePicker(
-                                        mode: CupertinoDatePickerMode.date,
-                                        onDateTimeChanged: (DateTime newDate) {
-                                          setState(() {
-                                            selectedDate = newDate;
-                                            dateController.text =
-                                                DateFormat('dd MMM, yyyy')
-                                                    .format(newDate);
-                                          });
-                                        },
-                                        initialDateTime: selectedDate,
-                                        maximumDate: DateTime.now(),
-                                        dateOrder: DatePickerDateOrder.dmy,
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text('Select',
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: headingColor))),
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text('Cancel',
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: headingColor)))
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ));
+                      showDatePicker(
+                        context: navigatorKey.currentContext!,
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: clickableColor,
+                                onPrimary: Colors.black, // header text color
+                                onSurface: Colors.black, // body text color
+                              ),
+                              textButtonTheme: TextButtonThemeData(
+                                style: TextButton.styleFrom(
+                                    foregroundColor: clickableColor),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime.now(),
+                        currentDate: DateTime.now(),
+                      );
                     },
                   ),
                   const SizedBox(height: 15),

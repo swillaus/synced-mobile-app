@@ -101,6 +101,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     }
 
     Widget getInvoiceCardWidget(item) {
+      var f = NumberFormat("###,###.##", "en_US");
+
       return Card(
         elevation: 4,
         shadowColor: Colors.grey,
@@ -114,7 +116,9 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                 width: MediaQuery.of(context).size.width * 0.2,
                 child: item['invoice_path'] != null
                     ? SizedBox(
-                        height: 75, width: 75, child: getInvoiceWidget(item))
+                        height: MediaQuery.of(context).size.width * 0.2,
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        child: getInvoiceWidget(item))
                     : appLoader,
               ),
               const SizedBox(width: 10),
@@ -127,7 +131,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.4,
+                        width: MediaQuery.of(context).size.width * 0.45,
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: item['supplierName'] != null
@@ -143,16 +147,21 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                       0.375),
                         ),
                       ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.1),
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Text(
-                          '${item['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(item['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${item['amountDue']}',
-                          textAlign: TextAlign.end,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                              color: Color(0XFF101828)),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: FittedBox(
+                            fit: BoxFit.fitWidth,
+                            child: Text(
+                              f.format(item['amountDue']),
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                  color: Color(0XFF101828)),
+                            ),
+                          ),
                         ),
                       )
                     ],

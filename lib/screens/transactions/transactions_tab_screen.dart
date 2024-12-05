@@ -24,6 +24,7 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
   Widget noTransactionWidget = Container(
     color: Colors.white,
     padding: const EdgeInsets.all(20),
+    width: MediaQuery.of(navigatorKey.currentContext!).size.width,
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -382,7 +383,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
             t['matchData'] != null &&
             t['relatedData'].isEmpty) {
           t['matchData']['invoice_path'] =
-              'https://syncedblobstaging.blob.core.windows.net/invoices/${t['matchData']['invoicePdfUrl']}';
+              'https://syncedblobstaging.blob.core.windows.net/invoices/${t['matchData']['pdfUrl']}';
         } else if (t['relatedData'] != null && t['relatedData'].isNotEmpty) {
           t['relatedData']['invoice_path'] =
               'https://syncedblobstaging.blob.core.windows.net/invoices/${t['relatedData']['invoicePdfUrl']}';
@@ -430,7 +431,9 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
               width: MediaQuery.of(context).size.width * 0.175,
               child: matchData['invoice_path'] != null
                   ? SizedBox(
-                      height: 75, width: 75, child: getInvoiceWidget(matchData))
+                      height: MediaQuery.of(context).size.width * 0.175,
+                      width: MediaQuery.of(context).size.width * 0.175,
+                      child: getInvoiceWidget(matchData))
                   : appLoader,
             ),
             const SizedBox(width: 8),
@@ -443,7 +446,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.375,
+                      width: MediaQuery.of(context).size.width * 0.38,
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: matchData['supplierName'] != null
@@ -456,19 +459,21 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                     color: Color(0XFF344054)))
                             : SizedBox(
                                 width:
-                                    MediaQuery.of(context).size.width * 0.375),
+                                    MediaQuery.of(context).size.width * 0.38),
                       ),
                     ),
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.05),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Text(
-                        '${matchData['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(matchData['currency']) : NumberFormat().simpleCurrencySymbol(defaultCurrency)}${matchData['amountDue']}',
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            color: Color(0XFF101828)),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.2,
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Text(
+                          matchData['amountDue'].toString(),
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              color: Color(0XFF101828)),
+                        ),
                       ),
                     )
                   ],
