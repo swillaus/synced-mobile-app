@@ -154,7 +154,9 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                           child: FittedBox(
                             fit: BoxFit.fitWidth,
                             child: Text(
-                              f.format(item['amountDue']),
+                              item['amountDue'] != null
+                                  ? f.format(item['amountDue'])
+                                  : "",
                               textAlign: TextAlign.end,
                               style: const TextStyle(
                                   fontWeight: FontWeight.w600,

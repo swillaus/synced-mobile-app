@@ -262,6 +262,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: Text(
             org['organisationName'],
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           )));
     }
     return entries;
@@ -426,31 +427,44 @@ class _HomeScreenState extends State<HomeScreen>
               mainAxisSize: MainAxisSize.max,
               children: [
                 const SizedBox(width: 25),
-                DropdownButtonHideUnderline(
-                    child: DropdownButton(
-                        alignment: Alignment.center,
-                        dropdownColor: Colors.white,
-                        isExpanded: false,
-                        isDense: true,
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black),
-                        onChanged: (value) async {
-                          setState(() {
-                            showSpinner = true;
-                            selectedOrgId = value!;
-                          });
-                          final resp = await ApiService.getDefaultCurrency(
-                              selectedOrgId);
-                          setState(() {
-                            defaultCurrency = resp['currency'] ?? 'USD';
-                          });
-                          await getUnprocessedExpenses(1, '');
-                          await getProcessedExpenses(1, '');
-                        },
-                        items: getDropdownEntries(),
-                        value: selectedOrgId)),
+                SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.5,
+                    child: DropdownButtonHideUnderline(
+                        child: DropdownButton(
+                            alignment: AlignmentDirectional.center,
+                            dropdownColor: Colors.white,
+                            isExpanded: true,
+                            selectedItemBuilder: (BuildContext context) {
+                              return organisations.map<Widget>((org) {
+                                return Container(
+                                    alignment: Alignment.center,
+                                    child: Center(
+                                      child: Text(org['organisationName'],
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center),
+                                    ));
+                              }).toList();
+                            },
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black),
+                            onChanged: (value) async {
+                              setState(() {
+                                showSpinner = true;
+                                selectedOrgId = value!;
+                              });
+                              final resp = await ApiService.getDefaultCurrency(
+                                  selectedOrgId);
+                              setState(() {
+                                defaultCurrency = resp['currency'] ?? 'USD';
+                              });
+                              await getUnprocessedExpenses(1, '');
+                              await getProcessedExpenses(1, '');
+                            },
+                            menuWidth: MediaQuery.of(context).size.width,
+                            items: getDropdownEntries(),
+                            value: selectedOrgId))),
                 SizedBox(
                   width: 25,
                   child: PopupMenuButton<int>(
