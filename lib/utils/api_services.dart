@@ -464,10 +464,14 @@ class ApiService {
     var request = http.Request(
         'POST', Uri.parse('$hostUrl/api/Reporting/GetUnreconciledReportList'));
     request.body = json.encode({
+      "Account": "",
+      "Source": "Report",
       "organizationId": orgId,
       "userid": User.userId,
-      "id": reportId,
+      "reportId": reportId,
       "isSavedReport": true,
+      "isSavedReportData": false,
+      "isOutstandingReport": false,
       "startDate": "1900-01-01",
       "endDate": "2048-01-01",
     });

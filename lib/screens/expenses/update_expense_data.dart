@@ -865,27 +865,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       fillColor: Colors.white,
                     ),
                     maxLines: 1,
-                    onEditingComplete: () async {
-                      updatedExpense['date'] =
-                          '${selectedDate?.year}-${selectedDate?.month}-${selectedDate?.day}';
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      final resp =
-                          await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
-                      if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                      } else {
-                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                            .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
-                      }
-                    },
-                    onTap: () {
-                      showDatePicker(
+                    onTap: () async {
+                      final DateTime? picked = await showDatePicker(
                         context: navigatorKey.currentContext!,
                         builder: (context, child) {
                           return Theme(
@@ -904,9 +885,32 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                           );
                         },
                         firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
+                        lastDate: DateTime(2100),
                         currentDate: DateTime.now(),
                       );
+
+                      if (picked != null && picked != selectedDate) {
+                        setState(() {
+                          selectedDate = picked;
+                        });
+                        updatedExpense['date'] =
+                            '${selectedDate?.year}-${selectedDate?.month}-${selectedDate?.day}';
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        final resp =
+                            await ApiService.updateExpense(updatedExpense);
+                        setState(() {
+                          showSpinner = false;
+                        });
+                        if (resp.isNotEmpty) {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Updated successfully.')));
+                        } else {
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(
+                                  content: Text('Failed to update.')));
+                        }
+                      }
                     },
                   ),
                   const SizedBox(height: 15),

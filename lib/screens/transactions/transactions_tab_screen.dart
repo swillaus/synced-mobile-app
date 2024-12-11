@@ -944,7 +944,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.5,
+                                                0.45,
                                             child: Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.start,
