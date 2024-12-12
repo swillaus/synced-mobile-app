@@ -38,7 +38,7 @@ class DatabaseHelper {
   Future<int> saveUser() async {
     var dbClient = await db;
     var existingUsers = await dbClient.query("User");
-    if (existingUsers.length > 0) {
+    if (existingUsers.isNotEmpty) {
       int res = await dbClient.delete("User");
       return res;
     }

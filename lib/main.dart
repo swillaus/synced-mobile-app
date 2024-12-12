@@ -34,6 +34,7 @@ void main() async {
       User.authToken = authToken;
       User.email = loggedInUser[0]["email"];
       User.password = loggedInUser[0]["password"];
+      User.userId = loggedInUser[0]["userId"];
     }
   }
 

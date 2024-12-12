@@ -976,7 +976,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                               filteredTransactions[
                                                                       index - 1]
                                                                   [
-                                                                  'relatedDate']))
+                                                                  'transactionDate']))
                                                           .toString(),
                                                       style: const TextStyle(
                                                           fontWeight:
