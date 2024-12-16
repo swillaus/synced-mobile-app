@@ -130,10 +130,13 @@ class _HomeScreenState extends State<HomeScreen>
                         insetPadding: const EdgeInsets.all(10),
                         backgroundColor: Colors.white,
                         title: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10.0),
-                            color: const Color(0XFFF9FAFB),
-                          ),
+                          decoration: const BoxDecoration(
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10)),
+                              color: Color(0XFFF9FAFB),
+                              border: Border(
+                                  bottom: BorderSide(color: Colors.grey))),
                           height: MediaQuery.of(context).size.height * 0.065,
                           child: Align(
                             alignment: Alignment.centerLeft,
@@ -151,17 +154,17 @@ class _HomeScreenState extends State<HomeScreen>
                         titlePadding: const EdgeInsets.all(0),
                         content: Container(
                           color: Colors.white,
-                          height: MediaQuery.of(navigatorKey.currentContext!)
-                                  .size
-                                  .height *
-                              0.35,
                           width: MediaQuery.of(navigatorKey.currentContext!)
                                   .size
                                   .width *
                               0.9,
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               TextField(
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
                                 decoration: InputDecoration(
                                     hintText: 'Add expense details',
                                     focusColor: Colors.grey.shade400,

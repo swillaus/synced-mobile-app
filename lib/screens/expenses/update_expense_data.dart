@@ -387,6 +387,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                             child: Column(
                                               children: [
                                                 TextField(
+                                                  keyboardType:
+                                                      TextInputType.text,
+                                                  textCapitalization:
+                                                      TextCapitalization
+                                                          .sentences,
                                                   controller:
                                                       supplierSearchController,
                                                   decoration: InputDecoration(
@@ -496,10 +501,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                               setState(() {
                                                                 supplierController
                                                                         .text =
-                                                                    filteredSuppliers[
-                                                                            index]
-                                                                        [
-                                                                        'name'];
+                                                                    supplierSearchController
+                                                                        .text;
                                                                 supplierSearchController
                                                                     .clear();
                                                                 filteredSuppliers =
@@ -1025,18 +1028,19 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     keyboardType: TextInputType.none,
                     controller: accountController,
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          borderSide: BorderSide(color: subHeadingColor)),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                            borderSide: BorderSide(color: subHeadingColor)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Select Account',
+                        hintStyle: const TextStyle(color: Colors.grey)),
                     maxLines: 1,
                     onTap: () {
                       showModalBottomSheet(
@@ -1618,6 +1622,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                   if (widget.isProcessed == false) ...[
                     DropdownButtonHideUnderline(
                         child: DropdownButton2(
+                      hint: const Text('Select Payment Account',
+                          style: TextStyle(color: Colors.grey)),
                       isExpanded: true,
                       value: selectedCard,
                       items: getBankDetailsDropdownItems(),
