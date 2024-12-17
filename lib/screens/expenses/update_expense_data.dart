@@ -136,6 +136,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         }
       }
     }
+    // dsfjnasdjkv
   }
 
   Future<void> getOrgCurrencies() async {
@@ -480,18 +481,43 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                                       ['name']
                                                                   .startsWith(
                                                                       '+ Add ')) {
-                                                                final resp = await ApiService
-                                                                    .createSupplier(
+                                                                if (supplierSearchController
+                                                                    .text
+                                                                    .isNotEmpty) {
+                                                                  final resp = await ApiService
+                                                                      .createSupplier(
+                                                                          supplierSearchController
+                                                                              .text);
+                                                                  selectedSupplier =
+                                                                      {
+                                                                    'id': resp[
+                                                                        'supplierId'],
+                                                                    'name':
                                                                         supplierSearchController
-                                                                            .text);
-                                                                selectedSupplier =
-                                                                    {
-                                                                  'id': resp[
-                                                                      'supplierId'],
-                                                                  'name':
-                                                                      supplierSearchController
-                                                                          .text
-                                                                };
+                                                                            .text
+                                                                  };
+                                                                } else {
+                                                                  final resp = await ApiService.createSupplier(filteredSuppliers[
+                                                                              index]
+                                                                          [
+                                                                          'name']
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          '+ Add ',
+                                                                          ''));
+                                                                  selectedSupplier =
+                                                                      {
+                                                                    'id': resp[
+                                                                        'supplierId'],
+                                                                    'name': filteredSuppliers[index]
+                                                                            [
+                                                                            'name']
+                                                                        .toString()
+                                                                        .replaceAll(
+                                                                            '+ Add ',
+                                                                            '')
+                                                                  };
+                                                                }
                                                               } else {
                                                                 selectedSupplier =
                                                                     filteredSuppliers[
@@ -1344,7 +1370,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         ),
                         backgroundColor: const Color(0XFFF2FFF5),
                         label: Text(
-                            'Total tax includes: ${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}${expense['totalTax']}',
+                            selectedTaxRate != null && expense['totalTax'] == 0
+                                ? 'Total tax includes: ${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}${expense['amountDue'] * selectedTaxRate!['rate'] / 100}'
+                                : 'Total tax includes: ${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}${expense['totalTax']}',
                             style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
@@ -1471,26 +1499,33 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                                     0]['taxId'] =
                                                                 selectedTaxRate?[
                                                                     'id'];
-                                                            double totalAmount = updatedExpense[
-                                                                    'subTotal'] +
+                                                            double subTotal = updatedExpense[
+                                                                    'amountDue'] -
                                                                 updatedExpense[
-                                                                        'subTotal'] *
+                                                                        'amountDue'] *
                                                                     selectedTaxRate?[
                                                                         'rate'] /
                                                                     100;
                                                             double totalTax =
                                                                 updatedExpense[
-                                                                        'subTotal'] *
+                                                                        'amountDue'] *
                                                                     selectedTaxRate?[
                                                                         'rate'] /
                                                                     100;
+                                                            updatedExpense[
+                                                                    'totalTax'] =
+                                                                totalTax;
+                                                            updatedExpense[
+                                                                    'subTotal'] =
+                                                                subTotal;
+                                                            updatedExpense['invoiceLines']
+                                                                        [0][
+                                                                    'subTotal'] =
+                                                                subTotal;
                                                             updatedExpense['invoiceLines']
                                                                         [0][
                                                                     'totalTax'] =
                                                                 totalTax;
-                                                            updatedExpense[
-                                                                    'amountDue'] =
-                                                                totalAmount;
                                                             final resp =
                                                                 await ApiService
                                                                     .updateExpense(
@@ -1503,6 +1538,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                                 context);
                                                             if (resp
                                                                 .isNotEmpty) {
+                                                              setState(() {
+                                                                expense =
+                                                                    updatedExpense;
+                                                              });
                                                               ScaffoldMessenger.of(
                                                                       navigatorKey
                                                                           .currentContext!)
@@ -1511,6 +1550,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                                                           content:
                                                                               Text('Updated successfully.')));
                                                             } else {
+                                                              setState(() {
+                                                                updatedExpense =
+                                                                    expense;
+                                                              });
                                                               ScaffoldMessenger.of(
                                                                       navigatorKey
                                                                           .currentContext!)
