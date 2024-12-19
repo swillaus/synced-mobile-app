@@ -198,7 +198,9 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     Widget getPageContent() {
       if (widget.reviewExpenses.isEmpty &&
           widget.processedExpenses.isEmpty &&
-          !showUploadingInvoice) {
+          !showUploadingInvoice &&
+          reviewSearchController.text.isEmpty &&
+          processedSearchController.text.isEmpty) {
         return noExpenseWidget;
       }
 
@@ -247,6 +249,15 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                               });
                               widget.reviewPagingController.refresh();
                             });
+                      },
+                      onEditingComplete: () async {
+                        if (reviewSearchController.text != reviewSearchTerm) {
+                          setState(() {
+                            reviewSearchTerm = reviewSearchController.text;
+                          });
+                          widget.reviewPagingController.refresh();
+                        }
+                        FocusManager.instance.primaryFocus?.unfocus();
                       },
                       controller: reviewSearchController,
                     )),
@@ -314,17 +325,20 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                 const SizedBox(
                                   height: 20,
                                 ),
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  child: Center(
-                                    child: LinearProgressIndicator(
-                                        minHeight: 6,
-                                        value: uploadingData['uploadProgress'],
-                                        valueColor: AlwaysStoppedAnimation(
-                                            clickableColor)),
-                                  ),
-                                )
+                                if (uploadingData['uploadProgress'] < 1) ...[
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.6,
+                                    child: Center(
+                                      child: LinearProgressIndicator(
+                                          minHeight: 6,
+                                          value:
+                                              uploadingData['uploadProgress'],
+                                          valueColor: AlwaysStoppedAnimation(
+                                              clickableColor)),
+                                    ),
+                                  )
+                                ]
                               ],
                             )
                           ],
@@ -481,6 +495,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                         });
                         widget.processedPagingController.refresh();
                       }
+                      FocusManager.instance.primaryFocus?.unfocus();
                     },
                     controller: processedSearchController,
                   ),

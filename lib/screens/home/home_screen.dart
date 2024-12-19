@@ -92,168 +92,176 @@ class _HomeScreenState extends State<HomeScreen>
                     'We were unable to process the image, please try again.')));
         return;
       } else {
-        Navigator.push(
-            navigatorKey.currentContext!,
-            MaterialPageRoute(
-                builder: (context) => UpdateExpenseData(
-                    expense: uploadResp,
-                    imagePath:
-                        'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
-                    isProcessed: false)));
+        reviewPagingController.refresh();
       }
     });
   }
 
   void startScan() async {
-    if (await Permission.camera.request().isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please scan one page only")));
-      imagesPath = await CunningDocumentScanner.getPictures(
-          noOfPages: 1, isGalleryImportAllowed: true);
-      setState(() {});
-      if ((imagesPath?.length ?? 0) > 1) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                'You have scanned ${imagesPath?.length} pages, only the first page will be saved')));
-      }
-      if (imagesPath?.isNotEmpty ?? false) {
-        fileSize = await getFileSize(imagesPath!.first, 1);
-        showDialog(
-            barrierDismissible: false,
-            context: navigatorKey.currentContext!,
-            builder: (context) => StatefulBuilder(
-                builder: (context, setState) => SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: AlertDialog(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0)),
-                        insetPadding: const EdgeInsets.all(10),
-                        backgroundColor: Colors.white,
-                        title: Container(
-                          decoration: const BoxDecoration(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10)),
-                              color: Color(0XFFF9FAFB),
-                              border: Border(
-                                  bottom: BorderSide(color: Colors.grey))),
-                          height: MediaQuery.of(context).size.height * 0.065,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                                padding: EdgeInsets.only(
-                                    left: MediaQuery.of(context).size.width *
-                                        0.075),
-                                child: Text('Add Note (Optional)',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: headingColor))),
-                          ),
-                        ),
-                        titlePadding: const EdgeInsets.all(0),
-                        content: Container(
-                          color: Colors.white,
-                          width: MediaQuery.of(navigatorKey.currentContext!)
-                                  .size
-                                  .width *
-                              0.9,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                keyboardType: TextInputType.multiline,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                decoration: InputDecoration(
-                                    hintText: 'Add expense details',
-                                    focusColor: Colors.grey.shade400,
-                                    border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade400,
-                                            width: 0.4)),
-                                    focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade400,
-                                            width: 0.4))),
-                                maxLines: 5,
-                                controller: notesController,
-                                autofocus: true,
-                                enabled: true,
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<
-                                            RoundedRectangleBorder>(
-                                        RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0))),
-                                    fixedSize: WidgetStateProperty.all(Size(
-                                        MediaQuery.of(context).size.width * 0.9,
-                                        40)),
-                                    backgroundColor: WidgetStateProperty.all(
-                                        const Color(0XFF009318))),
-                                onPressed: _onPressed,
-                                child: const Text(
-                                  'Submit',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              TextButton(
-                                  onPressed: () async {
-                                    Navigator.pop(navigatorKey.currentContext!);
-                                    setState(() {
-                                      showUploadingInvoice = true;
-                                      uploadingData = {
-                                        'path': imagesPath!.first,
-                                        'size': fileSize
-                                      };
-                                      selectedNavBarIndex = 0;
-                                    });
-                                    ApiService.uploadInvoice(imagesPath!.first,
-                                            selectedOrgId, '', uploadCallback)
-                                        .then((uploadResp) {
-                                      showUploadingInvoice = false;
-                                      uploadingData = {};
-                                      if (uploadResp.isEmpty) {
-                                        ScaffoldMessenger.of(
-                                                navigatorKey.currentContext!)
-                                            .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'We were unable to process the image, please try again.')));
-                                        return;
-                                      } else {
-                                        Navigator.push(
-                                            navigatorKey.currentContext!,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    UpdateExpenseData(
-                                                        expense: uploadResp,
-                                                        imagePath:
-                                                            'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
-                                                        isProcessed: false)));
-                                      }
-                                    });
-                                  },
-                                  child: const Text('Skip',
+    if (!showUploadingInvoice) {
+      if (await Permission.camera.request().isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please scan one page only")));
+        imagesPath = await CunningDocumentScanner.getPictures(
+            noOfPages: 1, isGalleryImportAllowed: true);
+        setState(() {});
+        if ((imagesPath?.length ?? 0) > 1) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'You have scanned ${imagesPath?.length} pages, only the first page will be saved')));
+        }
+        if (imagesPath?.isNotEmpty ?? false) {
+          fileSize = await getFileSize(imagesPath!.first, 1);
+          showDialog(
+              barrierDismissible: false,
+              context: navigatorKey.currentContext!,
+              builder: (context) => StatefulBuilder(
+                  builder: (context, setState) => SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: AlertDialog(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0)),
+                          insetPadding: const EdgeInsets.all(10),
+                          backgroundColor: Colors.white,
+                          title: Container(
+                            decoration: const BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10)),
+                                color: Color(0XFFF9FAFB),
+                                border: Border(
+                                    bottom: BorderSide(color: Colors.grey))),
+                            height: MediaQuery.of(context).size.height * 0.065,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                  padding: EdgeInsets.only(
+                                      left: MediaQuery.of(context).size.width *
+                                          0.075),
+                                  child: Text('Add Note (Optional)',
                                       style: TextStyle(
+                                          fontWeight: FontWeight.w600,
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0XFFFF4E4E))))
-                            ],
+                                          color: headingColor))),
+                            ),
+                          ),
+                          titlePadding: const EdgeInsets.all(0),
+                          content: Container(
+                            color: Colors.white,
+                            width: MediaQuery.of(navigatorKey.currentContext!)
+                                    .size
+                                    .width *
+                                0.9,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  keyboardType: TextInputType.multiline,
+                                  textCapitalization:
+                                      TextCapitalization.sentences,
+                                  decoration: InputDecoration(
+                                      hintText: 'Add expense details',
+                                      focusColor: Colors.grey.shade400,
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey.shade400,
+                                              width: 0.4)),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey.shade400,
+                                              width: 0.4))),
+                                  maxLines: 5,
+                                  controller: notesController,
+                                  autofocus: true,
+                                  enabled: true,
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton(
+                                  style: ButtonStyle(
+                                      shape: WidgetStateProperty.all<
+                                              RoundedRectangleBorder>(
+                                          RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0))),
+                                      fixedSize: WidgetStateProperty.all(Size(
+                                          MediaQuery.of(context).size.width *
+                                              0.9,
+                                          40)),
+                                      backgroundColor: WidgetStateProperty.all(
+                                          const Color(0XFF009318))),
+                                  onPressed: _onPressed,
+                                  child: const Text(
+                                    'Submit',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                TextButton(
+                                    onPressed: () async {
+                                      Navigator.pop(
+                                          navigatorKey.currentContext!);
+                                      setState(() {
+                                        showUploadingInvoice = true;
+                                        uploadingData = {
+                                          'path': imagesPath!.first,
+                                          'size': fileSize
+                                        };
+                                        selectedNavBarIndex = 0;
+                                      });
+                                      ApiService.uploadInvoice(
+                                              imagesPath!.first,
+                                              selectedOrgId,
+                                              '',
+                                              uploadCallback)
+                                          .then((uploadResp) {
+                                        showUploadingInvoice = false;
+                                        uploadingData = {};
+                                        if (uploadResp.isEmpty) {
+                                          ScaffoldMessenger.of(
+                                                  navigatorKey.currentContext!)
+                                              .showSnackBar(const SnackBar(
+                                                  content: Text(
+                                                      'We were unable to process the image, please try again.')));
+                                          return;
+                                        } else {
+                                          Navigator.push(
+                                              navigatorKey.currentContext!,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      UpdateExpenseData(
+                                                          expense: uploadResp,
+                                                          imagePath:
+                                                              'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
+                                                          isProcessed: false)));
+                                        }
+                                      });
+                                    },
+                                    child: const Text('Skip',
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0XFFFF4E4E))))
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    )));
+                      )));
+        }
+      } else if (await Permission.camera.isPermanentlyDenied) {
+        openAppSettings();
       }
-    } else if (await Permission.camera.isPermanentlyDenied) {
-      openAppSettings();
+    } else {
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Expense currently progressing. Please wait for completion and try again')));
+      return;
     }
   }
 
@@ -356,7 +364,13 @@ class _HomeScreenState extends State<HomeScreen>
     tabController.index = widget.tabIndex;
     selectedNavBarIndex = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
+      setState(() {
+        showSpinner = true;
+      });
       getUnprocessedExpenses(pageKey, reviewSearchTerm);
+      setState(() {
+        showSpinner = false;
+      });
     });
     processedPagingController.addPageRequestListener((pageKey) {
       getProcessedExpenses(pageKey, processedSearchTerm);
@@ -418,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen>
       progressIndicator: appLoader,
       child: Scaffold(
           extendBody: true,
-          resizeToAvoidBottomInset: true,
+          resizeToAvoidBottomInset: false,
           backgroundColor: const Color(0xfffbfbfb),
           appBar: AppBar(
             automaticallyImplyLeading: false,
@@ -453,17 +467,20 @@ class _HomeScreenState extends State<HomeScreen>
                                 fontWeight: FontWeight.w700,
                                 color: Colors.black),
                             onChanged: (value) async {
+                              if (showUploadingInvoice) {
+                                ScaffoldMessenger.of(
+                                        navigatorKey.currentContext!)
+                                    .showSnackBar(const SnackBar(
+                                        content: Text(
+                                            'Expense currently progressing. Please wait for completion and try again')));
+                                return;
+                              }
                               setState(() {
                                 showSpinner = true;
                                 selectedOrgId = value!;
                               });
-                              final resp = await ApiService.getDefaultCurrency(
-                                  selectedOrgId);
-                              setState(() {
-                                defaultCurrency = resp['currency'] ?? 'USD';
-                              });
-                              await getUnprocessedExpenses(1, '');
-                              await getProcessedExpenses(1, '');
+                              reviewPagingController.refresh();
+                              processedPagingController.refresh();
                             },
                             menuWidth: MediaQuery.of(context).size.width,
                             items: getDropdownEntries(),

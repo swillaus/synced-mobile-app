@@ -85,7 +85,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           ? expense['currency']
           : currencies.first ?? 'USD';
       currencyController.text = selectedCurrency!;
-      totalController.text = expense['subTotal'].toString();
+      totalController.text = expense['amountDue'].toString();
       for (var acc in paymentAccounts) {
         if (acc['id'] == expense['invoiceLines'][0]['accountId']) {
           selectedAccount = acc;
@@ -1109,9 +1109,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   });
                                   // call updateInvoice API with new tax data
                                   updatedExpense['invoiceLines'][0]
-                                          ['subTotal'] =
+                                          ['amountDue'] =
                                       double.parse(totalController.text);
-                                  updatedExpense['subTotal'] =
+                                  updatedExpense['amountDue'] =
                                       double.parse(totalController.text);
                                   FocusManager.instance.primaryFocus?.unfocus();
                                   final resp = await ApiService.updateExpense(
