@@ -67,11 +67,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       showSpinner = true;
     });
     await getInvoiceById();
-    await getPaymentAccounts();
-    await getBankDetails();
-    await getOrgCurrencies();
-    await getTaxRates();
     await getSuppliers();
+    getPaymentAccounts();
+    getBankDetails();
+    getOrgCurrencies();
+    getTaxRates();
     setState(() {
       updatedExpense = expense;
       updatedExpense.remove('invoice_path');
@@ -80,21 +80,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       dateController.text =
           DateFormat('dd MMM, yyyy').format(DateTime.parse(expense['date']));
       refController.text = expense['invoiceNumber'] ?? '';
-      selectedCurrency = expense['currency'] != null &&
-              expense['currency'].runtimeType == String
-          ? expense['currency']
-          : currencies.first ?? 'USD';
-      currencyController.text = selectedCurrency!;
-      totalController.text = expense['amountDue'].toString();
-      for (var acc in paymentAccounts) {
-        if (acc['id'] == expense['invoiceLines'][0]['accountId']) {
-          selectedAccount = acc;
-          accountController.text = acc['name'];
-          break;
-        }
-      }
       descriptionController.text =
           expense['invoiceLines'][0]['description'] ?? '';
+      showSpinner = false;
     });
   }
 
@@ -110,6 +98,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     for (var acc in paymentAccounts) {
       if (acc['id'] == expense['invoiceLines'][0]['accountId']) {
         selectedAccount = acc;
+        accountController.text = acc['name'];
+        break;
       }
     }
   }
@@ -143,6 +133,12 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     if (resp.isNotEmpty) {
       currencies = resp;
     }
+    selectedCurrency =
+        expense['currency'] != null && expense['currency'].runtimeType == String
+            ? expense['currency']
+            : currencies.first ?? 'USD';
+    currencyController.text = selectedCurrency!;
+    totalController.text = expense['amountDue'].toString();
   }
 
   Future<void> getSuppliers() async {
@@ -679,6 +675,227 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                   fillColor: Colors.white,
                                 ),
                                 maxLines: 1,
+                                onTap: () {
+                                  showModalBottomSheet(
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.white,
+                                      context: context,
+                                      builder: (context) {
+                                        return StatefulBuilder(
+                                            builder:
+                                                (context, setState) =>
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                          color: Colors.white,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      20)),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              20),
+                                                      height:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .height *
+                                                              0.9,
+                                                      width: double.maxFinite,
+                                                      child: Column(
+                                                        children: [
+                                                          TextField(
+                                                            keyboardType:
+                                                                TextInputType
+                                                                    .text,
+                                                            textCapitalization:
+                                                                TextCapitalization
+                                                                    .sentences,
+                                                            controller:
+                                                                supplierSearchController,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              hintText:
+                                                                  'Search',
+                                                              prefixIcon:
+                                                                  const Icon(Icons
+                                                                      .search),
+                                                              border: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              enabledBorder: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              focusedBorder: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12.0),
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          color:
+                                                                              subHeadingColor)),
+                                                              filled: true,
+                                                              fillColor:
+                                                                  Colors.white,
+                                                            ),
+                                                            maxLines: 1,
+                                                            onChanged: (query) {
+                                                              filteredSuppliers =
+                                                                  [];
+                                                              if (supplierSearchController
+                                                                  .text
+                                                                  .isNotEmpty) {
+                                                                filteredSuppliers
+                                                                    .add({
+                                                                  'name':
+                                                                      '+ Add $query'
+                                                                });
+                                                                for (var acc
+                                                                    in suppliers) {
+                                                                  if (acc['name']
+                                                                      .toString()
+                                                                      .toLowerCase()
+                                                                      .contains(supplierSearchController
+                                                                          .text
+                                                                          .toLowerCase())) {
+                                                                    filteredSuppliers
+                                                                        .add(
+                                                                            acc);
+                                                                  }
+                                                                }
+                                                              } else {
+                                                                if (suppliers
+                                                                    .where((element) =>
+                                                                        element[
+                                                                            'name'] ==
+                                                                        expense[
+                                                                            'supplierName'])
+                                                                    .isEmpty) {
+                                                                  filteredSuppliers
+                                                                      .add({
+                                                                    'name':
+                                                                        "+ Add ${expense['supplierName']}"
+                                                                  });
+                                                                }
+                                                                filteredSuppliers
+                                                                    .addAll(
+                                                                        suppliers);
+                                                              }
+                                                              setState(() {});
+                                                            },
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 30),
+                                                          Expanded(
+                                                              child: ListView
+                                                                  .separated(
+                                                                      separatorBuilder:
+                                                                          (context, index) =>
+                                                                              const Divider(),
+                                                                      shrinkWrap:
+                                                                          true,
+                                                                      itemCount:
+                                                                          filteredSuppliers
+                                                                              .length,
+                                                                      itemBuilder:
+                                                                          (context,
+                                                                              index) {
+                                                                        return GestureDetector(
+                                                                          onTap:
+                                                                              () async {
+                                                                            if (filteredSuppliers[index]['name'].startsWith('+ Add ')) {
+                                                                              if (supplierSearchController.text.isNotEmpty) {
+                                                                                final resp = await ApiService.createSupplier(supplierSearchController.text);
+                                                                                selectedSupplier = {
+                                                                                  'id': resp['supplierId'],
+                                                                                  'name': supplierSearchController.text
+                                                                                };
+                                                                                supplierController.text = supplierSearchController.text;
+                                                                              } else {
+                                                                                final resp = await ApiService.createSupplier(filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', ''));
+                                                                                selectedSupplier = {
+                                                                                  'id': resp['supplierId'],
+                                                                                  'name': filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', '')
+                                                                                };
+                                                                                supplierController.text = filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', '');
+                                                                              }
+                                                                            } else {
+                                                                              selectedSupplier = filteredSuppliers[index];
+                                                                            }
+
+                                                                            setState(() {
+                                                                              supplierSearchController.clear();
+                                                                              filteredSuppliers = suppliers;
+                                                                            });
+
+                                                                            updatedExpense['supplierName'] =
+                                                                                selectedSupplier!['name'];
+                                                                            updatedExpense['supplierId'] =
+                                                                                selectedSupplier!['id'];
+
+                                                                            FocusManager.instance.primaryFocus?.unfocus();
+                                                                            final resp =
+                                                                                await ApiService.updateExpense(updatedExpense);
+                                                                            setState(() {
+                                                                              showSpinner = false;
+                                                                            });
+                                                                            if (resp.isNotEmpty) {
+                                                                              ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                                                                            } else {
+                                                                              ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                                                                            }
+
+                                                                            Navigator.pop(context);
+                                                                            preparePage();
+                                                                          },
+                                                                          child:
+                                                                              Container(
+                                                                            padding: const EdgeInsets.fromLTRB(
+                                                                                10,
+                                                                                10,
+                                                                                10,
+                                                                                0),
+                                                                            height:
+                                                                                50,
+                                                                            child: selectedSupplier?['id'] == filteredSuppliers[index]['id'] && !filteredSuppliers[index]['name'].startsWith('+ Add')
+                                                                                ? Row(
+                                                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                    children: [
+                                                                                      Text(
+                                                                                        filteredSuppliers[index]['name'],
+                                                                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                                                                      ),
+                                                                                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 25)
+                                                                                    ],
+                                                                                  )
+                                                                                : Text(
+                                                                                    filteredSuppliers[index]['name'],
+                                                                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                                                                  ),
+                                                                          ),
+                                                                        );
+                                                                      }))
+                                                        ],
+                                                      ),
+                                                    ));
+                                      }).whenComplete(() {
+                                    setState(() {
+                                      supplierSearchController.clear();
+                                      filteredSuppliers = suppliers;
+                                    });
+                                  });
+                                },
                               ),
                             ),
                             const Icon(Icons.check_circle_outline,

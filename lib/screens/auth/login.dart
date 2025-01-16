@@ -7,6 +7,7 @@ import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:synced/utils/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -269,49 +270,49 @@ class _LoginPageState extends State<LoginPage> {
                 //             style: TextStyle(color: clickableColor)))
                 //   ],
                 // ),
-                // const SizedBox(height: 15),
-                // const Center(
-                //   child: Text(
-                //     'or',
-                //     style: TextStyle(
-                //         fontWeight: FontWeight.w600,
-                //         fontSize: 14,
-                //         color: Color(0XFF696969)),
-                //   ),
-                // ),
-                // const SizedBox(height: 15),
-                // ElevatedButton(
-                //   style: ButtonStyle(
-                //       side: const WidgetStatePropertyAll(
-                //           BorderSide(color: Colors.black, width: 0.5)),
-                //       shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(15.0))),
-                //       fixedSize: WidgetStateProperty.all(
-                //           Size(MediaQuery.of(context).size.width * 0.8, 48)),
-                //       backgroundColor: WidgetStateProperty.all(Colors.white)),
-                //   onPressed: () async {
-                //     if (!await launchUrl(Uri.parse(xeroAuthUrl),
-                //         mode: LaunchMode.externalApplication)) {
-                //       throw Exception(
-                //           'Could not launch ${Uri.parse(xeroAuthUrl)}');
-                //     }
-                //   },
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.center,
-                //     children: [
-                //       Image.asset('assets/xero_logo.png',
-                //           height: 30, width: 30),
-                //       const SizedBox(width: 15),
-                //       const Text(
-                //         'Sign in with Xero',
-                //         style: TextStyle(
-                //             color: Color(0XFF2A2A2A),
-                //             fontSize: 14,
-                //             fontWeight: FontWeight.w500),
-                //       )
-                //     ],
-                //   ),
-                // ),
+                const SizedBox(height: 15),
+                const Center(
+                  child: Text(
+                    'or',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0XFF696969)),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                ElevatedButton(
+                  style: ButtonStyle(
+                      side: const WidgetStatePropertyAll(
+                          BorderSide(color: Colors.black, width: 0.5)),
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.0))),
+                      fixedSize: WidgetStateProperty.all(
+                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
+                      backgroundColor: WidgetStateProperty.all(Colors.white)),
+                  onPressed: () async {
+                    if (!await launchUrl(Uri.parse(xeroAuthUrl),
+                        mode: LaunchMode.externalApplication)) {
+                      throw Exception(
+                          'Could not launch ${Uri.parse(xeroAuthUrl)}');
+                    }
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/xero_logo.png',
+                          height: 30, width: 30),
+                      const SizedBox(width: 15),
+                      const Text(
+                        'Sign in with Xero',
+                        style: TextStyle(
+                            color: Color(0XFF2A2A2A),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500),
+                      )
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

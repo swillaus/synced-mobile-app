@@ -280,12 +280,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getUnprocessedExpenses(page, searchTerm) async {
-    if (page == 1) {
-      reviewExpenses.clear();
-      reviewPagingController.refresh();
-    }
     final resp = await ApiService.getExpenses(
         false, selectedOrgId, searchTerm, page, pageSize);
+    if (page == 1) {
+      reviewExpenses.clear();
+    }
     if (resp.isNotEmpty) {
       setState(() {
         reviewExpenses += resp['invoices'];
@@ -317,12 +316,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   getProcessedExpenses(page, searchTerm) async {
-    if (page == 1) {
-      processedExpenses.clear();
-      processedPagingController.refresh();
-    }
     final resp = await ApiService.getExpenses(
         true, selectedOrgId, searchTerm, page, pageSize);
+    if (page == 1) {
+      processedExpenses.clear();
+    }
     if (resp.isNotEmpty) {
       setState(() {
         processedExpenses += resp['invoices'];
@@ -364,13 +362,7 @@ class _HomeScreenState extends State<HomeScreen>
     tabController.index = widget.tabIndex;
     selectedNavBarIndex = widget.navbarIndex;
     reviewPagingController.addPageRequestListener((pageKey) {
-      setState(() {
-        showSpinner = true;
-      });
       getUnprocessedExpenses(pageKey, reviewSearchTerm);
-      setState(() {
-        showSpinner = false;
-      });
     });
     processedPagingController.addPageRequestListener((pageKey) {
       getProcessedExpenses(pageKey, processedSearchTerm);
@@ -614,32 +606,35 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
-          body: selectedNavBarIndex == 0
-              ? SmartRefresher(
-                  controller: refreshController,
-                  onRefresh: () async {
-                    if (tabController.index == 0) {
-                      setState(() {
-                        reviewSearchTerm = '';
-                      });
-                      reviewPagingController.refresh();
-                    } else {
-                      setState(() {
-                        processedSearchTerm = '';
-                      });
-                      processedPagingController.refresh();
-                    }
-                  },
-                  onLoading: getOrganisations,
-                  child: ExpensesTabScreen(
-                    tabController: tabController,
-                    reviewPagingController: reviewPagingController,
-                    processedPagingController: processedPagingController,
-                    reviewExpenses: reviewExpenses,
-                    processedExpenses: processedExpenses,
-                  ),
-                )
-              : const TransactionsTabScreen()),
+          body: showSpinner
+              ? appLoader
+              : selectedNavBarIndex == 0
+                  ? SmartRefresher(
+                      controller: refreshController,
+                      onRefresh: () async {
+                        if (tabController.index == 0) {
+                          setState(() {
+                            reviewSearchTerm = '';
+                          });
+                          reviewPagingController.refresh();
+                        } else {
+                          setState(() {
+                            processedSearchTerm = '';
+                          });
+                          processedPagingController.refresh();
+                        }
+                      },
+                      onLoading: getOrganisations,
+                      child: ExpensesTabScreen(
+                        tabController: tabController,
+                        reviewPagingController: reviewPagingController,
+                        processedPagingController: processedPagingController,
+                        reviewExpenses: reviewExpenses,
+                        processedExpenses: processedExpenses,
+                        showSpinner: showSpinner,
+                      ),
+                    )
+                  : const TransactionsTabScreen()),
     );
   }
 }

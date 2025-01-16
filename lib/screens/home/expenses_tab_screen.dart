@@ -15,13 +15,15 @@ class ExpensesTabScreen extends StatefulWidget {
   final TabController tabController;
   final PagingController reviewPagingController, processedPagingController;
   final List reviewExpenses, processedExpenses;
+  final bool showSpinner;
   const ExpensesTabScreen(
       {super.key,
       required this.tabController,
       required this.reviewPagingController,
       required this.processedPagingController,
       required this.reviewExpenses,
-      required this.processedExpenses});
+      required this.processedExpenses,
+      required this.showSpinner});
 
   @override
   State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
@@ -196,7 +198,9 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     }
 
     Widget getPageContent() {
-      if (widget.reviewExpenses.isEmpty &&
+      if (showSpinner || widget.showSpinner) {
+        return appLoader;
+      } else if (widget.reviewExpenses.isEmpty &&
           widget.processedExpenses.isEmpty &&
           !showUploadingInvoice &&
           reviewSearchController.text.isEmpty &&
@@ -300,11 +304,24 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                         ),
                                         backgroundColor:
                                             const Color(0XFFFFFEF4),
-                                        label: const Text('Processing',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0XFF667085))),
+                                        label: const Row(
+                                          children: [
+                                            SizedBox(
+                                              height: 10,
+                                              width: 10,
+                                              child: CircularProgressIndicator(
+                                                color: Color(0XFF667085),
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                            SizedBox(width: 5),
+                                            Text('Processing',
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0XFF667085)))
+                                          ],
+                                        ),
                                       ),
                                     ),
                                     SizedBox(

@@ -12,7 +12,8 @@ CircularProgressIndicator appLoader = CircularProgressIndicator(
   color: clickableColor,
 );
 
-String xeroClientId = '90244E7404054BA8B0FAB1DA5F949573';
+// String xeroClientId = '90244E7404054BA8B0FAB1DA5F949573';
+String xeroClientId = 'B1FBCF253E474AE29998C451E960B0CE';
 String xeroSignInCallbackUrl = '$hostUrl/api/Account/XeroSignIn';
 String xeroRedirectUrlScheme = 'net.azurewebsites.syncedapi';
 String xeroState = 'afiGl5r9s2w';
