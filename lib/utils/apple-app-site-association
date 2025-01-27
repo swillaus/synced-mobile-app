@@ -3,7 +3,7 @@
     "details": [
       {
         "appIDs": [
-          "25543Z5PU6.com.syncedhq.syncedstage",
+          "25543Z5PU6.com.syncedhq.synced",
         ],
         "components": [
           {
@@ -15,6 +15,6 @@
     ]
   },
   "webcredentials": {
-    "apps": [ "25543Z5PU6.com.syncedhq.syncedstage" ]
+    "apps": [ "25543Z5PU6.com.syncedhq.synced" ]
   }
 }

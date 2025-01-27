@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:syncedtesting.azurewebsites.net</string>
+		<string>applinks:app.syncedhq.com</string>
 	</array>
 </dict>
 </plist>
