@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
 import 'package:is_first_run/is_first_run.dart';
 import 'package:synced/models/user.dart';
@@ -14,6 +15,7 @@ import 'package:synced/utils/dynamic_link_handler.dart';
 String selectedOrgId = '';
 String defaultCurrency = 'USD';
 final navigatorKey = GlobalKey<NavigatorState>();
+ChromeSafariBrowser? browser;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

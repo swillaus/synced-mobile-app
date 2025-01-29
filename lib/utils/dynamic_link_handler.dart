@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:synced/main.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/home/home_screen.dart';
@@ -42,6 +43,8 @@ final class DynamicLinkHandler {
       print(json.decode(queryParams['data']!));
       final DatabaseHelper _db = DatabaseHelper();
       await _db.deleteUsers();
+      ChromeSafariBrowser.clearWebsiteData();
+      await browser?.close();
       User.userId = json.decode(queryParams['data']!)['Data']['user']['UserId'];
       User.email = json.decode(queryParams['data']!)['Data']['user']['Email'];
       User.name = json.decode(queryParams['data']!)['Data']['user']['Name'];

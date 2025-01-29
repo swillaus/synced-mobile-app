@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
+import 'package:synced/main.dart';
 import 'package:synced/models/user.dart';
 import 'package:synced/screens/auth/forgot_password.dart';
 import 'package:synced/screens/home/home_screen.dart';
@@ -7,7 +9,6 @@ import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:synced/utils/widgets.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -291,11 +292,13 @@ class _LoginPageState extends State<LoginPage> {
                           Size(MediaQuery.of(context).size.width * 0.8, 48)),
                       backgroundColor: WidgetStateProperty.all(Colors.white)),
                   onPressed: () async {
-                    if (!await launchUrl(Uri.parse(xeroAuthUrl),
-                        mode: LaunchMode.externalApplication)) {
-                      throw Exception(
-                          'Could not launch ${Uri.parse(xeroAuthUrl)}');
-                    }
+                    setState(() {
+                      showSpinner = true;
+                    });
+                    browser = ChromeSafariBrowser();
+                    browser?.open(
+                        url: WebUri(xeroAuthUrl),
+                        settings: ChromeSafariBrowserSettings(noHistory: true));
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
