@@ -279,8 +279,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                         child: Row(
                           children: [
                             SizedBox(
-                                height: 75,
-                                width: 75,
+                                height: 750,
+                                width: 750,
                                 child: uploadingData['path'] != null
                                     ? Image.file(File(uploadingData['path']))
                                     : appLoader),
@@ -517,7 +517,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                     controller: processedSearchController,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 Expanded(
                     child: PagedListView(
                         shrinkWrap: true,
