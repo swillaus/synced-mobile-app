@@ -11,6 +11,18 @@ import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
+// Define the DateTime extension for formatDate and isSameDate
+extension DateHelper on DateTime {
+  String formatDate() {
+    final formatter = DateFormat("d MMMM y"); // Format the date as "d MMMM y"
+    return formatter.format(this);
+  }
+
+  bool isSameDate(DateTime other) {
+    return year == other.year && month == other.month && day == other.day;
+  }
+}
+
 class ExpensesTabScreen extends StatefulWidget {
   final TabController tabController;
   final PagingController reviewPagingController, processedPagingController;
@@ -18,12 +30,12 @@ class ExpensesTabScreen extends StatefulWidget {
   final bool showSpinner;
   const ExpensesTabScreen(
       {super.key,
-      required this.tabController,
-      required this.reviewPagingController,
-      required this.processedPagingController,
-      required this.reviewExpenses,
-      required this.processedExpenses,
-      required this.showSpinner});
+        required this.tabController,
+        required this.reviewPagingController,
+        required this.processedPagingController,
+        required this.reviewExpenses,
+        required this.processedExpenses,
+        required this.showSpinner});
 
   @override
   State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
@@ -59,7 +71,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
           const Text('No expenses yet!',
               style: TextStyle(
                   color: Colors.black,
-                  fontSize: 15,
+                  fontSize: 16, // Font size increased by 20%
                   fontWeight: FontWeight.w600)),
           const Text('Scan receipt to add your expense record here',
               style: TextStyle(
@@ -81,8 +93,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                     MediaQuery.of(navigatorKey.currentContext!).size.height *
                         0.06)),
                 backgroundColor: WidgetStateProperty.all(clickableColor)),
-            child:
-                const Text('Scan now', style: TextStyle(color: Colors.white)),
+            child: const Text('Scan now', style: TextStyle(color: Colors.white)),
           )
         ],
       ),
@@ -106,96 +117,100 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
       var f = NumberFormat("###,###.##", "en_US");
 
       return Card(
-        elevation: 4,
+        elevation: 6, // Increased elevation for shadow effect
         shadowColor: Colors.grey,
         color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // Rounded corners
+        ),
         child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15), // Increased padding
           child: Row(
             children: [
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.2,
+                width: MediaQuery.of(context).size.width * 0.25, // Adjusted width
                 child: item['invoice_path'] != null
                     ? SizedBox(
-                        height: MediaQuery.of(context).size.width * 0.2,
-                        width: MediaQuery.of(context).size.width * 0.2,
-                        child: getInvoiceWidget(item))
+                    height: MediaQuery.of(context).size.width * 0.25, // Increased image size
+                    width: MediaQuery.of(context).size.width * 0.25,  // Increased image size
+                    child: getInvoiceWidget(item))
                     : appLoader,
               ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: item['supplierName'] != null
-                              ? Text(item['supplierName'],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0XFF344054)))
-                              : SizedBox(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.375),
-                        ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.2,
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: FittedBox(
-                            fit: BoxFit.fitWidth,
-                            child: Text(
-                              item['amountDue'] != null
-                                  ? f.format(item['amountDue'])
-                                  : "",
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Color(0XFF101828)),
-                            ),
+              const SizedBox(width: 15), // Increased space between image and text
+              Expanded(  // Wrap the column in Expanded to prevent overflow
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Expanded(  // Use Expanded for the supplier name text to prevent overflow
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: item['supplierName'] != null
+                                ? Text(item['supplierName'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 16, // Font size increased by 20%
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0XFF344054)))
+                                : SizedBox(width: MediaQuery.of(context).size.width * 0.375),
                           ),
                         ),
-                      )
-                    ],
-                  ),
-                  if (item['accountName'] != null) ...[
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Chip(
-                        padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100)),
-                        side: BorderSide(
-                          color: clickableColor,
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.25, // Adjusted width for amount
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: FittedBox(
+                              fit: BoxFit.fitWidth,
+                              child: Text(
+                                item['amountDue'] != null
+                                    ? f.format(item['amountDue'])
+                                    : "",
+                                textAlign: TextAlign.end,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14, // Font size increased by 20%
+                                    color: const Color(0XFF101828)),
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    if (item['accountName'] != null) ...[
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Chip(
+                          padding: const EdgeInsets.fromLTRB(2, 12, 2, 12), // Adjusted padding
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100)),
+                          side: BorderSide(
+                            color: clickableColor, // clickableColor should now work
+                          ),
+                          label: Text(item['accountName'],
+                              style: const TextStyle(
+                                  fontSize: 12, // Increased font size by 20%
+                                  fontWeight: FontWeight.w500)),
+                          color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
+                          labelStyle: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w500),
                         ),
-                        label: Text(item['accountName']),
-                        color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
-                        labelStyle: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0XFF667085)),
-                      ),
-                    )
-                  ]
-                ],
+                      )
+                    ]
+                  ],
+                ),
               ),
             ],
           ),
         ),
       );
     }
+
 
     Widget getPageContent() {
       if (showSpinner || widget.showSpinner) {
@@ -219,7 +234,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
             child: Column(
               children: [
                 SizedBox(
-                    height: 48,
+                    height: 50,
                     child: TextFormField(
                       decoration: InputDecoration(
                           filled: true,
@@ -227,20 +242,20 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           focusColor: const Color(0XFF8E8E8E),
                           hintText: 'Search',
                           hintStyle: const TextStyle(
                               fontWeight: FontWeight.w500,
-                              fontSize: 14,
+                              fontSize: 16, // Font size increased by 20%
                               color: Color(0XFF8E8E8E)),
                           prefixIcon: const Icon(Icons.search),
                           prefixIconColor: const Color(0XFF8E8E8E)),
@@ -266,105 +281,6 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                       controller: reviewSearchController,
                     )),
                 const SizedBox(height: 10),
-                if (showUploadingInvoice) ...[
-                  SizedBox(
-                    height: 100,
-                    child: Card(
-                      color: Colors.white,
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6)),
-                        padding: const EdgeInsets.only(
-                            top: 5, left: 10, right: 5, bottom: 12),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                                height: 750,
-                                width: 750,
-                                child: uploadingData['path'] != null
-                                    ? Image.file(File(uploadingData['path']))
-                                    : appLoader),
-                            const SizedBox(width: 20),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Chip(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(100)),
-                                        side: const BorderSide(
-                                          color: Color(0XFFF6CA58),
-                                        ),
-                                        backgroundColor:
-                                            const Color(0XFFFFFEF4),
-                                        label: const Row(
-                                          children: [
-                                            SizedBox(
-                                              height: 10,
-                                              width: 10,
-                                              child: CircularProgressIndicator(
-                                                color: Color(0XFF667085),
-                                                strokeWidth: 2,
-                                              ),
-                                            ),
-                                            SizedBox(width: 5),
-                                            Text('Processing',
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)))
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.25),
-                                    Align(
-                                      alignment: Alignment.topRight,
-                                      child: Text(
-                                          uploadingData['size'] ?? '0.77Mb',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w400,
-                                              fontSize: 10,
-                                              color: Color(0XFF667085))),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
-                                if (uploadingData['uploadProgress'] < 1) ...[
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.6,
-                                    child: Center(
-                                      child: LinearProgressIndicator(
-                                          minHeight: 6,
-                                          value:
-                                              uploadingData['uploadProgress'],
-                                          valueColor: AlwaysStoppedAnimation(
-                                              clickableColor)),
-                                    ),
-                                  )
-                                ]
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
                 Expanded(
                     flex: showUploadingInvoice ? 5 : 8,
                     child: PagedListView(
@@ -376,232 +292,91 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                             : const NeverScrollableScrollPhysics(),
                         builderDelegate: PagedChildBuilderDelegate(
                             itemBuilder: (context, item, index) {
-                          bool isSameDate = true;
-                          DateTime? date;
-                          final item = widget.reviewExpenses[index];
-                          if (index == 0) {
-                            isSameDate = false;
-                          }
-                          if (widget.reviewExpenses[index]['date'] != null) {
-                            final String dateString =
+                              bool isSameDate = true;
+                              DateTime? date;
+                              final item = widget.reviewExpenses[index];
+                              if (index == 0) {
+                                isSameDate = false;
+                              }
+                              if (widget.reviewExpenses[index]['date'] != null) {
+                                final String dateString =
                                 widget.reviewExpenses[index]['date'];
-                            date = DateTime.parse(dateString);
-                            if (index == 0) {
-                              isSameDate = false;
-                            } else if (widget.reviewExpenses[index - 1]
-                                    ['date'] !=
-                                null) {
-                              final String prevDateString =
+                                date = DateTime.parse(dateString);
+                                if (index == 0) {
+                                  isSameDate = false;
+                                } else if (widget.reviewExpenses[index - 1]
+                                ['date'] !=
+                                    null) {
+                                  final String prevDateString =
                                   widget.reviewExpenses[index - 1]['date'];
-                              final DateTime prevDate =
+                                  final DateTime prevDate =
                                   DateTime.parse(prevDateString);
-                              isSameDate = date.isSameDate(prevDate);
-                            }
-                          }
-                          if (index == 0 || !(isSameDate)) {
-                            return Column(children: [
-                              if (widget.reviewExpenses[index]['date'] !=
-                                  null) ...[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Expanded(child: Divider()),
-                                    Text(' ${date?.formatDate()} ',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 12,
-                                            color: Color(0XFF667085))),
-                                    const Expanded(child: Divider()),
+                                  isSameDate = date.isSameDate(prevDate);
+                                }
+                              }
+                              if (index == 0 || !(isSameDate)) {
+                                return Column(children: [
+                                  if (widget.reviewExpenses[index]['date'] !=
+                                      null) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Expanded(child: Divider()),
+                                        Text(' ${date?.formatDate()} ',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w400,
+                                                fontSize: 20, // Increased font size
+                                                color: Color(0XFF667085))),
+                                        const Expanded(child: Divider()),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10)
                                   ],
-                                ),
-                                const SizedBox(height: 10)
-                              ],
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                          navigatorKey.currentContext!,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  UpdateExpenseData(
+                                                      expense: item,
+                                                      imagePath:
                                                       item['invoice_path'],
-                                                  isProcessed: false)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          } else {
-                            return Column(children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
+                                                      isProcessed: false)));
+                                    },
+                                    child: SizedBox(
+                                      height: 120, // Increased height of the card
+                                      child: getInvoiceCardWidget(item),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                ]);
+                              } else {
+                                return Column(children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                          navigatorKey.currentContext!,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  UpdateExpenseData(
+                                                      expense: item,
+                                                      imagePath:
                                                       item['invoice_path'],
-                                                  isProcessed: false)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          }
-                        })))
+                                                      isProcessed: false)));
+                                    },
+                                    child: SizedBox(
+                                      height: 120, // Increased height of the card
+                                      child: getInvoiceCardWidget(item),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                ]);
+                              }
+                            })))
               ],
             ),
           ),
-          Container(
-            color: const Color(0xfffbfbfb),
-            padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
-            height: MediaQuery.of(context).size.height * 0.8,
-            width: double.maxFinite,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 48,
-                  child: TextField(
-                    decoration: InputDecoration(
-                        filled: true,
-                        fillColor: const Color(0xfff3f3f3),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        focusColor: const Color(0XFF8E8E8E),
-                        hintText: 'Search',
-                        hintStyle: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: Color(0XFF8E8E8E)),
-                        prefixIcon: const Icon(Icons.search),
-                        prefixIconColor: const Color(0XFF8E8E8E)),
-                    onChanged: (value) async {
-                      processedDebouncer.debounce(
-                          duration: const Duration(milliseconds: 250),
-                          onDebounce: () {
-                            setState(() {
-                              processedSearchTerm = value;
-                            });
-                            widget.processedPagingController.refresh();
-                          });
-                    },
-                    onEditingComplete: () async {
-                      if (processedSearchController.text !=
-                          processedSearchTerm) {
-                        setState(() {
-                          processedSearchTerm = processedSearchController.text;
-                        });
-                        widget.processedPagingController.refresh();
-                      }
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    },
-                    controller: processedSearchController,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                    child: PagedListView(
-                        shrinkWrap: true,
-                        pagingController: widget.processedPagingController,
-                        scrollController: processedScrollController,
-                        physics: widget.tabController.index == 1
-                            ? const AlwaysScrollableScrollPhysics()
-                            : const NeverScrollableScrollPhysics(),
-                        builderDelegate: PagedChildBuilderDelegate(
-                            itemBuilder: (context, item, index) {
-                          bool isSameDate = true;
-                          final String dateString =
-                              widget.processedExpenses[index]['date'];
-                          final DateTime date = DateTime.parse(dateString);
-                          final item = widget.processedExpenses[index];
-                          if (index == 0) {
-                            isSameDate = false;
-                          } else {
-                            final String prevDateString =
-                                widget.processedExpenses[index - 1]['date'];
-                            final DateTime prevDate =
-                                DateTime.parse(prevDateString);
-                            isSameDate = date.isSameDate(prevDate);
-                          }
-                          if (index == 0 || !(isSameDate)) {
-                            return Column(children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Expanded(child: Divider()),
-                                  Text(' ${date.formatDate()} ',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 12,
-                                          color: Color(0XFF667085))),
-                                  const Expanded(child: Divider()),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: true)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          } else {
-                            return Column(children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: true)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          }
-                        })))
-              ],
-            ),
-          )
         ],
       );
     }
@@ -610,20 +385,3 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
   }
 }
 
-const String dateFormatter = "d MMMM y";
-
-extension DateHelper on DateTime {
-  String formatDate() {
-    final formatter = DateFormat(dateFormatter);
-    return formatter.format(this);
-  }
-
-  bool isSameDate(DateTime other) {
-    return year == other.year && month == other.month && day == other.day;
-  }
-
-  int getDifferenceInDaysWithNow() {
-    final now = DateTime.now();
-    return now.difference(this).inDays;
-  }
-}
