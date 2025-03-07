@@ -41,8 +41,8 @@ final class DynamicLinkHandler {
     log(data.toString(), name: 'Dynamic Link Handler');
     if (queryParams.isNotEmpty) {
       print(json.decode(queryParams['data']!));
-      final DatabaseHelper _db = DatabaseHelper();
-      await _db.deleteUsers();
+      final DatabaseHelper db = DatabaseHelper();
+      await db.deleteUsers();
       ChromeSafariBrowser.clearWebsiteData();
       await browser?.close();
       User.userId = json.decode(queryParams['data']!)['Data']['user']['UserId'];
@@ -50,7 +50,7 @@ final class DynamicLinkHandler {
       User.name = json.decode(queryParams['data']!)['Data']['user']['Name'];
       User.authToken =
           json.decode(queryParams['data']!)['Data']['access_token'];
-      _db.saveUser();
+      db.saveUser();
       Navigator.push(
           navigatorKey.currentContext!,
           MaterialPageRoute(

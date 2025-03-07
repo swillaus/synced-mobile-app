@@ -861,7 +861,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                   .add(transaction);
                                             }
                                           }
-                                          ;
                                           setState(() {});
                                         },
                                         child: Chip(

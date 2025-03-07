@@ -61,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
             automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             title: const Text(
-              '',
+              'Login',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             centerTitle: true,
@@ -90,15 +90,15 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Email',
+                      child: Text('Enter your email',
                           style: TextStyle(
                               color: headingColor,
                               fontSize: 14,
                               fontWeight: FontWeight.w500)),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 15),
                     SizedBox(
-                      height: 60,
+                      height: 48,
                       child: TextFormField(
                         style: TextStyle(
                             fontSize: 14,
@@ -118,13 +118,13 @@ class _LoginPageState extends State<LoginPage> {
                                   : const Icon(Icons.close, color: Colors.red)
                               : null,
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
+                              borderRadius: BorderRadius.circular(15.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           filled: true,
                           fillColor: Colors.white,
@@ -136,10 +136,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 15),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Password',
+                      child: Text('Enter your password',
                           style: TextStyle(
                               color: headingColor,
                               fontSize: 14,
@@ -147,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 5),
                     SizedBox(
-                      height: 60,
+                      height: 48,
                       child: TextFormField(
                         style: TextStyle(
                             fontSize: 14,
@@ -171,13 +171,13 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
+                                borderRadius: BorderRadius.circular(15.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
+                                borderRadius: BorderRadius.circular(15.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
+                                borderRadius: BorderRadius.circular(15.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             filled: true,
                             fillColor: Colors.white,
@@ -202,14 +202,14 @@ class _LoginPageState extends State<LoginPage> {
                             builder: (context) => const ForgotPasswordPage())),
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 15),
                 ElevatedButton(
                   style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(
-                          Size(MediaQuery.of(context).size.width * 0.9, 48)),
+                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     setState(() {
@@ -304,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset('assets/xero_logo.png',
-                          height: 46, width: 30),
+                          height: 30, width: 30),
                       const SizedBox(width: 15),
                       const Text(
                         'Sign in with Xero',

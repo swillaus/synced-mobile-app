@@ -13,17 +13,20 @@ import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:lottie/lottie.dart';
 
 class UpdateExpenseData extends StatefulWidget {
   final Map expense;
   final String? imagePath;
   final bool? isProcessed;
+  final String selectedOrgId;
 
   const UpdateExpenseData({
     super.key,
     required this.expense,
     required this.imagePath,
     this.isProcessed,
+    required this.selectedOrgId,
   });
 
   @override
@@ -41,6 +44,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   TextEditingController accountController = TextEditingController();
   TextEditingController accountSearchController = TextEditingController();
   FocusNode keyboardFocusNode = FocusNode();
+
+  String? imagePath;
+  Widget? _publishButtonChild;
 
   final InputDecoration plainInputDecoration = const InputDecoration(
     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -62,8 +68,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     filled: true,
     fillColor: Colors.white,
     alignLabelWithHint: true,
-    // Add this to align text to the left
-    constraints: BoxConstraints(maxHeight: 40),
+    constraints: BoxConstraints(maxHeight: 40, minWidth: double.infinity),
     suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.grey),
   );
 
@@ -92,11 +97,39 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     preparePage();
   }
 
+  @override
+  void didUpdateWidget(covariant UpdateExpenseData oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedOrgId != widget.selectedOrgId) {
+      // Organization has changed, load new data
+      preparePage();
+    }
+  }
+
   Future<void> preparePage() async {
     setState(() {
       showSpinner = true;
     });
+
+    // Fetch the invoice data
     await getInvoiceById();
+
+    // Assuming the pdfUrl is part of the expense data
+    String? pdfUrl = widget.expense['pdfUrl'];
+
+    // Construct the imagePath with the pdfUrl
+    setState(() {
+      if (pdfUrl != null && pdfUrl.isNotEmpty) {
+        imagePath = pdfUrl;
+      } else {
+        imagePath = null; // Handle the case where pdfUrl is null or empty
+      }
+    });
+
+    // Log the constructed imagePath for debugging
+    print('Constructed imagePath: $imagePath');
+
+    // Continue with other initializations
     await getSuppliers();
     getPaymentAccounts();
     getBankDetails();
@@ -104,30 +137,29 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     getTaxRates();
 
     setState(() {
-      updatedExpense = expense;
+      updatedExpense = widget.expense;
       updatedExpense.remove('invoice_path');
-      supplierController.text = expense['supplierName'] ?? '';
-      selectedDate = DateTime.parse(expense['date']);
-      dateController.text =
-          DateFormat('dd MMM, yyyy').format(DateTime.parse(expense['date']));
-      refController.text = expense['invoiceNumber'] ?? '';
-      descriptionController.text =
-          expense['invoiceLines'][0]['description'] ?? '';
+      supplierController.text = widget.expense['supplierName'] ?? '';
+      selectedDate = DateTime.parse(widget.expense['date']);
+      dateController.text = DateFormat('dd MMM, yyyy').format(DateTime.parse(widget.expense['date']));
+      refController.text = widget.expense['invoiceNumber'] ?? '';
+      descriptionController.text = widget.expense['invoiceLines'][0]['description'] ?? '';
       showSpinner = false;
     });
   }
 
   Future<void> getInvoiceById() async {
     final resp = await ApiService.getInvoiceById(widget.expense['id']);
+    print('API Response: $resp'); // Log the API response
     expense = resp;
   }
 
   Future<void> getPaymentAccounts() async {
-    final resp = await ApiService.getPaymentAccounts(selectedOrgId);
+    final resp = await ApiService.getPaymentAccounts(widget.selectedOrgId);
     paymentAccounts = resp;
     filteredPaymentAccounts = resp;
     for (var acc in paymentAccounts) {
-      if (acc['id'] == expense['invoiceLines'][0]['accountId']) {
+      if (acc['id'] == widget.expense['invoiceLines'][0]['accountId']) {
         selectedAccount = acc;
         accountController.text = acc['name'];
         break;
@@ -136,11 +168,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> getBankDetails() async {
-    final resp = await ApiService.getBankDetails(selectedOrgId);
+    final resp = await ApiService.getBankDetails(widget.selectedOrgId);
     if (resp.isNotEmpty && resp['status'] == 0) {
       bankDetails = resp['data'];
       for (var bankDetail in bankDetails) {
-        if (expense['paymentAccountNumber'] == bankDetail['accountID']) {
+        if (widget.expense['paymentAccountNumber'] == bankDetail['accountID']) {
           selectedCard = bankDetail;
         }
       }
@@ -148,11 +180,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> getTaxRates() async {
-    final resp = await ApiService.getTaxRates(selectedOrgId);
+    final resp = await ApiService.getTaxRates(widget.selectedOrgId);
     if (resp.isNotEmpty) {
       taxRates = resp;
       for (var tax in taxRates) {
-        if (tax['id'] == expense['invoiceLines'][0]['taxId']) {
+        if (tax['id'] == widget.expense['invoiceLines'][0]['taxId']) {
           selectedTaxRate = tax;
         }
       }
@@ -160,34 +192,34 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> getOrgCurrencies() async {
-    final List resp = await ApiService.getOrgCurrencies(selectedOrgId);
+    final List resp = await ApiService.getOrgCurrencies(widget.selectedOrgId);
     if (resp.isNotEmpty) {
       currencies = resp;
     }
     selectedCurrency =
-    expense['currency'] != null && expense['currency'].runtimeType == String
-        ? expense['currency']
+    widget.expense['currency'] != null && widget.expense['currency'].runtimeType == String
+        ? widget.expense['currency']
         : currencies.isNotEmpty
         ? currencies.first
         : 'USD';
     currencyController.text = selectedCurrency!;
-    totalController.text = expense['amountDue'].toString();
+    totalController.text = widget.expense['amountDue'].toString();
   }
 
   Future<void> getSuppliers() async {
     suppliers.clear();
     filteredSuppliers.clear();
-    final resp = await ApiService.getSuppliers(selectedOrgId);
+    final resp = await ApiService.getSuppliers(widget.selectedOrgId);
     if (resp.isNotEmpty) {
       suppliers = resp;
       if (suppliers
-          .where((element) => element['name'] == expense['supplierName'])
+          .where((element) => element['name'] == widget.expense['supplierName'])
           .isNotEmpty) {
         selectedSupplier = suppliers
-            .where((element) => element['name'] == expense['supplierName'])
+            .where((element) => element['name'] == widget.expense['supplierName'])
             .first;
       } else {
-        filteredSuppliers.add({'name': "+ Add ${expense['supplierName']}"});
+        filteredSuppliers.add({'name': "+ Add ${widget.expense['supplierName']}"});
       }
       filteredSuppliers.addAll(resp);
     }
@@ -240,7 +272,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       body: ModalProgressHUD(
         color: const Color(0XFFFBFBFB),
         opacity: 1.0,
-        progressIndicator: appLoader,
+        progressIndicator: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            appLoader,
+            Lottie.asset('assets/animations/loading.json', width: 300, height: 300),
+          ],
+        ),
         inAsyncCall: showSpinner,
         child: Column(
           children: [
@@ -261,22 +299,21 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       ),
                     ),
                     children: [
-                      _buildTableRow("Type", _buildTypeValue()),
-                      _buildTableRow("Supplier", _buildSupplierWidget()),
-                      _buildTableRow("Date", _buildDateWidget()),
-                      _buildTableRow("Currency", _buildCurrencyWidget()),
-                      _buildTableRow("Ref", _buildRefWidget()),
-                      _buildTableRow("Account", _buildAccountWidget()),
-                      _buildTableRow("Paid Form", _buildPaidFormWidget()),
-                      _buildTableRow("Description", _buildDescriptionWidget()),
-                      _buildTableRow("Total", Column(
+                      _buildTableRow("Supplier", Align(alignment: Alignment.centerLeft, child: _buildSupplierWidget())),
+                      _buildTableRow("Date", Align(alignment: Alignment.centerLeft, child: _buildDateWidget())),
+                      _buildTableRow("Currency", Align(alignment: Alignment.centerLeft, child: _buildCurrencyWidget())),
+                      _buildTableRow("Ref", Align(alignment: Alignment.centerLeft, child: _buildRefWidget())),
+                      _buildTableRow("Account", Align(alignment: Alignment.centerLeft, child: _buildAccountWidget())),
+                      _buildTableRow("Paid Form", Align(alignment: Alignment.centerLeft, child: _buildPaidFormWidget())),
+                      _buildTableRow("Description", Align(alignment: Alignment.centerLeft, child: _buildDescriptionWidget())),
+                      _buildTableRow("Total", Align(alignment: Alignment.centerLeft, child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildTotalWidget(),
                           const SizedBox(height: 8),
                           _buildTaxChipRow(),
                         ],
-                      )),
+                      ))),
                     ],
                   ),
                 ),
@@ -304,7 +341,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// A helper method to build a single row with a label on the left and a widget on the right.
   Widget _buildRow(String label, Widget widgetOnRight) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start, 
       children: [
         // Label with fixed width
         SizedBox(
@@ -327,16 +364,18 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Type field: read-only text, defaulting to "Receipt" if none.
   Widget _buildTypeValue() {
     final String typeVal = updatedExpense['type'] ?? "Receipt";
-    return Text(
-      typeVal,
-      style: const TextStyle(fontSize: 14, color: Colors.black),
+    return TextField(
+      enabled: false,
+      controller: TextEditingController(text: typeVal),
+      decoration: plainInputDecoration,
+      textAlign: TextAlign.left,
     );
   }
 
   /// Supplier name widget: your existing logic to show a text field or a row with an icon if it exists
   Widget _buildSupplierWidget() {
     // If the supplier is not found in the list
-    if (suppliers.where((element) => element['name'] == expense['supplierName']).isEmpty) {
+    if (suppliers.where((element) => element['name'] == widget.expense['supplierName']).isEmpty) {
       return TextField(
         enabled: !widget.isProcessed!,
         controller: supplierController,
@@ -344,6 +383,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         decoration: dropdownInputDecoration,
         onTap: _showSupplierBottomSheet,
         maxLines: 1,
+        textAlign: TextAlign.left,
       );
     } else {
       // If found
@@ -357,6 +397,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               decoration: dropdownInputDecoration,
               maxLines: 1,
               onTap: _showSupplierBottomSheet,
+              textAlign: TextAlign.left,
             ),
           ),
           const SizedBox(width: 5),
@@ -418,10 +459,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       }
                     } else {
                       if (suppliers
-                          .where((element) => element['name'] == expense['supplierName'])
+                          .where((element) => element['name'] == widget.expense['supplierName'])
                           .isEmpty) {
                         filteredSuppliers
-                            .add({'name': "+ Add ${expense['supplierName']}"});
+                            .add({'name': "+ Add "+widget.expense['supplierName']});
                       }
                       filteredSuppliers.addAll(suppliers);
                     }
@@ -500,13 +541,17 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       showSpinner = false;
     });
     if (resp.isNotEmpty) {
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-        const SnackBar(content: Text('Updated successfully.')),
-      );
+      setState(() {
+        updatedExpense = updatedExpense;
+      });
+      ScaffoldMessenger.of(navigatorKey.currentContext!)
+          .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
     } else {
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-        const SnackBar(content: Text('Failed to update.')),
-      );
+      setState(() {
+        updatedExpense = widget.expense;
+      });
+      ScaffoldMessenger.of(navigatorKey.currentContext!)
+          .showSnackBar(const SnackBar(content: Text('Failed to update.')));
     }
   }
 
@@ -544,6 +589,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       decoration: dropdownInputDecoration,
       maxLines: 1,
       onTap: _pickDate,
+      textAlign: TextAlign.left,
     );
   }
 
@@ -583,9 +629,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         showSpinner = false;
       });
       if (resp.isNotEmpty) {
+        setState(() {
+          updatedExpense = updatedExpense;
+        });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
             .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
       } else {
+        setState(() {
+          updatedExpense = widget.expense;
+        });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
             .showSnackBar(const SnackBar(content: Text('Failed to update.')));
       }
@@ -601,6 +653,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       decoration: dropdownInputDecoration,
       maxLines: 1,
       onTap: _pickCurrency,
+      textAlign: TextAlign.left,
     );
   }
 
@@ -623,9 +676,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           showSpinner = false;
         });
         if (resp.isNotEmpty) {
+          setState(() {
+            updatedExpense = updatedExpense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
         } else {
+          setState(() {
+            updatedExpense = widget.expense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Failed to update.')));
         }
@@ -638,7 +697,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     return TextField(
       enabled: !widget.isProcessed!,
       controller: refController,
-      decoration: plainInputDecoration,
+      decoration: plainInputDecoration.copyWith(
+        hintText: refController.text.isEmpty ? 'Add Reference' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
       maxLines: 1,
       onEditingComplete: () async {
         updatedExpense['invoiceNumber'] = refController.text;
@@ -648,13 +710,20 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           showSpinner = false;
         });
         if (resp.isNotEmpty) {
+          setState(() {
+            updatedExpense = updatedExpense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
         } else {
+          setState(() {
+            updatedExpense = widget.expense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Failed to update.')));
         }
       },
+      textAlign: TextAlign.left,
     );
   }
 
@@ -670,6 +739,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       ),
       maxLines: 1,
       onTap: _showAccountBottomSheet,
+      textAlign: TextAlign.left,
     );
   }
 
@@ -753,10 +823,16 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                             showSpinner = false;
                           });
                           if (resp.isNotEmpty) {
+                            setState(() {
+                              updatedExpense = updatedExpense;
+                            });
                             ScaffoldMessenger.of(navigatorKey.currentContext!)
                                 .showSnackBar(const SnackBar(
                                 content: Text('Updated successfully.')));
                           } else {
+                            setState(() {
+                              updatedExpense = widget.expense;
+                            });
                             ScaffoldMessenger.of(navigatorKey.currentContext!)
                                 .showSnackBar(const SnackBar(
                                 content: Text('Failed to update.')));
@@ -803,7 +879,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     if (widget.isProcessed == false) {
       return DropdownButtonHideUnderline(
         child: DropdownButton2(
-          hint: const Text('Select Payment Account', style: TextStyle(color: Colors.grey)),
+          hint: const Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Select Payment Account', style: TextStyle(color: Colors.grey)),
+          ),
           isExpanded: true,
           value: selectedCard,
           items: getBankDetailsDropdownItems(),
@@ -818,9 +897,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               showSpinner = false;
             });
             if (resp.isNotEmpty) {
+              setState(() {
+                updatedExpense = updatedExpense;
+              });
               ScaffoldMessenger.of(navigatorKey.currentContext!)
                   .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
             } else {
+              setState(() {
+                updatedExpense = widget.expense;
+              });
               ScaffoldMessenger.of(navigatorKey.currentContext!)
                   .showSnackBar(const SnackBar(content: Text('Failed to update.')));
             }
@@ -852,7 +937,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       enabled: !widget.isProcessed!,
       textInputAction: TextInputAction.done,
       controller: descriptionController,
-      decoration: plainInputDecoration,
+      decoration: plainInputDecoration.copyWith(
+        hintText: descriptionController.text.isEmpty ? 'Add Description' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
       maxLines: 3,
       onTapOutside: (cb) async {
         updatedExpense['description'] = descriptionController.text;
@@ -863,13 +951,20 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           showSpinner = false;
         });
         if (resp.isNotEmpty) {
+          setState(() {
+            updatedExpense = updatedExpense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
         } else {
+          setState(() {
+            updatedExpense = widget.expense;
+          });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Failed to update.')));
         }
       },
+      textAlign: TextAlign.left,
     );
   }
 
@@ -902,9 +997,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       showSpinner = false;
                     });
                     if (resp.isNotEmpty) {
+                      setState(() {
+                        updatedExpense = updatedExpense;
+                      });
                       ScaffoldMessenger.of(navigatorKey.currentContext!)
                           .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
                     } else {
+                      setState(() {
+                        updatedExpense = widget.expense;
+                      });
                       ScaffoldMessenger.of(navigatorKey.currentContext!)
                           .showSnackBar(const SnackBar(content: Text('Failed to update.')));
                     }
@@ -933,6 +1034,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         controller: totalController,
         decoration: plainInputDecoration,
         maxLines: 1,
+        textAlign: TextAlign.left,
       ),
     );
   }
@@ -976,15 +1078,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   String _buildTaxChipLabel() {
-    if (selectedTaxRate != null && expense['totalTax'] == 0) {
-      double potentialTax = expense['amountDue'] * (selectedTaxRate!['rate'] / 100);
+    if (selectedTaxRate != null && widget.expense['totalTax'] == 0) {
+      double potentialTax = widget.expense['amountDue'] * (selectedTaxRate!['rate'] / 100);
       return 'Total tax includes: '
-          '${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}'
+          '${widget.expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(widget.expense['currency']) : ''}'
           '$potentialTax';
     } else {
       return 'Total tax includes: '
-          '${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}'
-          '${expense['totalTax']}';
+          '${widget.expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(widget.expense['currency']) : ''}'
+          '${widget.expense['totalTax']}';
     }
   }
 
@@ -1052,18 +1154,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
                       ),
-                      fixedSize: MaterialStateProperty.all(Size(
+                      fixedSize: Size(
                         MediaQuery.of(context).size.width,
                         MediaQuery.of(context).size.height * 0.06,
-                      )),
-                      backgroundColor:
-                      MaterialStateProperty.all(const Color(0XFF009318)),
+                      ),
+                      backgroundColor: const Color(0XFF009318),
                     ),
                     onPressed: () async {
                       setState(() {
@@ -1086,16 +1185,15 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       setState(() {
                         showSpinner = false;
                       });
-                      Navigator.pop(context);
                       if (resp.isNotEmpty) {
                         setState(() {
-                          expense = updatedExpense;
+                          updatedExpense = updatedExpense;
                         });
                         ScaffoldMessenger.of(navigatorKey.currentContext!)
                             .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
                       } else {
                         setState(() {
-                          updatedExpense = expense;
+                          updatedExpense = widget.expense;
                         });
                         ScaffoldMessenger.of(navigatorKey.currentContext!)
                             .showSnackBar(const SnackBar(content: Text('Failed to update.')));
@@ -1128,19 +1226,17 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Publish button
   Widget _buildPublishButton() {
     return ElevatedButton(
-      style: ButtonStyle(
-        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-        ),
-        fixedSize: MaterialStateProperty.all(
-          Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
-        ),
-        backgroundColor: MaterialStateProperty.all(const Color(0XFF009318)),
-      ),
       onPressed: _handlePublish,
-      child: const Text(
+      child: _publishButtonChild ?? const Text(
         'Publish',
         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        fixedSize: Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
+        backgroundColor: const Color(0XFF009318),
       ),
     );
   }
@@ -1149,6 +1245,32 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     setState(() {
       showSpinner = true;
     });
+
+    // Disable the button and show a loading spinner
+    final buttonChild = ElevatedButton(
+      onPressed: null, // Disable the button while loading
+      child: const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        fixedSize: Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
+        backgroundColor: const Color(0XFF009318),
+      ),
+    );
+
+    // Temporarily replace the button with a loading spinner
+    setState(() {
+      _publishButtonChild = buttonChild;
+    });
+
     Map contact = {};
     for (var supplier in suppliers) {
       if (supplier['name'] == supplierController.text) {
@@ -1161,7 +1283,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     }
     List lineItems = updatedExpense['invoiceLines'];
     for (var item in lineItems) {
-      item.addAll({'organisationId': selectedOrgId});
+      item.addAll({'organisationId': widget.selectedOrgId});
     }
     Map receipt = {
       "bankAccount": {
@@ -1177,10 +1299,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       'date': updatedExpense['date'],
       'invoiceId': updatedExpense['id'],
       'invoiceNumber': updatedExpense['invoiceNumber'],
-      "InvoiceOrCreditNote": updatedExpense['type'],
       'lineAmountTypes': 'Exclusive',
       'lineItems': lineItems,
-      'OrganisationId': selectedOrgId,
+      'OrganisationId': widget.selectedOrgId,
       'paymentAccountNumber': updatedExpense['paymentAccountNumber'],
       'paymentDate': updatedExpense['paymentDate'],
       'paymentStatus': updatedExpense['type'] == 'Receipt' ? 1 : 0,
@@ -1189,24 +1310,26 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       'subTotal': updatedExpense['subTotal'],
       'total': updatedExpense['amountDue'],
       'totalTax': updatedExpense['totalTax'],
-      'type': updatedExpense['type'],
       "unreconciledReportIds": ""
     };
     // Debug log
     print(jsonEncode(receipt));
 
     final resp = await ApiService.publishReceipt(receipt);
+    setState(() {
+      showSpinner = false;
+      _publishButtonChild = null; // Reset the button to its original state
+    });
     if (resp.isNotEmpty) {
       ScaffoldMessenger.of(navigatorKey.currentContext!)
-          .showSnackBar(const SnackBar(content: Text('Published successfully.')));
+          .showSnackBar(
+        const SnackBar(content: Text('Published successfully! 🎉')),
+      );
       Navigator.push(
         navigatorKey.currentContext!,
         MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
       );
     } else {
-      setState(() {
-        showSpinner = false;
-      });
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         const SnackBar(content: Text('We were unable to publish the expense, please try again.')),
       );
@@ -1234,7 +1357,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       setState(() {
                         showSpinner = true;
                       });
-                      final resp = await ApiService.deleteExpense(expense['id']);
+                      final resp = await ApiService.deleteExpense(widget.expense['id']);
                       setState(() {
                         showSpinner = false;
                       });
@@ -1286,6 +1409,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// AppBar with the image or PDF preview
   PreferredSizeWidget _buildAppBar() {
+    print('Image URL: $imagePath');
     return AppBar(
       toolbarHeight: 60, // Reduced from 100
       surfaceTintColor: Colors.transparent,
@@ -1298,106 +1422,30 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       title: const SizedBox(height: 10),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(40), // Adjust as needed
-        child: widget.imagePath!.toLowerCase().endsWith('.pdf')
-            ? _buildPdfPreview()
-            : CachedNetworkImage(
-                imageUrl: widget.imagePath!,
-                height: 40,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildPdfPreview() {
-    return SfPdfViewer.network(
-      widget.imagePath!,
-      onTap: (details) => _showPdfDialog(),
-      enableDoubleTapZooming: false,
-      enableTextSelection: false,
-      enableDocumentLinkAnnotation: false,
-      enableHyperlinkNavigation: false,
-      canShowPageLoadingIndicator: false,
-      canShowScrollHead: false,
-      canShowScrollStatus: false,
-    );
-  }
-
-  void _showFullImage() {
-    showGeneralDialog(
-      barrierDismissible: false,
-      context: context,
-      pageBuilder: (context, animation, secondaryAnimation) => Container(
-        color: Colors.white,
-        padding: EdgeInsets.zero,
-        width: 100,
-        height: 200,
-        child: Stack(
-          children: [
-            PhotoView(
-              imageProvider: CachedNetworkImageProvider(widget.imagePath!),
-            ),
-            Positioned(
-              top: 50,
-              left: 10,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: CircleAvatar(
-                  backgroundColor: Colors.grey.shade400,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
+        child: imagePath != null && imagePath!.toLowerCase().endsWith('.pdf')
+            ? SfPdfViewer.network(
+                imagePath!,
+                canShowPageLoadingIndicator: false,
+                canShowScrollHead: false,
+                canShowScrollStatus: false,
+                onDocumentLoadFailed: (details) {
+                  print('Error loading PDF: ${details.description}');
+                },
+              )
+            : imagePath != null
+                ? CachedNetworkImage(
+                    imageUrl: imagePath!,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    errorWidget: (context, url, error) {
+                      print('Error loading image: $error'); // Log the error
+                      return const Icon(Icons.error);
                     },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPdfDialog() {
-    showGeneralDialog(
-      barrierDismissible: false,
-      context: context,
-      pageBuilder: (context, animation, secondaryAnimation) => Container(
-        color: Colors.white,
-        padding: EdgeInsets.zero,
-        width: MediaQuery.of(context).size.width - 10,
-        height: MediaQuery.of(context).size.height - 10,
-        child: Stack(
-          children: [
-            SfPdfViewer.network(
-              widget.imagePath!,
-              canShowPageLoadingIndicator: false,
-              canShowScrollHead: false,
-              canShowScrollStatus: false,
-            ),
-            Positioned(
-              top: 50,
-              left: 10,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: CircleAvatar(
-                  backgroundColor: Colors.grey.shade400,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+                  )
+                : const SizedBox(), // Handle null imagePath
       ),
     );
   }
@@ -1412,7 +1460,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               label,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600, // Increased font weight for boldness
               ),
             ),
           ),

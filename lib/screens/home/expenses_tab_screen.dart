@@ -29,6 +29,7 @@ class ExpensesTabScreen extends StatefulWidget {
   final PagingController reviewPagingController, processedPagingController;
   final List reviewExpenses, processedExpenses;
   final bool showSpinner;
+  final String selectedOrgId;
   const ExpensesTabScreen(
       {super.key,
         required this.tabController,
@@ -36,7 +37,8 @@ class ExpensesTabScreen extends StatefulWidget {
         required this.processedPagingController,
         required this.reviewExpenses,
         required this.processedExpenses,
-        required this.showSpinner});
+        required this.showSpinner,
+        required this.selectedOrgId});
 
   @override
   State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
@@ -57,6 +59,30 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     reviewDebouncer.cancel();
     processedDebouncer.cancel();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ExpensesTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedOrgId != widget.selectedOrgId) {
+      // Organization has changed, load new data
+      _loadDataForNewOrg();
+    }
+  }
+
+  Future<void> _loadDataForNewOrg() async {
+    setState(() {
+      showSpinner = true;
+    });
+
+    // Add your data loading logic here
+    // For example, refresh the paging controllers or fetch new data
+    widget.reviewPagingController.refresh();
+    widget.processedPagingController.refresh();
+
+    setState(() {
+      showSpinner = false;
+    });
   }
 
   @override
@@ -101,108 +127,107 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     );
 
     Widget getInvoiceWidget(Map matchData) {
-      late Widget invoiceImage;
-      invoiceImage = CachedNetworkImage(
+      return CachedNetworkImage(
         imageUrl: matchData['invoice_path'],
+        placeholder: (context, url) => CircularProgressIndicator(),
         errorWidget: (context, url, error) {
-          return SfPdfViewer.network(matchData['invoice_path'],
-              canShowPageLoadingIndicator: false,
-              canShowScrollHead: false,
-              canShowScrollStatus: false);
+          return SfPdfViewer.network(
+            matchData['invoice_path'],
+            canShowPageLoadingIndicator: false,
+            canShowScrollHead: false,
+            canShowScrollStatus: false,
+          );
         },
       );
-      return invoiceImage;
     }
 
     Widget getInvoiceCardWidget(item) {
       var f = NumberFormat("###,###.##", "en_US");
 
       return Card(
-        elevation: 6, // Increased elevation for shadow effect
-        shadowColor: Colors.grey,
+        elevation: 8, // Increased elevation for a more pronounced shadow
+        shadowColor: Colors.black26, // Softer shadow color
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12), // Rounded corners
+          borderRadius: BorderRadius.circular(16), // More rounded corners
         ),
         child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15), // Increased padding
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200), // Subtle border
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Consistent padding
           child: Row(
             children: [
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.25, // Adjusted width
+                width: MediaQuery.of(context).size.width * 0.25,
                 child: item['invoice_path'] != null
                     ? SizedBox(
-                    height: MediaQuery.of(context).size.width * 0.25, // Increased image size
-                    width: MediaQuery.of(context).size.width * 0.25,  // Increased image size
-                    child: getInvoiceWidget(item))
+                        height: MediaQuery.of(context).size.width * 0.25,
+                        width: MediaQuery.of(context).size.width * 0.25,
+                        child: getInvoiceWidget(item))
                     : appLoader,
               ),
-              const SizedBox(width: 15), // Increased space between image and text
-              Expanded(  // Wrap the column in Expanded to prevent overflow
+              const SizedBox(width: 16), // Consistent spacing
+              Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.max,
                       children: [
-                        Expanded(  // Use Expanded for the supplier name text to prevent overflow
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: item['supplierName'] != null
-                                ? Text(item['supplierName'],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: 16, // Font size increased by 20%
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0XFF344054)))
-                                : SizedBox(width: MediaQuery.of(context).size.width * 0.375),
-                          ),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.25, // Adjusted width for amount
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: FittedBox(
-                              fit: BoxFit.fitWidth,
-                              child: Text(
-                                item['amountDue'] != null
-                                    ? f.format(item['amountDue'])
-                                    : "",
-                                textAlign: TextAlign.end,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14, // Font size increased by 20%
-                                    color: const Color(0XFF101828)),
-                              ),
+                        Expanded(
+                          child: Text(
+                            item['supplierName'] ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18, // Larger font size
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0XFF344054),
                             ),
                           ),
-                        )
+                        ),
+                        Flexible(
+                          child: Text(
+                            item['amountDue'] != null ? f.format(item['amountDue']) : "",
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18, // Larger font size for clarity
+                              color: Colors.green, // Change color to green for better visibility
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     if (item['accountName'] != null) ...[
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Chip(
-                          padding: const EdgeInsets.fromLTRB(2, 12, 2, 12), // Adjusted padding
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100)),
-                          side: BorderSide(
-                            color: clickableColor, // clickableColor should now work
-                          ),
-                          label: Text(item['accountName'],
-                              style: const TextStyle(
-                                  fontSize: 12, // Increased font size by 20%
-                                  fontWeight: FontWeight.w500)),
-                          color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
-                          labelStyle: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w500),
+                      const SizedBox(height: 8), // Consistent spacing
+                      Chip(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
                         ),
-                      )
-                    ]
+                        side: BorderSide(color: clickableColor),
+                        label: Row(
+                          children: [
+                            Text(
+                              '💼 ', // Adding a briefcase emoji for account label
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            Text(
+                              item['accountName'],
+                              style: const TextStyle(
+                                fontSize: 14, // Larger font size
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0XFFFFFEF4),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -220,10 +245,12 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Lottie.asset(
-                '../../assets/lottie/loading.json',
-                width: 200,
-                height: 200,
-                fit: BoxFit.contain,
+                'assets/animations/loading.json',
+                width: 300,
+                height: 300,
+                errorBuilder: (context, error, stackTrace) {
+                  return Text('Error loading animation');
+                },
               ),
               const SizedBox(height: 16),
               const Text(
@@ -281,15 +308,10 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                               color: Color(0XFF8E8E8E)),
                           prefixIcon: const Icon(Icons.search),
                           prefixIconColor: const Color(0XFF8E8E8E)),
-                      onChanged: (value) async {
-                        reviewDebouncer.debounce(
-                            duration: const Duration(milliseconds: 250),
-                            onDebounce: () {
-                              setState(() {
-                                reviewSearchTerm = value;
-                              });
-                              widget.reviewPagingController.refresh();
-                            });
+                      onChanged: (value) {
+                        setState(() {
+                          updateDetails(value);
+                        });
                       },
                       onEditingComplete: () async {
                         if (reviewSearchController.text != reviewSearchTerm) {
@@ -364,7 +386,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                                       expense: item,
                                                       imagePath:
                                                       item['invoice_path'],
-                                                      isProcessed: false)));
+                                                      isProcessed: false,
+                                                      selectedOrgId: widget.selectedOrgId)));
                                     },
                                     child: SizedBox(
                                       height: 120, // Increased height of the card
@@ -385,7 +408,8 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                                       expense: item,
                                                       imagePath:
                                                       item['invoice_path'],
-                                                      isProcessed: false)));
+                                                      isProcessed: false,
+                                                      selectedOrgId: widget.selectedOrgId)));
                                     },
                                     child: SizedBox(
                                       height: 120, // Increased height of the card
@@ -404,6 +428,16 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     }
 
     return getPageContent();
+  }
+
+  void updateDetails(String value) {
+    // Implement the logic to update the details
+    // This could involve updating the local state or sending the data to a backend
+    print('Details updated: $value');
+    // Example: update the local state or call an API
+    // setState(() {
+    //   // Update the relevant state variable
+    // });
   }
 }
 

@@ -16,6 +16,8 @@ import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lottie/lottie.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 bool showUploadingInvoice = false;
 Map<String, dynamic> uploadingData = {};
@@ -238,7 +240,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                           expense: uploadResp,
                                                           imagePath:
                                                               'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
-                                                          isProcessed: false)));
+                                                          isProcessed: false,
+                                                          selectedOrgId: selectedOrgId)));
                                         }
                                       });
                                     },
@@ -387,8 +390,10 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {
         defaultCurrency = resp['currency'] ?? 'USD';
       });
-      await getUnprocessedExpenses(1, '');
-      await getProcessedExpenses(1, '');
+      await Future.wait<List<Future<dynamic>>>([
+        getUnprocessedExpenses(1, reviewSearchTerm),
+        getProcessedExpenses(1, processedSearchTerm),
+      ]);
     } else {
       setState(() {
         showSpinner = false;
@@ -421,7 +426,17 @@ class _HomeScreenState extends State<HomeScreen>
       inAsyncCall: showSpinner,
       opacity: 1.0,
       color: Colors.white,
-      progressIndicator: appLoader,
+      progressIndicator: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          appLoader,
+          Lottie.asset(
+            'assets/animations/loading.json',
+            width: 300,
+            height: 300,
+          ),
+        ],
+      ),
       child: Scaffold(
           extendBody: true,
           resizeToAvoidBottomInset: false,
@@ -431,99 +446,49 @@ class _HomeScreenState extends State<HomeScreen>
             surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.white,
             centerTitle: true,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                const SizedBox(width: 25),
-                SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: DropdownButtonHideUnderline(
-                        child: DropdownButton(
-                            alignment: AlignmentDirectional.center,
-                            dropdownColor: Colors.white,
-                            isExpanded: true,
-                            selectedItemBuilder: (BuildContext context) {
-                              return organisations.map<Widget>((org) {
-                                return Container(
-                                    alignment: Alignment.center,
-                                    child: Center(
-                                      child: Text(org['organisationName'],
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center),
-                                    ));
-                              }).toList();
-                            },
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black),
-                            onChanged: (value) async {
-                              if (showUploadingInvoice) {
-                                ScaffoldMessenger.of(
-                                        navigatorKey.currentContext!)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text(
-                                            'Expense currently progressing. Please wait for completion and try again')));
-                                return;
-                              }
-                              setState(() {
-                                showSpinner = true;
-                                selectedOrgId = value!;
-                              });
-                              reviewPagingController.refresh();
-                              processedPagingController.refresh();
-                            },
-                            menuWidth: MediaQuery.of(context).size.width,
-                            items: getDropdownEntries(),
-                            value: selectedOrgId))),
-                SizedBox(
-                  width: 25,
-                  child: PopupMenuButton<int>(
-                    color: Colors.white,
-                    icon: const Icon(Icons.more_vert, size: 25),
-                    onSelected: (item) async {
-                      switch (item) {
-                        case 0:
-                          if (!await launchUrl(
-                              Uri.parse('https://help.syncedhq.com/en/'))) {
-                            throw Exception('Could not launch help center');
-                          }
-                          break;
-                        case 1:
-                          final DatabaseHelper _db = DatabaseHelper();
-                          await _db.deleteUsers();
-                          selectedOrgId = '';
-                          Navigator.pushReplacement(
-                              navigatorKey.currentContext!,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginPage()));
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem<int>(
-                          value: 0,
-                          child: Row(
-                            children: [
-                              Icon(Icons.business_center_outlined),
-                              SizedBox(width: 10),
-                              Text('Help Center')
-                            ],
-                          )),
-                      const PopupMenuItem<int>(
-                          value: 1,
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout),
-                              SizedBox(width: 10),
-                              Text('Logout')
-                            ],
-                          )),
-                    ],
-                  ),
+            title: DropdownSearch<String>(
+              popupProps: PopupProps.dialog(
+                showSearchBox: true,
+                itemBuilder: (context, item, isSelected) {
+                  return ListTile(
+                    title: Text(item),
+                    selected: isSelected,
+                  );
+                },
+              ),
+              items: organisations.map((org) => org['organisationName'] as String).toList(),
+              onChanged: (String? selectedOrgName) {
+                setState(() {
+                  selectedOrgId = organisations.firstWhere(
+                      (org) => org['organisationName'] == selectedOrgName)['organisationID'];
+                });
+                // Directly call methods to refresh records when organization is switched
+                getUnprocessedExpenses(1, reviewSearchTerm);
+                getProcessedExpenses(1, processedSearchTerm);
+              },
+              selectedItem: organisations.isNotEmpty
+                  ? organisations.firstWhere(
+                      (org) => org['organisationID'] == selectedOrgId)['organisationName']
+                  : null,
+              dropdownDecoratorProps: DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  border: InputBorder.none,
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
-              ],
+              ),
+              dropdownBuilder: (context, selectedItem) {
+                return Center(
+                  child: Text(
+                    selectedItem ?? '',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              },
             ),
             bottom: selectedNavBarIndex == 0
                 ? TabBar(
@@ -632,6 +597,7 @@ class _HomeScreenState extends State<HomeScreen>
                         reviewExpenses: reviewExpenses,
                         processedExpenses: processedExpenses,
                         showSpinner: showSpinner,
+                        selectedOrgId: selectedOrgId,
                       ),
                     )
                   : const TransactionsTabScreen()),
