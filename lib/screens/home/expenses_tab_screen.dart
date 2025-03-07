@@ -10,6 +10,7 @@ import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:lottie/lottie.dart';
 
 // Define the DateTime extension for formatDate and isSameDate
 extension DateHelper on DateTime {
@@ -214,7 +215,28 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
 
     Widget getPageContent() {
       if (showSpinner || widget.showSpinner) {
-        return appLoader;
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                '../../assets/lottie/loading.json',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Loading expenses...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0XFF667085),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
       } else if (widget.reviewExpenses.isEmpty &&
           widget.processedExpenses.isEmpty &&
           !showUploadingInvoice &&

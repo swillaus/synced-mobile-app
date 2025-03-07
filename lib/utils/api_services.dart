@@ -612,7 +612,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            '$hostUrl/api/Organisation/getOrganizationDefaultCurrency?id=ee437f5b-8067-419e-9492-715314225cd3'));
+            '$hostUrl/api/Organisation/getOrganizationDefaultCurrency?id=$orgId'));
 
     request.headers.addAll(headers);
 

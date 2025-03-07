@@ -18,11 +18,13 @@ class UpdateExpenseData extends StatefulWidget {
   final Map expense;
   final String? imagePath;
   final bool? isProcessed;
-  const UpdateExpenseData(
-      {super.key,
-        required this.expense,
-        required this.imagePath,
-        this.isProcessed});
+
+  const UpdateExpenseData({
+    super.key,
+    required this.expense,
+    required this.imagePath,
+    this.isProcessed,
+  });
 
   @override
   State<UpdateExpenseData> createState() => _UpdateExpenseDataState();
@@ -39,6 +41,31 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   TextEditingController accountController = TextEditingController();
   TextEditingController accountSearchController = TextEditingController();
   FocusNode keyboardFocusNode = FocusNode();
+
+  final InputDecoration plainInputDecoration = const InputDecoration(
+    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+    filled: true,
+    fillColor: Colors.white,
+    alignLabelWithHint: true,
+    // Add this to align text to the left
+    constraints: BoxConstraints(maxHeight: 40),
+  );
+
+  final InputDecoration dropdownInputDecoration = const InputDecoration(
+    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+    filled: true,
+    fillColor: Colors.white,
+    alignLabelWithHint: true,
+    // Add this to align text to the left
+    constraints: BoxConstraints(maxHeight: 40),
+    suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.grey),
+  );
 
   Map updatedExpense = {};
   DateTime? selectedDate;
@@ -215,56 +242,73 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         opacity: 1.0,
         progressIndicator: appLoader,
         inAsyncCall: showSpinner,
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Each row is label + widget side by side
-                const SizedBox(height: 15),
-                _buildRow("Type", _buildTypeValue()),
-                const SizedBox(height: 15),
-                _buildRow("Supplier name", _buildSupplierNameWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Date", _buildDateWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Currency", _buildCurrencyWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Ref", _buildRefWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Account", _buildAccountWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Paid form", _buildPaidFormWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Description", _buildDescriptionWidget()),
-                const SizedBox(height: 15),
-                _buildRow("Total", _buildTotalWidget()),
-                const SizedBox(height: 15),
-                // Tax chip row is still in one line
-                _buildTaxChipRow(),
-                const SizedBox(height: 20),
-                // Publish and Delete
-                if (widget.isProcessed == false) ...[
-                  _buildPublishButton(),
-                  const SizedBox(height: 10),
-                  _buildDeleteButton(),
-                ],
-              ],
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Table(
+                    columnWidths: const {
+                      0: FixedColumnWidth(120), // Label column
+                      1: FlexColumnWidth(), // Input column
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    border: TableBorder(
+                      horizontalInside: BorderSide(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    children: [
+                      _buildTableRow("Type", _buildTypeValue()),
+                      _buildTableRow("Supplier", _buildSupplierWidget()),
+                      _buildTableRow("Date", _buildDateWidget()),
+                      _buildTableRow("Currency", _buildCurrencyWidget()),
+                      _buildTableRow("Ref", _buildRefWidget()),
+                      _buildTableRow("Account", _buildAccountWidget()),
+                      _buildTableRow("Paid Form", _buildPaidFormWidget()),
+                      _buildTableRow("Description", _buildDescriptionWidget()),
+                      _buildTableRow("Total", Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTotalWidget(),
+                          const SizedBox(height: 8),
+                          _buildTaxChipRow(),
+                        ],
+                      )),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+            // Add buttons at the bottom
+            if (widget.isProcessed == false) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  children: [
+                    _buildPublishButton(),
+                    const SizedBox(height: 10),
+                    _buildDeleteButton(),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
-  // Builds a single row: label on the left, widget on the right
-  Widget _buildRow(String label, Widget inputWidget) {
+  /// A helper method to build a single row with a label on the left and a widget on the right.
+  Widget _buildRow(String label, Widget widgetOnRight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label
+        // Label with fixed width
         SizedBox(
-          width: 120, // fixed width for label
+          width: 120,
           child: Text(
             label,
             style: const TextStyle(
@@ -274,50 +318,35 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           ),
         ),
         const SizedBox(width: 10),
-        // Input / Value widget
-        Expanded(child: inputWidget),
+        // The input or read-only value on the right
+        Expanded(child: widgetOnRight),
       ],
     );
   }
 
-  // 1. Type field (read-only)
+  /// Type field: read-only text, defaulting to "Receipt" if none.
   Widget _buildTypeValue() {
-    // If no type found, default to "Receipt"
-    String typeValue = updatedExpense['type'] ?? "Receipt";
+    final String typeVal = updatedExpense['type'] ?? "Receipt";
     return Text(
-      typeValue,
+      typeVal,
       style: const TextStyle(fontSize: 14, color: Colors.black),
     );
   }
 
-  // 2. Supplier name
-  Widget _buildSupplierNameWidget() {
-    // The code that decides if the supplier is in the list or not
-    // (This preserves your logic for showing the bottom sheet, etc.)
+  /// Supplier name widget: your existing logic to show a text field or a row with an icon if it exists
+  Widget _buildSupplierWidget() {
+    // If the supplier is not found in the list
     if (suppliers.where((element) => element['name'] == expense['supplierName']).isEmpty) {
-      // If not found in the list
       return TextField(
         enabled: !widget.isProcessed!,
         controller: supplierController,
         keyboardType: TextInputType.none,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
+        decoration: dropdownInputDecoration,
         onTap: _showSupplierBottomSheet,
         maxLines: 1,
       );
     } else {
-      // If supplier is found
+      // If found
       return Row(
         children: [
           Expanded(
@@ -325,19 +354,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               enabled: !widget.isProcessed!,
               controller: supplierController,
               keyboardType: TextInputType.none,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: subHeadingColor)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: subHeadingColor)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: subHeadingColor)),
-                filled: true,
-                fillColor: Colors.white,
-              ),
+              decoration: dropdownInputDecoration,
               maxLines: 1,
               onTap: _showSupplierBottomSheet,
             ),
@@ -350,7 +367,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   void _showSupplierBottomSheet() {
-    // Same bottom sheet logic you had before
+    // Same logic you had for showing suppliers
     showModalBottomSheet(
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -400,8 +417,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         }
                       }
                     } else {
-                      if (suppliers.where((element) => element['name'] == expense['supplierName']).isEmpty) {
-                        filteredSuppliers.add({'name': "+ Add ${expense['supplierName']}"});
+                      if (suppliers
+                          .where((element) => element['name'] == expense['supplierName'])
+                          .isEmpty) {
+                        filteredSuppliers
+                            .add({'name': "+ Add ${expense['supplierName']}"});
                       }
                       filteredSuppliers.addAll(suppliers);
                     }
@@ -515,25 +535,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // 3. Date
+  /// Date field logic
   Widget _buildDateWidget() {
     return TextField(
       enabled: !widget.isProcessed!,
       keyboardType: TextInputType.none,
       controller: dateController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
+      decoration: dropdownInputDecoration,
       maxLines: 1,
       onTap: _pickDate,
     );
@@ -584,25 +592,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     }
   }
 
-  // 4. Currency
+  /// Currency field logic
   Widget _buildCurrencyWidget() {
     return TextField(
       enabled: !widget.isProcessed!,
       keyboardType: TextInputType.none,
       controller: currencyController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
+      decoration: dropdownInputDecoration,
       maxLines: 1,
       onTap: _pickCurrency,
     );
@@ -637,24 +633,12 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // 5. Ref
+  /// Ref field logic
   Widget _buildRefWidget() {
     return TextField(
       enabled: !widget.isProcessed!,
       controller: refController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
+      decoration: plainInputDecoration,
       maxLines: 1,
       onEditingComplete: () async {
         updatedExpense['invoiceNumber'] = refController.text;
@@ -674,24 +658,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // 6. Account
+  /// Account field logic
   Widget _buildAccountWidget() {
     return TextField(
       enabled: !widget.isProcessed!,
       keyboardType: TextInputType.none,
       controller: accountController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        filled: true,
-        fillColor: Colors.white,
+      decoration: dropdownInputDecoration.copyWith(
         hintText: 'Select Account',
         hintStyle: const TextStyle(color: Colors.grey),
       ),
@@ -701,7 +674,6 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   void _showAccountBottomSheet() {
-    // Same logic as before
     showModalBottomSheet(
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -826,7 +798,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     }
   }
 
-  // 7. Paid form
+  /// Paid form logic
   Widget _buildPaidFormWidget() {
     if (widget.isProcessed == false) {
       return DropdownButtonHideUnderline(
@@ -854,11 +826,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             }
           },
           buttonStyleData: ButtonStyleData(
-            height: 55,
-            padding: const EdgeInsets.only(left: 14, right: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(strokeAlign: 0, color: Colors.black26),
+            height: 40, // Reduced height
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
             ),
           ),
           dropdownStyleData: const DropdownStyleData(
@@ -867,6 +838,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         ),
       );
     } else {
+      // If processed, just show read-only text
       return Text(
         selectedCard?['name'] ?? 'Cash',
         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: headingColor),
@@ -874,30 +846,17 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     }
   }
 
-  // 8. Description
+  /// Description logic
   Widget _buildDescriptionWidget() {
     return TextField(
       enabled: !widget.isProcessed!,
       textInputAction: TextInputAction.done,
       controller: descriptionController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: subHeadingColor)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
+      decoration: plainInputDecoration,
       maxLines: 3,
       onTapOutside: (cb) async {
         updatedExpense['description'] = descriptionController.text;
-        updatedExpense['invoiceLines'][0]['description'] =
-            descriptionController.text;
+        updatedExpense['invoiceLines'][0]['description'] = descriptionController.text;
         FocusManager.instance.primaryFocus?.unfocus();
         final resp = await ApiService.updateExpense(updatedExpense);
         setState(() {
@@ -914,7 +873,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // 9. Total
+  /// Total logic
   Widget _buildTotalWidget() {
     return KeyboardActions(
       bottomAvoiderScrollPhysics: const NeverScrollableScrollPhysics(),
@@ -972,25 +931,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textInputAction: TextInputAction.done,
         controller: totalController,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: subHeadingColor)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
+        decoration: plainInputDecoration,
         maxLines: 1,
       ),
     );
   }
 
-  // 10. Tax chip row
+  /// Tax chip row
   Widget _buildTaxChipRow() {
     return Row(
       children: [
@@ -1002,7 +949,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           backgroundColor: const Color(0XFFF2FFF5),
           label: Text(
             _buildTaxChipLabel(),
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0XFF009318)),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Color(0XFF009318),
+            ),
           ),
         ),
         if (widget.isProcessed == false) ...[
@@ -1012,7 +963,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             child: const Chip(
               shape: CircleBorder(side: BorderSide(color: Color(0XFF009318))),
               backgroundColor: Color(0XFFF2FFF5),
-              label: Icon(Icons.edit_outlined, color: Color(0XFF009318), size: 22),
+              label: Icon(
+                Icons.edit_outlined,
+                color: Color(0XFF009318),
+                size: 22,
+              ),
             ),
           ),
         ],
@@ -1022,7 +977,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   String _buildTaxChipLabel() {
     if (selectedTaxRate != null && expense['totalTax'] == 0) {
-      double potentialTax = expense['amountDue'] * selectedTaxRate!['rate'] / 100;
+      double potentialTax = expense['amountDue'] * (selectedTaxRate!['rate'] / 100);
       return 'Total tax includes: '
           '${expense['currency'].runtimeType == String ? NumberFormat().simpleCurrencySymbol(expense['currency']) : ''}'
           '$potentialTax';
@@ -1046,11 +1001,17 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             color: const Color(0XFFF9FAFB),
           ),
           height: MediaQuery.of(context).size.height * 0.075,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '  Tax Amount',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: headingColor),
+          child: const Padding(
+            padding: EdgeInsets.only(left: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Tax Amount',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ),
@@ -1092,20 +1053,25 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                 Center(
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
                       ),
-                      fixedSize: WidgetStateProperty.all(Size(
+                      fixedSize: MaterialStateProperty.all(Size(
                         MediaQuery.of(context).size.width,
                         MediaQuery.of(context).size.height * 0.06,
                       )),
-                      backgroundColor: WidgetStateProperty.all(const Color(0XFF009318)),
+                      backgroundColor:
+                      MaterialStateProperty.all(const Color(0XFF009318)),
                     ),
                     onPressed: () async {
                       setState(() {
                         showSpinner = true;
                       });
-                      updatedExpense['invoiceLines'][0]['taxId'] = selectedTaxRate?['id'];
+                      updatedExpense['invoiceLines'][0]['taxId'] =
+                      selectedTaxRate?['id'];
+
                       double subTotal = updatedExpense['amountDue'] -
                           (updatedExpense['amountDue'] * (selectedTaxRate?['rate'] / 100));
                       double totalTax = updatedExpense['amountDue'] *
@@ -1137,7 +1103,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     },
                     child: const Text(
                       'Save',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
                     ),
                   ),
                 ),
@@ -1158,17 +1125,17 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // Publish and Delete Buttons
+  /// Publish button
   Widget _buildPublishButton() {
     return ElevatedButton(
       style: ButtonStyle(
-        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
         ),
-        fixedSize: WidgetStateProperty.all(
+        fixedSize: MaterialStateProperty.all(
           Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
         ),
-        backgroundColor: WidgetStateProperty.all(const Color(0XFF009318)),
+        backgroundColor: MaterialStateProperty.all(const Color(0XFF009318)),
       ),
       onPressed: _handlePublish,
       child: const Text(
@@ -1225,7 +1192,9 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       'type': updatedExpense['type'],
       "unreconciledReportIds": ""
     };
+    // Debug log
     print(jsonEncode(receipt));
+
     final resp = await ApiService.publishReceipt(receipt);
     if (resp.isNotEmpty) {
       ScaffoldMessenger.of(navigatorKey.currentContext!)
@@ -1238,11 +1207,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       setState(() {
         showSpinner = false;
       });
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(const SnackBar(
-          content: Text('We were unable to publish the expense, please try again.')));
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+        const SnackBar(content: Text('We were unable to publish the expense, please try again.')),
+      );
     }
   }
 
+  /// Delete button
   Widget _buildDeleteButton() {
     return TextButton(
       onPressed: () async {
@@ -1251,6 +1222,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           builder: (context) {
             return StatefulBuilder(
               builder: (context, setState) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                 title: Text(
                   'Are you sure you want to delete the invoice?',
                   style: TextStyle(
@@ -1270,8 +1242,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         Navigator.push(
                           navigatorKey.currentContext!,
                           MaterialPageRoute(
-                            builder: (context) =>
-                            const HomeScreen(tabIndex: 0, navbarIndex: 0),
+                            builder: (context) => const HomeScreen(
+                              tabIndex: 0,
+                              navbarIndex: 0,
+                            ),
                           ),
                         );
                       } else {
@@ -1283,15 +1257,19 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         );
                       }
                     },
-                    child: const Text('Delete',
-                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500)),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: const Text('Cancel',
-                        style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
                   ),
                 ],
               ),
@@ -1306,42 +1284,35 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 
-  // Builds the custom AppBar with the image/PDF preview
+  /// AppBar with the image or PDF preview
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      toolbarHeight: 100,
+      toolbarHeight: 60, // Reduced from 100
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
       backgroundColor: const Color(0XFFECECEC),
       leading: IconButton(
-        onPressed: () {
-          Navigator.push(
-            navigatorKey.currentContext!,
-            MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-          );
-        },
         icon: const Icon(Icons.arrow_back_ios),
+        onPressed: () => Navigator.pop(context),
       ),
       title: const SizedBox(height: 10),
       bottom: PreferredSize(
-        preferredSize: const Size(200, 150),
-        child: widget.imagePath != null
-            ? SizedBox(
-          height: 200,
-          child: GestureDetector(
-            onTap: _showFullImage,
-            child: CachedNetworkImage(
-              imageUrl: widget.imagePath!,
-              errorWidget: (context, url, error) => _buildPdfPreview(),
-            ),
-          ),
-        )
-            : Container(height: 200),
+        preferredSize: const Size.fromHeight(40), // Adjust as needed
+        child: widget.imagePath!.toLowerCase().endsWith('.pdf')
+            ? _buildPdfPreview()
+            : CachedNetworkImage(
+                imageUrl: widget.imagePath!,
+                height: 40,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              ),
       ),
     );
   }
 
-  // Reuses the PDF preview logic if an error occurs loading the image
   Widget _buildPdfPreview() {
     return SfPdfViewer.network(
       widget.imagePath!,
@@ -1430,4 +1401,30 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       ),
     );
   }
+
+  TableRow _buildTableRow(String label, Widget widget) {
+    return TableRow(
+      children: [
+        TableCell(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8), // Reduced from 16
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        TableCell(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8), // Reduced from 16
+            child: widget,
+          ),
+        ),
+      ],
+    );
+  }
 }
+
