@@ -470,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ? organisations.firstWhere(
                       (org) => org['organisationID'] == selectedOrgId)['organisationName']
                   : null,
-              dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownDecoratorProps: const DropDownDecoratorProps(
                 dropdownSearchDecoration: InputDecoration(
                   border: InputBorder.none,
                   fillColor: Colors.white,
@@ -490,6 +490,28 @@ class _HomeScreenState extends State<HomeScreen>
                 );
               },
             ),
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    // Handle logout
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                    );
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return [
+                    const PopupMenuItem<String>(
+                      value: 'logout',
+                      child: Text('Logout'),
+                    ),
+                    // Add more menu items here if needed
+                  ];
+                },
+              ),
+            ],
             bottom: selectedNavBarIndex == 0
                 ? TabBar(
                     indicatorColor: clickableColor,
@@ -510,41 +532,49 @@ class _HomeScreenState extends State<HomeScreen>
           bottomNavigationBar: Container(
             padding: EdgeInsets.zero,
             margin: EdgeInsets.zero,
-            decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
+                ),
+              ],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
             child: BottomNavigationBar(
               items: [
                 BottomNavigationBarItem(
-                    icon: Image.asset('assets/nav_bar/expenses-grey.png',
-                        height: 25, width: 25),
-                    activeIcon: Image.asset(
-                        'assets/nav_bar/expenses-yellow.png',
-                        height: 25,
-                        width: 25),
-                    label: 'Expenses'),
+                  icon: Image.asset('assets/nav_bar/expenses-grey.png', height: 30, width: 30),
+                  activeIcon: Image.asset('assets/nav_bar/expenses-yellow.png', height: 30, width: 30),
+                  label: 'Expenses',
+                ),
                 BottomNavigationBarItem(
-                    icon: Image.asset('assets/nav_bar/transactions-grey.png',
-                        height: 30, width: 30),
-                    activeIcon: Image.asset(
-                        'assets/nav_bar/transactions-yellow.png',
-                        height: 30,
-                        width: 30),
-                    label: 'Transactions'),
+                  icon: Image.asset('assets/nav_bar/transactions-grey.png', height: 30, width: 30),
+                  activeIcon: Image.asset('assets/nav_bar/transactions-yellow.png', height: 30, width: 30),
+                  label: 'Transactions',
+                ),
               ],
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.white,
               selectedItemColor: clickableColor,
               unselectedItemColor: const Color(0XFF888888),
-              selectedFontSize: 11,
-              unselectedFontSize: 11,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
               selectedLabelStyle: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: clickableColor),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                color: clickableColor,
+              ),
               unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: Color(0XFF888888)),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                color: Color(0XFF888888),
+              ),
               showSelectedLabels: true,
               showUnselectedLabels: true,
               currentIndex: selectedNavBarIndex,

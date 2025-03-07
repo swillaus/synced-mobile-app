@@ -156,6 +156,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   Future<void> getPaymentAccounts() async {
     final resp = await ApiService.getPaymentAccounts(widget.selectedOrgId);
+    print('Payment Accounts API Response: $resp'); // Log the API response
     paymentAccounts = resp;
     filteredPaymentAccounts = resp;
     for (var acc in paymentAccounts) {
@@ -165,6 +166,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         break;
       }
     }
+    setState(() {}); // Ensure UI updates after fetching data
   }
 
   Future<void> getBankDetails() async {
@@ -892,28 +894,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               showSpinner = true;
             });
             updatedExpense['paymentAccountNumber'] = selectedCard?['accountID'];
-            final resp = await ApiService.updateExpense(updatedExpense);
-            setState(() {
-              showSpinner = false;
-            });
-            if (resp.isNotEmpty) {
-              setState(() {
-                updatedExpense = updatedExpense;
-              });
-              ScaffoldMessenger.of(navigatorKey.currentContext!)
-                  .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-            } else {
-              setState(() {
-                updatedExpense = widget.expense;
-              });
-              ScaffoldMessenger.of(navigatorKey.currentContext!)
-                  .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-            }
+            await ApiService.updateExpense(updatedExpense);
+            preparePage();
           },
-          buttonStyleData: ButtonStyleData(
-            height: 40, // Reduced height
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: const BoxDecoration(
+          buttonStyleData: const ButtonStyleData(
+            height: 40,
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
               color: Colors.white,
             ),
           ),
@@ -1227,16 +1214,16 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   Widget _buildPublishButton() {
     return ElevatedButton(
       onPressed: _handlePublish,
-      child: _publishButtonChild ?? const Text(
-        'Publish',
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
-      ),
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
         fixedSize: Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
         backgroundColor: const Color(0XFF009318),
+      ),
+      child: _publishButtonChild ?? const Text(
+        'Publish',
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
       ),
     );
   }
@@ -1248,7 +1235,14 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
     // Disable the button and show a loading spinner
     final buttonChild = ElevatedButton(
-      onPressed: null, // Disable the button while loading
+      onPressed: null,
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        fixedSize: Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
+        backgroundColor: const Color(0XFF009318),
+      ), // Disable the button while loading
       child: const SizedBox(
         width: 24,
         height: 24,
@@ -1256,13 +1250,6 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         ),
-      ),
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        fixedSize: Size(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height * 0.06),
-        backgroundColor: const Color(0XFF009318),
       ),
     );
 

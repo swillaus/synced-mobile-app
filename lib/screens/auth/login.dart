@@ -61,8 +61,8 @@ class _LoginPageState extends State<LoginPage> {
             automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             title: const Text(
-              'Login',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              '',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF344054)),
             ),
             centerTitle: true,
           ),
@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Enter your email',
+                      child: Text('Email',
                           style: TextStyle(
                               color: headingColor,
                               fontSize: 14,
@@ -98,12 +98,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 15),
                     SizedBox(
-                      height: 48,
+                      height: 56,
+                      width: MediaQuery.of(context).size.width * 0.9,
                       child: TextFormField(
                         style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: headingColor),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF344054)),
                         keyboardType: TextInputType.emailAddress,
                         autovalidateMode: AutovalidateMode.onUnfocus,
                         validator: validateEmail,
@@ -118,28 +119,28 @@ class _LoginPageState extends State<LoginPage> {
                                   : const Icon(Icons.close, color: Colors.red)
                               : null,
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15.0),
+                              borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15.0),
+                              borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15.0),
+                              borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Color(0xFFF3F4F6),
                           hintText: 'Enter your email',
                           hintStyle: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: subHeadingColor),
+                              color: Color(0xFF9CA3AF)),
                         ),
                       ),
                     ),
                     const SizedBox(height: 15),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Enter your password',
+                      child: Text('Password',
                           style: TextStyle(
                               color: headingColor,
                               fontSize: 14,
@@ -147,7 +148,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 5),
                     SizedBox(
-                      height: 48,
+                      height: 56,
+                      width: MediaQuery.of(context).size.width * 0.85,
                       child: TextFormField(
                         style: TextStyle(
                             fontSize: 14,
@@ -171,13 +173,13 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15.0),
+                                borderRadius: BorderRadius.circular(8.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15.0),
+                                borderRadius: BorderRadius.circular(8.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15.0),
+                                borderRadius: BorderRadius.circular(8.0),
                                 borderSide: BorderSide(color: subHeadingColor)),
                             filled: true,
                             fillColor: Colors.white,
@@ -209,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                           RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(
-                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
+                          Size(MediaQuery.of(context).size.width * 0.9, 56)),
                       backgroundColor: WidgetStateProperty.all(clickableColor)),
                   onPressed: () async {
                     setState(() {
@@ -253,8 +255,8 @@ class _LoginPageState extends State<LoginPage> {
                     'Login',
                     style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
                 // Row(
@@ -285,11 +287,11 @@ class _LoginPageState extends State<LoginPage> {
                 ElevatedButton(
                   style: ButtonStyle(
                       side: const WidgetStatePropertyAll(
-                          BorderSide(color: Colors.black, width: 0.5)),
+                          BorderSide(color: Color(0xFF2563EB), width: 1.0)),
                       shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.0))),
+                          borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(
-                          Size(MediaQuery.of(context).size.width * 0.8, 48)),
+                          Size(MediaQuery.of(context).size.width * 0.9, 56)),
                       backgroundColor: WidgetStateProperty.all(Colors.white)),
                   onPressed: () async {
                     setState(() {
@@ -309,8 +311,8 @@ class _LoginPageState extends State<LoginPage> {
                       const Text(
                         'Sign in with Xero',
                         style: TextStyle(
-                            color: Color(0XFF2A2A2A),
-                            fontSize: 14,
+                            color: Color(0xFF2563EB),
+                            fontSize: 16,
                             fontWeight: FontWeight.w500),
                       )
                     ],

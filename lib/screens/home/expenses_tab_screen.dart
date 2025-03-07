@@ -129,7 +129,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
     Widget getInvoiceWidget(Map matchData) {
       return CachedNetworkImage(
         imageUrl: matchData['invoice_path'],
-        placeholder: (context, url) => CircularProgressIndicator(),
+        placeholder: (context, url) => const CircularProgressIndicator(),
         errorWidget: (context, url, error) {
           return SfPdfViewer.network(
             matchData['invoice_path'],
@@ -182,10 +182,10 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                             item['supplierName'] ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18, // Larger font size
                               fontWeight: FontWeight.bold,
-                              color: const Color(0XFF344054),
+                              color: Color(0XFF344054),
                             ),
                           ),
                         ),
@@ -193,7 +193,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                           child: Text(
                             item['amountDue'] != null ? f.format(item['amountDue']) : "",
                             textAlign: TextAlign.end,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18, // Larger font size for clarity
                               color: Colors.green, // Change color to green for better visibility
@@ -211,10 +211,11 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                         ),
                         side: BorderSide(color: clickableColor),
                         label: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
+                            const Text(
                               '💼 ', // Adding a briefcase emoji for account label
-                              style: const TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: 16),
                             ),
                             Text(
                               item['accountName'],
@@ -249,7 +250,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                 width: 300,
                 height: 300,
                 errorBuilder: (context, error, stackTrace) {
-                  return Text('Error loading animation');
+                  return const Text('Error loading animation');
                 },
               ),
               const SizedBox(height: 16),
@@ -338,25 +339,32 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                             itemBuilder: (context, item, index) {
                               bool isSameDate = true;
                               DateTime? date;
-                              final item = widget.reviewExpenses[index];
-                              if (index == 0) {
-                                isSameDate = false;
-                              }
-                              if (widget.reviewExpenses[index]['date'] != null) {
-                                final String dateString =
-                                widget.reviewExpenses[index]['date'];
-                                date = DateTime.parse(dateString);
-                                if (index == 0) {
-                                  isSameDate = false;
-                                } else if (widget.reviewExpenses[index - 1]
-                                ['date'] !=
-                                    null) {
-                                  final String prevDateString =
-                                  widget.reviewExpenses[index - 1]['date'];
-                                  final DateTime prevDate =
-                                  DateTime.parse(prevDateString);
-                                  isSameDate = date.isSameDate(prevDate);
+                              if (index < widget.reviewExpenses.length) {
+                                final item = widget.reviewExpenses[index];
+                                if (item is Map<dynamic, dynamic>) {
+                                  if (index == 0) {
+                                    isSameDate = false;
+                                  }
+                                  final dateString = item['date'] as String?;
+                                  if (dateString != null) {
+                                    date = DateTime.parse(dateString);
+                                    if (index == 0) {
+                                      isSameDate = false;
+                                    } else {
+                                      final prevItem = widget.reviewExpenses[index - 1];
+                                      if (prevItem is Map<dynamic, dynamic>) {
+                                        final prevDateString = prevItem['date'] as String?;
+                                        if (prevDateString != null) {
+                                          final DateTime prevDate = DateTime.parse(prevDateString);
+                                          isSameDate = date.isSameDate(prevDate);
+                                        }
+                                      }
+                                    }
+                                  }
                                 }
+                              } else {
+                                // Handle the case where index is out of bounds
+                                return Container(); // or any other placeholder widget
                               }
                               if (index == 0 || !(isSameDate)) {
                                 return Column(children: [
@@ -378,16 +386,22 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                   ],
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.push(
-                                          navigatorKey.currentContext!,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UpdateExpenseData(
-                                                      expense: item,
-                                                      imagePath:
-                                                      item['invoice_path'],
-                                                      isProcessed: false,
-                                                      selectedOrgId: widget.selectedOrgId)));
+                                      if (item is Map<dynamic, dynamic>) {
+                                        final imagePath = item['invoice_path'] as String?;
+                                        if (imagePath != null) {
+                                          Navigator.push(
+                                            navigatorKey.currentContext!,
+                                            MaterialPageRoute(
+                                              builder: (context) => UpdateExpenseData(
+                                                expense: item,
+                                                imagePath: imagePath,
+                                                isProcessed: false,
+                                                selectedOrgId: widget.selectedOrgId,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
                                     },
                                     child: SizedBox(
                                       height: 120, // Increased height of the card
@@ -400,16 +414,22 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                 return Column(children: [
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.push(
-                                          navigatorKey.currentContext!,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UpdateExpenseData(
-                                                      expense: item,
-                                                      imagePath:
-                                                      item['invoice_path'],
-                                                      isProcessed: false,
-                                                      selectedOrgId: widget.selectedOrgId)));
+                                      if (item is Map<dynamic, dynamic>) {
+                                        final imagePath = item['invoice_path'] as String?;
+                                        if (imagePath != null) {
+                                          Navigator.push(
+                                            navigatorKey.currentContext!,
+                                            MaterialPageRoute(
+                                              builder: (context) => UpdateExpenseData(
+                                                expense: item,
+                                                imagePath: imagePath,
+                                                isProcessed: false,
+                                                selectedOrgId: widget.selectedOrgId,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
                                     },
                                     child: SizedBox(
                                       height: 120, // Increased height of the card
@@ -420,6 +440,18 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                 ]);
                               }
                             })))
+              ],
+            ),
+          ),
+          Container(
+            color: const Color(0xfffbfbfb),
+            padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+            height: MediaQuery.of(context).size.height * 0.8,
+            width: double.maxFinite,
+            child: Column(
+              children: [
+                // Add content for the second tab here
+                Center(child: Text('Processed Expenses')), // Placeholder content
               ],
             ),
           ),
