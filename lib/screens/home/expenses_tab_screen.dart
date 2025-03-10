@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
@@ -73,16 +71,38 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
   Future<void> _loadDataForNewOrg() async {
     setState(() {
       showSpinner = true;
+      // Clear existing data
+      widget.reviewExpenses.clear();
+      widget.processedExpenses.clear();
+      // Reset search terms and controllers
+      reviewSearchController.clear();
+      processedSearchController.clear();
+      reviewSearchTerm = '';
+      processedSearchTerm = '';
     });
 
-    // Add your data loading logic here
-    // For example, refresh the paging controllers or fetch new data
-    widget.reviewPagingController.refresh();
-    widget.processedPagingController.refresh();
-
-    setState(() {
-      showSpinner = false;
-    });
+    try {
+      // Reset both paging controllers completely
+      widget.reviewPagingController.itemList?.clear();
+      widget.processedPagingController.itemList?.clear();
+      
+      // Reset the page keys
+      widget.reviewPagingController.nextPageKey = 1;
+      widget.processedPagingController.nextPageKey = 1;
+      
+      // Trigger a complete refresh of both controllers
+      widget.reviewPagingController.refresh();
+      widget.processedPagingController.refresh();
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error refreshing data: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
+    }
   }
 
   @override
@@ -107,10 +127,12 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                   fontWeight: FontWeight.w400)),
           const SizedBox(height: 30),
           ElevatedButton(
-            onPressed: () => Navigator.pushReplacement(
-                navigatorKey.currentContext!,
-                MaterialPageRoute(
-                    builder: (context) => const HomeScreen(tabIndex: 0))),
+            onPressed: () {
+              final homeScreenState = context.findAncestorStateOfType<State<HomeScreen>>();
+              if (homeScreenState != null && homeScreenState is HomeScreenState) {  // Use the exposed state type
+                homeScreenState.startScan();
+              }
+            },
             style: ButtonStyle(
                 shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0))),
@@ -145,18 +167,18 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
       var f = NumberFormat("###,###.##", "en_US");
 
       return Card(
-        elevation: 8, // Increased elevation for a more pronounced shadow
-        shadowColor: Colors.black26, // Softer shadow color
+        elevation: 8,
+        shadowColor: Colors.black26,
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16), // More rounded corners
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200), // Subtle border
+            border: Border.all(color: Colors.grey.shade200),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Consistent padding
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
             children: [
               SizedBox(
@@ -168,7 +190,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                         child: getInvoiceWidget(item))
                     : appLoader,
               ),
-              const SizedBox(width: 16), // Consistent spacing
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -183,7 +205,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 18, // Larger font size
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Color(0XFF344054),
                             ),
@@ -195,15 +217,15 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                             textAlign: TextAlign.end,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 18, // Larger font size for clarity
-                              color: Colors.green, // Change color to green for better visibility
+                              fontSize: 18,
+                              color: Colors.green,
                             ),
                           ),
                         ),
                       ],
                     ),
                     if (item['accountName'] != null) ...[
-                      const SizedBox(height: 8), // Consistent spacing
+                      const SizedBox(height: 8),
                       Chip(
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         shape: RoundedRectangleBorder(
@@ -214,14 +236,16 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Text(
-                              '💼 ', // Adding a briefcase emoji for account label
+                              '💼 ',
                               style: TextStyle(fontSize: 16),
                             ),
-                            Text(
-                              item['accountName'],
-                              style: const TextStyle(
-                                fontSize: 14, // Larger font size
-                                fontWeight: FontWeight.w500,
+                            Flexible(
+                              child: Text(
+                                item['accountName'],
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ],
@@ -450,8 +474,164 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
             width: double.maxFinite,
             child: Column(
               children: [
-                // Add content for the second tab here
-                Center(child: Text('Processed Expenses')), // Placeholder content
+                SizedBox(
+                    height: 50,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xfff3f3f3),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                              borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                              borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                              borderSide:
+                              const BorderSide(color: Colors.transparent)),
+                          focusColor: const Color(0XFF8E8E8E),
+                          hintText: 'Search',
+                          hintStyle: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16, // Font size increased by 20%
+                              color: Color(0XFF8E8E8E)),
+                          prefixIcon: const Icon(Icons.search),
+                          prefixIconColor: const Color(0XFF8E8E8E)),
+                      onChanged: (value) {
+                        setState(() {
+                          updateDetails(value);
+                        });
+                      },
+                      onEditingComplete: () async {
+                        if (processedSearchController.text != processedSearchTerm) {
+                          setState(() {
+                            processedSearchTerm = processedSearchController.text;
+                          });
+                          widget.processedPagingController.refresh();
+                        }
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
+                      controller: processedSearchController,
+                    )),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: PagedListView(
+                    shrinkWrap: true,
+                    pagingController: widget.processedPagingController,
+                    scrollController: processedScrollController,
+                    physics: widget.tabController.index == 1
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    builderDelegate: PagedChildBuilderDelegate(
+                      itemBuilder: (context, item, index) {
+                        bool isSameDate = true;
+                        DateTime? date;
+                        if (index < widget.processedExpenses.length) {
+                          final item = widget.processedExpenses[index];
+                          if (item is Map<dynamic, dynamic>) {
+                            if (index == 0) {
+                              isSameDate = false;
+                            }
+                            final dateString = item['date'] as String?;
+                            if (dateString != null) {
+                              date = DateTime.parse(dateString);
+                              if (index == 0) {
+                                isSameDate = false;
+                              } else {
+                                final prevItem = widget.processedExpenses[index - 1];
+                                if (prevItem is Map<dynamic, dynamic>) {
+                                  final prevDateString = prevItem['date'] as String?;
+                                  if (prevDateString != null) {
+                                    final DateTime prevDate = DateTime.parse(prevDateString);
+                                    isSameDate = date.isSameDate(prevDate);
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        } else {
+                          // Handle the case where index is out of bounds
+                          return Container(); // or any other placeholder widget
+                        }
+                        if (index == 0 || !(isSameDate)) {
+                          return Column(children: [
+                            if (widget.processedExpenses[index]['date'] != null) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Expanded(child: Divider()),
+                                  Text(' ${date?.formatDate()} ',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 12,
+                                          color: Color(0XFF667085))),
+                                  const Expanded(child: Divider()),
+                                ],
+                              ),
+                              const SizedBox(height: 10)
+                            ],
+                            GestureDetector(
+                              onTap: () {
+                                if (item is Map<dynamic, dynamic>) {
+                                  final imagePath = item['invoice_path'] as String?;
+                                  if (imagePath != null) {
+                                    Navigator.push(
+                                      navigatorKey.currentContext!,
+                                      MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: imagePath,
+                                          isProcessed: true,
+                                          selectedOrgId: widget.selectedOrgId,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: SizedBox(
+                                height: 100,
+                                child: getInvoiceCardWidget(item),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ]);
+                        } else {
+                          return Column(children: [
+                            GestureDetector(
+                              onTap: () {
+                                if (item is Map<dynamic, dynamic>) {
+                                  final imagePath = item['invoice_path'] as String?;
+                                  if (imagePath != null) {
+                                    Navigator.push(
+                                      navigatorKey.currentContext!,
+                                      MaterialPageRoute(
+                                        builder: (context) => UpdateExpenseData(
+                                          expense: item,
+                                          imagePath: imagePath,
+                                          isProcessed: true,
+                                          selectedOrgId: widget.selectedOrgId,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: SizedBox(
+                                height: 100,
+                                child: getInvoiceCardWidget(item),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ]);
+                        }
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

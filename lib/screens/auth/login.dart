@@ -101,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                       height: 56,
                       width: MediaQuery.of(context).size.width * 0.9,
                       child: TextFormField(
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF344054)),
@@ -128,9 +128,9 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(color: subHeadingColor)),
                           filled: true,
-                          fillColor: Color(0xFFF3F4F6),
+                          fillColor: const Color(0xFFF3F4F6),
                           hintText: 'Enter your email',
-                          hintStyle: TextStyle(
+                          hintStyle: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
                               color: Color(0xFF9CA3AF)),

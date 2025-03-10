@@ -32,10 +32,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.tabIndex = 0, this.navbarIndex = 0});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   List organisations = [];
   List reviewExpenses = [];
@@ -282,45 +282,77 @@ class _HomeScreenState extends State<HomeScreen>
     return entries;
   }
 
-  getUnprocessedExpenses(page, searchTerm) async {
-    final resp = await ApiService.getExpenses(
-        false, selectedOrgId, searchTerm, page, pageSize);
-    if (page == 1) {
-      reviewExpenses.clear();
-    }
-    if (resp.isNotEmpty) {
-      setState(() {
-        reviewExpenses += resp['invoices'];
-      });
-    }
-
+  String? getSelectedOrgName() {
+    if (organisations.isEmpty) return null;
     try {
-      final isLastPage = resp['invoices'].length < pageSize;
-      if (isLastPage) {
-        reviewPagingController.appendLastPage(resp['invoices']);
-      } else {
-        final nextPageKey = page + 1;
-        reviewPagingController.appendPage(resp['invoices'], nextPageKey);
-      }
-    } catch (error) {
-      reviewPagingController.error = error;
+      return organisations.firstWhere(
+        (org) => org['organisationID'] == selectedOrgId,
+        orElse: () => organisations[0],
+      )['organisationName'] as String;
+    } catch (e) {
+      return null;
     }
-    setState(() {
-      showSpinner = false;
-    });
-    refreshController.loadComplete();
-    refreshController.refreshCompleted();
+  }
 
-    for (var exp in reviewExpenses) {
-      exp['invoice_path'] =
+  List<String> getOrgNames() {
+    return organisations
+        .map((org) => org['organisationName'] as String)
+        .toList();
+  }
+
+  Future<void> getUnprocessedExpenses(int page, String searchTerm) async {
+    try {
+      final resp = await ApiService.getExpenses(
+        false, selectedOrgId, searchTerm, page, pageSize);
+      
+      if (resp.isEmpty) {
+        reviewPagingController.error = 'No data available';
+        reviewExpenses.clear();
+        setState(() {});
+        return;
+      }
+
+      final invoices = resp['invoices'] as List;
+      
+      if (page == 1) {
+        reviewExpenses.clear();
+      }
+
+      setState(() {
+        reviewExpenses.addAll(invoices);
+      });
+
+      final isLastPage = invoices.length < pageSize;
+      if (isLastPage) {
+        reviewPagingController.appendLastPage(invoices);
+      } else {
+        reviewPagingController.appendPage(invoices, page + 1);
+      }
+
+      // Update invoice paths
+      for (var exp in reviewExpenses) {
+        exp['invoice_path'] = 
           'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
+      }
+
+      setState(() {});
+    } catch (e) {
+      reviewPagingController.error = e;
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
+      refreshController.loadComplete();
+      refreshController.refreshCompleted();
     }
-    setState(() {});
   }
 
   getProcessedExpenses(page, searchTerm) async {
+    print('Fetching processed expenses for page: $page with searchTerm: $searchTerm');
     final resp = await ApiService.getExpenses(
         true, selectedOrgId, searchTerm, page, pageSize);
+    print('API response for processed expenses: $resp');
+
     if (page == 1) {
       processedExpenses.clear();
     }
@@ -339,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen>
         processedPagingController.appendPage(resp['invoices'], nextPageKey);
       }
     } catch (error) {
+      print('Error loading processed expenses: $error');
       processedPagingController.error = error;
     }
 
@@ -373,38 +406,48 @@ class _HomeScreenState extends State<HomeScreen>
     getOrganisations();
   }
 
-  getOrganisations() async {
+  Future<void> getOrganisations() async {
     setState(() {
       showSpinner = true;
     });
 
-    final resp = await ApiService.getOrganisations();
-    if (!resp['failed']) {
-      organisations = resp['data'];
-      if (selectedOrgId.isEmpty && organisations.isNotEmpty) {
-        selectedOrgId = organisations[0]['organisationID'];
+    try {
+      final resp = await ApiService.getOrganisations();
+      if (!resp['failed']) {
+        organisations = resp['data'];
+        if (selectedOrgId.isEmpty && organisations.isNotEmpty) {
+          selectedOrgId = organisations[0]['organisationID'];
+        }
       }
-    }
-    if (selectedOrgId.isNotEmpty) {
-      final resp = await ApiService.getDefaultCurrency(selectedOrgId);
-      setState(() {
-        defaultCurrency = resp['currency'] ?? 'USD';
-      });
-      await Future.wait<List<Future<dynamic>>>([
-        getUnprocessedExpenses(1, reviewSearchTerm),
-        getProcessedExpenses(1, processedSearchTerm),
-      ]);
-    } else {
+      
+      if (selectedOrgId.isNotEmpty) {
+        final currencyResp = await ApiService.getDefaultCurrency(selectedOrgId);
+        setState(() {
+          defaultCurrency = currencyResp['currency'] ?? 'USD';
+        });
+        
+        // Fix: Remove Future.wait and call methods sequentially
+        await getUnprocessedExpenses(1, reviewSearchTerm);
+        await getProcessedExpenses(1, processedSearchTerm);
+      } else {
+        setState(() {
+          showSpinner = false;
+          reviewPagingController.nextPageKey = 1;
+          processedPagingController.nextPageKey = 1;
+        });
+        refreshController.loadComplete();
+        refreshController.refreshCompleted();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select or create an organization.'))
+        );
+      }
+    } catch (e) {
       setState(() {
         showSpinner = false;
-        reviewPagingController.nextPageKey = 1;
-        processedPagingController.nextPageKey = 1;
       });
-      refreshController.loadComplete();
-      refreshController.refreshCompleted();
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-          const SnackBar(
-              content: Text('Please select or create an organization.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading organizations: ${e.toString()}'))
+      );
     }
   }
 
@@ -446,72 +489,154 @@ class _HomeScreenState extends State<HomeScreen>
             surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.white,
             centerTitle: true,
-            title: DropdownSearch<String>(
-              popupProps: PopupProps.dialog(
-                showSearchBox: true,
-                itemBuilder: (context, item, isSelected) {
-                  return ListTile(
-                    title: Text(item),
-                    selected: isSelected,
-                  );
-                },
-              ),
-              items: organisations.map((org) => org['organisationName'] as String).toList(),
-              onChanged: (String? selectedOrgName) {
-                setState(() {
-                  selectedOrgId = organisations.firstWhere(
-                      (org) => org['organisationName'] == selectedOrgName)['organisationID'];
-                });
-                // Directly call methods to refresh records when organization is switched
-                getUnprocessedExpenses(1, reviewSearchTerm);
-                getProcessedExpenses(1, processedSearchTerm);
-              },
-              selectedItem: organisations.isNotEmpty
-                  ? organisations.firstWhere(
-                      (org) => org['organisationID'] == selectedOrgId)['organisationName']
-                  : null,
-              dropdownDecoratorProps: const DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  border: InputBorder.none,
-                  fillColor: Colors.white,
-                  filled: true,
-                ),
-              ),
-              dropdownBuilder: (context, selectedItem) {
-                return Center(
-                  child: Text(
-                    selectedItem ?? '',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                const SizedBox(width: 15),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: DropdownSearch<String>(
+                    popupProps: PopupProps.dialog(
+                      showSearchBox: true,
+                      itemBuilder: (context, item, isSelected) {
+                        return ListTile(
+                          title: Text(item),
+                          selected: isSelected,
+                        );
+                      },
+                      searchFieldProps: const TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: "Search organization",
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    items: getOrgNames(),
+                    onChanged: (String? selectedOrgName) async {
+                      if (showUploadingInvoice) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text(
+                            'Expense currently progressing. Please wait for completion and try again'
+                          ))
+                        );
+                        return;
+                      }
+
+                      if (selectedOrgName == null) return;
+
+                      try {
+                        final newOrgId = organisations.firstWhere(
+                          (org) => org['organisationName'] == selectedOrgName
+                        )['organisationID'] as String;
+                        
+                        setState(() {
+                          selectedOrgId = newOrgId;
+                          showSpinner = true;
+                        });
+
+                        // Get currency for new org
+                        final currencyResp = await ApiService.getDefaultCurrency(newOrgId);
+                        setState(() {
+                          defaultCurrency = currencyResp['currency'] ?? 'USD';
+                        });
+
+                        // Clear existing data
+                        reviewExpenses.clear();
+                        processedExpenses.clear();
+
+                        // Reset paging controllers
+                        reviewPagingController.itemList?.clear();
+                        processedPagingController.itemList?.clear();
+                        reviewPagingController.nextPageKey = 1;
+                        processedPagingController.nextPageKey = 1;
+
+                        // Get expenses for the new organization
+                        await getUnprocessedExpenses(1, reviewSearchTerm);
+                        await getProcessedExpenses(1, processedSearchTerm);
+
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error switching organization: ${e.toString()}'))
+                        );
+                      } finally {
+                        setState(() {
+                          showSpinner = false;
+                        });
+                      }
+                    },
+                    selectedItem: getSelectedOrgName(),
+                    dropdownDecoratorProps: const DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        border: InputBorder.none,
+                        fillColor: Colors.white,
+                        filled: true,
+                      ),
+                    ),
+                    dropdownBuilder: (context, selectedItem) {
+                      return Center(
+                        child: Text(
+                          selectedItem ?? '',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+                SizedBox(
+                  width: 25,
+                  child: PopupMenuButton<int>(
+                    color: Colors.white,
+                    icon: const Icon(Icons.more_vert, size: 25),
+                    onSelected: (item) async {
+                      switch (item) {
+                        case 0:
+                          if (!await launchUrl(Uri.parse('https://help.syncedhq.com/en/'))) {
+                            throw Exception('Could not launch help center');
+                          }
+                          break;
+                        case 1:
+                          final DatabaseHelper db = DatabaseHelper();
+                          await db.deleteUsers();
+                          selectedOrgId = '';
+                          Navigator.pushReplacement(
+                            navigatorKey.currentContext!,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<int>(
+                        value: 0,
+                        child: Row(
+                          children: [
+                            Icon(Icons.business_center_outlined),
+                            SizedBox(width: 10),
+                            Text('Help Center')
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<int>(
+                        value: 1,
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout),
+                            SizedBox(width: 10),
+                            Text('Logout')
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'logout') {
-                    // Handle logout
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                    );
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                  return [
-                    const PopupMenuItem<String>(
-                      value: 'logout',
-                      child: Text('Logout'),
-                    ),
-                    // Add more menu items here if needed
-                  ];
-                },
-              ),
-            ],
             bottom: selectedNavBarIndex == 0
                 ? TabBar(
                     indicatorColor: clickableColor,
@@ -523,7 +648,7 @@ class _HomeScreenState extends State<HomeScreen>
                         text: 'For Review',
                       ),
                       Tab(
-                        text: 'Processed',
+                        text: 'In Processed',
                       ),
                     ],
                     controller: tabController)
@@ -532,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen>
           bottomNavigationBar: Container(
             padding: EdgeInsets.zero,
             margin: EdgeInsets.zero,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
