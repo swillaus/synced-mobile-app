@@ -1,0 +1,1 @@
+/Users/samwill/development/synced-mobile-app/build/app/intermediates/cxx/Debug/5a142u6q/obj/arm64-v8a

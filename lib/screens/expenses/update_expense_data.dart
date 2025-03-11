@@ -487,7 +487,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       _buildTableRow("Ref", Align(alignment: Alignment.centerLeft, child: _buildRefWidget())),
                       _buildTableRow("Account", Align(alignment: Alignment.centerLeft, child: _buildAccountWidget())),
                       _buildTableRow("Paid Form", Align(alignment: Alignment.centerLeft, child: _buildPaidFormWidget())),
-                      _buildTableRow("Description", Align(alignment: Alignment.centerLeft, child: _buildDescriptionWidget())),
+                      _buildTableRow("Details", Align(alignment: Alignment.centerLeft, child: _buildDescriptionWidget())),
                       _buildTableRow("Total", Align(alignment: Alignment.topLeft, child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -874,36 +874,49 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Ref field logic
   Widget _buildRefWidget() {
     return TextField(
-      enabled: !widget.isProcessed!,
-      controller: refController,
-      decoration: plainInputDecoration.copyWith(
-        hintText: refController.text.isEmpty ? 'Add Reference' : null,
-        hintStyle: const TextStyle(color: Colors.grey),
-      ),
-      maxLines: null,
-      minLines: 1,
-      onEditingComplete: () async {
-        updatedExpense['invoiceNumber'] = refController.text;
-        FocusManager.instance.primaryFocus?.unfocus();
-        final resp = await ApiService.updateExpense(updatedExpense);
-        setState(() {
-          showSpinner = false;
-        });
-        if (resp.isNotEmpty) {
-          setState(() {
-            updatedExpense = updatedExpense;
-          });
-          ScaffoldMessenger.of(navigatorKey.currentContext!)
-              .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-        } else {
-          setState(() {
-            updatedExpense = widget.expense;
-          });
-          ScaffoldMessenger.of(navigatorKey.currentContext!)
-              .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-        }
-      },
-      textAlign: TextAlign.left,
+        enabled: !widget.isProcessed!,
+        controller: refController,
+        decoration: plainInputDecoration.copyWith(
+            hintText: refController.text.isEmpty ? 'Add Reference' : null,
+            hintStyle: const TextStyle(color: Colors.grey),
+        ),
+        maxLines: null,
+        minLines: 1,
+        onChanged: (value) {
+            // Update the invoice number in the updatedExpense map when the text changes
+            updatedExpense['invoiceNumber'] = value;
+        },
+        onEditingComplete: () async {
+            FocusManager.instance.primaryFocus?.unfocus();
+            final resp = await ApiService.updateExpense(updatedExpense);
+            setState(() {
+                showSpinner = false;
+            });
+            if (resp.isNotEmpty) {
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+            } else {
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+            }
+        },
+        onTapOutside: (cb) async {
+            // Call the update function when the user taps outside
+            updatedExpense['invoiceNumber'] = refController.text;
+            FocusManager.instance.primaryFocus?.unfocus();
+            final resp = await ApiService.updateExpense(updatedExpense);
+            setState(() {
+                showSpinner = false;
+            });
+            if (resp.isNotEmpty) {
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+            } else {
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+            }
+        },
+        textAlign: TextAlign.left,
     );
   }
 
@@ -1139,112 +1152,134 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Description logic
   Widget _buildDescriptionWidget() {
     return TextField(
-      enabled: !widget.isProcessed!,
-      textInputAction: TextInputAction.done,
-      controller: descriptionController,
-      decoration: plainInputDecoration.copyWith(
-        hintText: descriptionController.text.isEmpty ? 'Add Description' : null,
-        hintStyle: const TextStyle(color: Colors.grey),
-        // Remove fixed height constraints
-        constraints: const BoxConstraints(
-          minHeight: 40,
+        enabled: !widget.isProcessed!,
+        textInputAction: TextInputAction.done,
+        controller: descriptionController,
+        decoration: plainInputDecoration.copyWith(
+            hintText: descriptionController.text.isEmpty ? 'Add Description' : null,
+            hintStyle: const TextStyle(color: Colors.grey),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-      maxLines: null, // Allow unlimited lines
-      minLines: 1, // Start with one line
-      onChanged: (text) {
-        setState(() {}); // Trigger rebuild to adjust height
-      },
-      onTapOutside: (cb) async {
-        updatedExpense['description'] = descriptionController.text;
-        updatedExpense['invoiceLines'][0]['description'] = descriptionController.text;
-        FocusManager.instance.primaryFocus?.unfocus();
-        final resp = await ApiService.updateExpense(updatedExpense);
-        setState(() {
-          showSpinner = false;
-        });
-        if (resp.isNotEmpty) {
-          ScaffoldMessenger.of(navigatorKey.currentContext!)
-              .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-        } else {
-          ScaffoldMessenger.of(navigatorKey.currentContext!)
-              .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-        }
-      },
-      textAlign: TextAlign.left,
+        maxLines: null, // Allow unlimited lines
+        minLines: 1, // Start with one line
+        onChanged: (text) {
+            // Update the description in the updatedExpense map when the text changes
+            updatedExpense['description'] = text;
+        },
+        onEditingComplete: () async {
+            FocusManager.instance.primaryFocus?.unfocus();
+            print('Updating description with: ${updatedExpense['description']}'); // Log the description being updated
+            final resp = await ApiService.updateExpense(updatedExpense);
+            setState(() {
+                showSpinner = false;
+            });
+            if (resp.isNotEmpty) {
+                print('Description updated successfully: $resp'); // Debug log
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+            } else {
+                print('Failed to update description: $resp'); // Debug log
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+            }
+        },
+        onTapOutside: (cb) async {
+            // Call the update function when the user taps outside
+            updatedExpense['description'] = descriptionController.text;
+            FocusManager.instance.primaryFocus?.unfocus();
+            print('Updating description on tap outside with: ${updatedExpense['description']}'); // Log the description being updated
+            final resp = await ApiService.updateExpense(updatedExpense);
+            setState(() {
+                showSpinner = false;
+            });
+            if (resp.isNotEmpty) {
+                print('Description updated successfully on tap outside: $resp'); // Debug log
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+            } else {
+                print('Failed to update description on tap outside: $resp'); // Debug log
+                ScaffoldMessenger.of(navigatorKey.currentContext!)
+                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+            }
+        },
+        textAlign: TextAlign.left,
     );
   }
 
   /// Total logic
   Widget _buildTotalWidget() {
     return KeyboardActions(
-      bottomAvoiderScrollPhysics: const NeverScrollableScrollPhysics(),
-      disableScroll: true,
-      config: KeyboardActionsConfig(
-        nextFocus: false,
-        keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
-        keyboardBarColor: const Color(0xFFCAD1D9),
-        actions: [
-          KeyboardActionsItem(
-            focusNode: keyboardFocusNode,
-            toolbarButtons: [
-                  (node) {
-                return GestureDetector(
-                  onTap: () async {
-                    node.unfocus();
-                    setState(() {
-                      showSpinner = true;
-                    });
-                    updatedExpense['invoiceLines'][0]['amountDue'] =
-                        double.parse(totalController.text);
-                    updatedExpense['amountDue'] = double.parse(totalController.text);
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    final resp = await ApiService.updateExpense(updatedExpense);
-                    setState(() {
-                      showSpinner = false;
-                    });
-                    if (resp.isNotEmpty) {
-                      setState(() {
-                        updatedExpense = updatedExpense;
-                      });
-                      ScaffoldMessenger.of(navigatorKey.currentContext!)
-                          .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-                    } else {
-                      setState(() {
-                        updatedExpense = widget.expense;
-                      });
-                      ScaffoldMessenger.of(navigatorKey.currentContext!)
-                          .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        color: Color(0xFF0978ED),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                );
-              }
+        bottomAvoiderScrollPhysics: const NeverScrollableScrollPhysics(),
+        disableScroll: true,
+        config: KeyboardActionsConfig(
+            nextFocus: false,
+            keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+            keyboardBarColor: const Color(0xFFCAD1D9),
+            actions: [
+                KeyboardActionsItem(
+                    focusNode: keyboardFocusNode,
+                    toolbarButtons: [
+                        (node) {
+                            return GestureDetector(
+                                onTap: () async {
+                                    node.unfocus();
+                                    setState(() {
+                                        showSpinner = true;
+                                    });
+                                    // Update the amount due in the updatedExpense map
+                                    updatedExpense['invoiceLines'][0]['amountDue'] =
+                                        double.parse(totalController.text);
+                                    updatedExpense['amountDue'] = double.parse(totalController.text);
+                                    
+                                    // Call the API to update the expense
+                                    final resp = await ApiService.updateExpense(updatedExpense);
+                                    setState(() {
+                                        showSpinner = false;
+                                    });
+                                    if (resp.isNotEmpty) {
+                                        setState(() {
+                                            updatedExpense = updatedExpense;
+                                        });
+                                        ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                            .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                                    } else {
+                                        setState(() {
+                                            updatedExpense = widget.expense;
+                                        });
+                                        ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                            .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                                    }
+                                },
+                                child: Container(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: const Text(
+                                        'Done',
+                                        style: TextStyle(
+                                            color: Color(0xFF0978ED),
+                                            fontWeight: FontWeight.bold,
+                                        ),
+                                    ),
+                                ),
+                            );
+                        }
+                    ],
+                ),
             ],
-          ),
-        ],
-      ),
-      child: TextField(
-        focusNode: keyboardFocusNode,
-        enabled: !widget.isProcessed!,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        textInputAction: TextInputAction.done,
-        controller: totalController,
-        decoration: plainInputDecoration,
-        maxLines: null,
-        minLines: 1,
-        textAlign: TextAlign.left,
-      ),
+        ),
+        child: TextField(
+            focusNode: keyboardFocusNode,
+            enabled: !widget.isProcessed!,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.done,
+            controller: totalController,
+            decoration: plainInputDecoration,
+            maxLines: null,
+            minLines: 1,
+            textAlign: TextAlign.left,
+            onChanged: (value) {
+                // Update the amount due in the updatedExpense map when the text changes
+                updatedExpense['invoiceLines'][0]['amountDue'] = double.tryParse(value) ?? 0.0;
+            },
+        ),
     );
   }
 
@@ -1592,4 +1627,3 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     );
   }
 }
-
