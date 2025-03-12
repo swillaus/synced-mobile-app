@@ -348,10 +348,10 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   getProcessedExpenses(page, searchTerm) async {
-    print('Fetching processed expenses for page: $page with searchTerm: $searchTerm');
+    // print('Fetching processed expenses for page: $page with searchTerm: $searchTerm');
     final resp = await ApiService.getExpenses(
         true, selectedOrgId, searchTerm, page, pageSize);
-    print('API response for processed expenses: $resp');
+    // print('API response for processed expenses: $resp');
 
     if (page == 1) {
       processedExpenses.clear();
@@ -643,12 +643,18 @@ class HomeScreenState extends State<HomeScreen>
                     labelColor: clickableColor,
                     unselectedLabelColor: textColor,
                     indicatorSize: TabBarIndicatorSize.tab,
-                    tabs: const [
+                    tabs: [
                       Tab(
-                        text: 'For Review',
+                        child: Text(
+                          'For Review',
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
                       Tab(
-                        text: 'In Processed',
+                        child: Text(
+                          'In Processed',
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
                     ],
                     controller: tabController)

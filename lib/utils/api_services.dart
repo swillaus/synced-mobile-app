@@ -420,6 +420,7 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
+      print('SUCCESS CODE BY ID - ${jsonRes['paymentAccountName']}');
       return jsonRes;
     } else {
       print('Get invoice by id API - ${response.reasonPhrase}');

@@ -167,6 +167,20 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   Future<void> getInvoiceById() async {
     final resp = await ApiService.getInvoiceById(widget.expense['id']);
     expense = resp;
+
+    // Assuming paymentAccountName is part of the response
+    if (resp['paymentAccountName'] != null) {
+        setState(() {
+            // Set the selected card based on the payment account name
+            selectedCard = {
+                'accountID': resp['paymentAccountNumber'], // Assuming you have this in the response
+                'name': resp['paymentAccountName'],
+            };
+            // Update the dropdown controller
+            paidFormController.text = resp['paymentAccountName'];
+        });
+    }
+
     print('Expense: $expense');
   }
 
@@ -293,7 +307,6 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   @override
   Widget build(BuildContext context) {
-    // print('Review Expenses Count: ${reviewExpenses.length}');
     return ModalProgressHUD(
       inAsyncCall: showSpinner,
       child: Scaffold(
@@ -320,7 +333,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           ),
           title: const SizedBox(height: 10),
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(150),
+            preferredSize: const Size.fromHeight(200),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -339,7 +352,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               ),
               child: widget.imagePath != null
                   ? SizedBox(
-                      height: 200,
+                      height: 250,
                       child: GestureDetector(
                         onTap: () {
                           showGeneralDialog(
@@ -389,7 +402,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         ),
                       ),
                     )
-                  : Container(height: 200),
+                  : Container(height: 250),
             ),
           ),
           actions: [
@@ -467,7 +480,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               children: [
                 const SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(8),
                   child: Table(
                     columnWidths: const {
                       0: FixedColumnWidth(120),
@@ -1086,7 +1099,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         overflow: TextOverflow.ellipsis,
                     ),
                 ),
-                value: selectedCard?['accountID'], // Use accountID from selectedCard
+                value: selectedCard?['accountID'], // Bind to the selected account ID
                 isExpanded: true,
                 items: bankDetails.map((bankDetail) {
                     return DropdownMenuItem<String>(
@@ -1105,6 +1118,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     if (newValue != null) {
                         setState(() {
                             selectedCard = bankDetails.firstWhere((bd) => bd['accountID'] == newValue); // Find the selected card
+                            paidFormController.text = selectedCard?['name']; // Update the controller text
                             showSpinner = true;
                         });
                         
@@ -1136,9 +1150,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                 ),
                 dropdownStyleData: const DropdownStyleData(
                     maxHeight: 200,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                    ),
+                    decoration: BoxDecoration(color: Colors.white),
                 ),
                 menuItemStyleData: const MenuItemStyleData(
                     height: 40,
@@ -1167,42 +1179,36 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         },
         onEditingComplete: () async {
             FocusManager.instance.primaryFocus?.unfocus();
-            print('Updating description with: ${updatedExpense['description']}'); // Log the description being updated
-            final resp = await ApiService.updateExpense(updatedExpense);
-            setState(() {
-                showSpinner = false;
-            });
-            if (resp.isNotEmpty) {
-                print('Description updated successfully: $resp'); // Debug log
-                ScaffoldMessenger.of(navigatorKey.currentContext!)
-                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-            } else {
-                print('Failed to update description: $resp'); // Debug log
-                ScaffoldMessenger.of(navigatorKey.currentContext!)
-                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-            }
+            await _updateDescription(); // Call the method to update the API
         },
         onTapOutside: (cb) async {
             // Call the update function when the user taps outside
             updatedExpense['description'] = descriptionController.text;
             FocusManager.instance.primaryFocus?.unfocus();
-            print('Updating description on tap outside with: ${updatedExpense['description']}'); // Log the description being updated
-            final resp = await ApiService.updateExpense(updatedExpense);
-            setState(() {
-                showSpinner = false;
-            });
-            if (resp.isNotEmpty) {
-                print('Description updated successfully on tap outside: $resp'); // Debug log
-                ScaffoldMessenger.of(navigatorKey.currentContext!)
-                    .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-            } else {
-                print('Failed to update description on tap outside: $resp'); // Debug log
-                ScaffoldMessenger.of(navigatorKey.currentContext!)
-                    .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-            }
+            await _updateDescription(); // Call the method to update the API
         },
         textAlign: TextAlign.left,
     );
+  }
+
+  Future<void> _updateDescription() async {
+    setState(() {
+        showSpinner = true; // Show loading spinner
+    });
+
+    final resp = await ApiService.updateExpense(updatedExpense); // Call the API to update the expense
+
+    setState(() {
+        showSpinner = false; // Hide loading spinner
+    });
+
+    if (resp.isNotEmpty) {
+        ScaffoldMessenger.of(navigatorKey.currentContext!)
+            .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+    } else {
+        ScaffoldMessenger.of(navigatorKey.currentContext!)
+            .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+    }
   }
 
   /// Total logic
@@ -1227,8 +1233,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                                     });
                                     // Update the amount due in the updatedExpense map
                                     updatedExpense['invoiceLines'][0]['amountDue'] =
-                                        double.parse(totalController.text);
-                                    updatedExpense['amountDue'] = double.parse(totalController.text);
+                                        double.parse(totalController.text.replaceAll(',', '')); // Remove commas for parsing
+                                    updatedExpense['amountDue'] = double.parse(totalController.text.replaceAll(',', ''));
                                     
                                     // Call the API to update the expense
                                     final resp = await ApiService.updateExpense(updatedExpense);
@@ -1268,7 +1274,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         child: TextField(
             focusNode: keyboardFocusNode,
             enabled: !widget.isProcessed!,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
             textInputAction: TextInputAction.done,
             controller: totalController,
             decoration: plainInputDecoration,
@@ -1276,8 +1282,27 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             minLines: 1,
             textAlign: TextAlign.left,
             onChanged: (value) {
-                // Update the amount due in the updatedExpense map when the text changes
-                updatedExpense['invoiceLines'][0]['amountDue'] = double.tryParse(value) ?? 0.0;
+                // Validate and format the value with commas and up to 2 decimal places
+                String sanitizedValue = value.replaceAll(',', ''); // Remove existing commas
+                if (sanitizedValue.isNotEmpty) {
+                    // Use regex to allow up to 2 decimal places
+                    RegExp regex = RegExp(r'^\d*\.?\d{0,2}');
+                    Match? match = regex.firstMatch(sanitizedValue);
+                    if (match != null) {
+                        String formattedValue = NumberFormat('#,###.##').format(double.tryParse(match.group(0)!) ?? 0);
+                        totalController.value = TextEditingValue(
+                            text: formattedValue,
+                            selection: TextSelection.collapsed(offset: formattedValue.length),
+                        );
+                        updatedExpense['invoiceLines'][0]['amountDue'] = double.tryParse(sanitizedValue) ?? 0.0;
+                    }
+                } else {
+                    totalController.value = TextEditingValue(
+                        text: '',
+                        selection: TextSelection.collapsed(offset: 0),
+                    );
+                    updatedExpense['invoiceLines'][0]['amountDue'] = 0.0;
+                }
             },
         ),
     );
@@ -1606,7 +1631,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle, // Change to middle
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               label,
               style: const TextStyle(
@@ -1619,7 +1644,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle, // Change to middle
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: widgetOnRight,
           ),
         ),

@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   dropdown_search: ^5.0.2
+  intl: ^0.19.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -47,7 +48,6 @@ dependencies:
   flutter_otp_text_field: ^1.2.0
   otp_timer_button: ^1.1.1
   modal_progress_hud_nsn: ^0.5.1
-  intl: ^0.19.0
   dropdown_button2: ^2.3.9
   syncfusion_flutter_pdfviewer: ^27.1.58
   cached_network_image: ^3.4.1
