@@ -68,35 +68,87 @@ class HomeScreenState extends State<HomeScreen>
     });
   }
 
-  _onPressed() {
-    Navigator.pop(navigatorKey.currentContext!);
+  void _onPressed() async {
+    Navigator.pop(context);
+    
     setState(() {
       showUploadingInvoice = true;
       uploadingData = {
         'path': imagesPath!.first,
         'size': fileSize,
-        'uploadProgress': 0.0
+        'uploadProgress': 0.0,
+        'status': 'Processing...'
       };
       selectedNavBarIndex = 0;
     });
-    ApiService.uploadInvoice(imagesPath!.first, selectedOrgId,
-            notesController.text, uploadCallback)
-        .then((uploadResp) {
+  
+    try {
+      final uploadResp = await ApiService.uploadInvoice(
+        imagesPath!.first,
+        selectedOrgId,
+        notesController.text,
+        uploadCallback
+      );
+  
+      if (uploadResp.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('We were unable to process the image, please try again.')
+          )
+        );
+        return;
+      }
+  
+      // Replace refresh with getUnprocessedExpenses
+      await getUnprocessedExpenses(1, reviewSearchTerm);
+      notesController.clear();
+  
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading: ${e.toString()}'))
+      );
+    } finally {
       setState(() {
         showUploadingInvoice = false;
         uploadingData = {};
       });
-      notesController.clear();
-      if (uploadResp.isEmpty) {
-        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'We were unable to process the image, please try again.')));
-        return;
-      } else {
-        reviewPagingController.refresh();
-      }
-    });
+    }
+  }
+  
+  // Add this widget to show the processing status
+  Widget _buildProcessingCard() {
+    if (!showUploadingInvoice) return const SizedBox.shrink();
+  
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Processing Invoice',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (uploadingData['uploadProgress'] != null)
+              LinearProgressIndicator(
+                value: uploadingData['uploadProgress'],
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(clickableColor),
+              ),
+            const SizedBox(height: 8),
+            Text(
+              'File Size: ${uploadingData['size'] ?? ''}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void startScan() async {
@@ -115,146 +167,127 @@ class HomeScreenState extends State<HomeScreen>
         if (imagesPath?.isNotEmpty ?? false) {
           fileSize = await getFileSize(imagesPath!.first, 1);
           showDialog(
-              barrierDismissible: false,
-              context: navigatorKey.currentContext!,
-              builder: (context) => StatefulBuilder(
-                  builder: (context, setState) => SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: AlertDialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0)),
-                          insetPadding: const EdgeInsets.all(10),
-                          backgroundColor: Colors.white,
-                          title: Container(
-                            decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10)),
-                                color: Color(0XFFF9FAFB),
-                                border: Border(
-                                    bottom: BorderSide(color: Colors.grey))),
-                            height: MediaQuery.of(context).size.height * 0.065,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Padding(
-                                  padding: EdgeInsets.only(
-                                      left: MediaQuery.of(context).size.width *
-                                          0.075),
-                                  child: Text('Add Note (Optional)',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: headingColor))),
+            barrierDismissible: false,
+            context: navigatorKey.currentContext!,
+            builder: (context) => StatefulBuilder(
+              builder: (context, setState) => Dialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tell us about this expense',
+                            style: TextStyle(
+                              color: headingColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          titlePadding: const EdgeInsets.all(0),
-                          content: Container(
-                            color: Colors.white,
-                            width: MediaQuery.of(navigatorKey.currentContext!)
-                                    .size
-                                    .width *
-                                0.9,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  keyboardType: TextInputType.multiline,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: InputDecoration(
-                                      hintText: 'Add expense details',
-                                      focusColor: Colors.grey.shade400,
-                                      border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey.shade400,
-                                              width: 0.4)),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey.shade400,
-                                              width: 0.4))),
-                                  maxLines: 5,
-                                  controller: notesController,
-                                  autofocus: true,
-                                  enabled: true,
-                                ),
-                                const SizedBox(height: 20),
-                                ElevatedButton(
-                                  style: ButtonStyle(
-                                      shape: WidgetStateProperty.all<
-                                              RoundedRectangleBorder>(
-                                          RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0))),
-                                      fixedSize: WidgetStateProperty.all(Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.9,
-                                          40)),
-                                      backgroundColor: WidgetStateProperty.all(
-                                          const Color(0XFF009318))),
-                                  onPressed: _onPressed,
-                                  child: const Text(
-                                    'Submit',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                TextButton(
-                                    onPressed: () async {
-                                      Navigator.pop(
-                                          navigatorKey.currentContext!);
-                                      setState(() {
-                                        showUploadingInvoice = true;
-                                        uploadingData = {
-                                          'path': imagesPath!.first,
-                                          'size': fileSize
-                                        };
-                                        selectedNavBarIndex = 0;
-                                      });
-                                      ApiService.uploadInvoice(
-                                              imagesPath!.first,
-                                              selectedOrgId,
-                                              '',
-                                              uploadCallback)
-                                          .then((uploadResp) {
-                                        showUploadingInvoice = false;
-                                        uploadingData = {};
-                                        if (uploadResp.isEmpty) {
-                                          ScaffoldMessenger.of(
-                                                  navigatorKey.currentContext!)
-                                              .showSnackBar(const SnackBar(
-                                                  content: Text(
-                                                      'We were unable to process the image, please try again.')));
-                                          return;
-                                        } else {
-                                          Navigator.push(
-                                              navigatorKey.currentContext!,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      UpdateExpenseData(
-                                                          expense: uploadResp,
-                                                          imagePath:
-                                                              'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
-                                                          isProcessed: false,
-                                                          selectedOrgId: selectedOrgId)));
-                                        }
-                                      });
-                                    },
-                                    child: const Text('Skip',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0XFFFF4E4E))))
-                              ],
-                            ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 24),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Chat-like message
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Adding some details helps with expense tracking and approvals. What is this expense for?',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF374151),
                           ),
                         ),
-                      )));
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Input field
+                      TextField(
+                        controller: notesController,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        maxLines: 4,
+                        style: const TextStyle(fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: 'E.g. Office supplies for Q1, Team lunch meeting...',
+                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                          filled: true,
+                          fillColor: const Color(0xFFF9FAFB),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[200]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: clickableColor),
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                        autofocus: true,
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Action buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: clickableColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              onPressed: _onPressed,
+                              child: const Text(
+                                'Submit',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // Call your existing skip logic here
+                        },
+                        child: Text(
+                          'Skip for now',
+                          style: TextStyle(
+                            color: clickableColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
         }
       } else if (await Permission.camera.isPermanentlyDenied) {
         openAppSettings();
@@ -491,12 +524,18 @@ class HomeScreenState extends State<HomeScreen>
             centerTitle: true,
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
               children: [
-                const SizedBox(width: 15),
+                // Left spacer
+                const SizedBox(width: 35),  // Decrease from 40 to 35
+                
+                // Center dropdown
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  // Increase width from 0.6 to 0.7 to show more characters
+                  width: MediaQuery.of(context).size.width * 0.7,
                   child: DropdownSearch<String>(
+                    dropdownButtonProps: const DropdownButtonProps(
+                      icon: SizedBox.shrink(),
+                    ),
                     popupProps: PopupProps.dialog(
                       showSearchBox: true,
                       itemBuilder: (context, item, isSelected) {
@@ -571,25 +610,40 @@ class HomeScreenState extends State<HomeScreen>
                         border: InputBorder.none,
                         fillColor: Colors.white,
                         filled: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 0), // Remove horizontal padding
                       ),
                     ),
                     dropdownBuilder: (context, selectedItem) {
                       return Center(
-                        child: Text(
-                          selectedItem ?? '',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(width: 10), // Add left padding
+                            Flexible(
+                              child: Text(
+                                selectedItem ?? '',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, size: 24),
+                          ],
                         ),
                       );
                     },
                   ),
                 ),
+                
+                // Right menu - keep width consistent with left spacer
                 SizedBox(
-                  width: 25,
+                  width: 35,  // Match left spacer width
                   child: PopupMenuButton<int>(
                     color: Colors.white,
                     icon: const Icon(Icons.more_vert, size: 25),
@@ -732,9 +786,11 @@ class HomeScreenState extends State<HomeScreen>
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
-          body: showSpinner
-              ? appLoader
-              : selectedNavBarIndex == 0
+          body: Column(
+            children: [
+              if (showUploadingInvoice) _buildProcessingCard(),
+              Expanded(
+                child: selectedNavBarIndex == 0
                   ? SmartRefresher(
                       controller: refreshController,
                       onRefresh: () async {
@@ -742,12 +798,12 @@ class HomeScreenState extends State<HomeScreen>
                           setState(() {
                             reviewSearchTerm = '';
                           });
-                          reviewPagingController.refresh();
+                          await getUnprocessedExpenses(1, '');
                         } else {
                           setState(() {
                             processedSearchTerm = '';
                           });
-                          processedPagingController.refresh();
+                          await getProcessedExpenses(1, '');
                         }
                       },
                       onLoading: getOrganisations,
@@ -761,7 +817,11 @@ class HomeScreenState extends State<HomeScreen>
                         selectedOrgId: selectedOrgId,
                       ),
                     )
-                  : const TransactionsTabScreen()),
+                  : const TransactionsTabScreen(),
+              ),
+            ],
+          ),
+        ),
     );
   }
 }

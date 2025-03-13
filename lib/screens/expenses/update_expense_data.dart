@@ -116,6 +116,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   Map expense = {};
 
   bool showSpinner = false;
+  bool isPublishing = false;
 
   List reviewExpenses = [];
 
@@ -333,7 +334,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
           ),
           title: const SizedBox(height: 10),
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(200),
+            preferredSize: const Size.fromHeight(150),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -352,7 +353,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
               ),
               child: widget.imagePath != null
                   ? SizedBox(
-                      height: 250,
+                      height: 150,
                       child: GestureDetector(
                         onTap: () {
                           showGeneralDialog(
@@ -396,13 +397,14 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                         },
                         child: CachedNetworkImage(
                           imageUrl: widget.imagePath!,
+                          fit: BoxFit.contain,
                           errorWidget: (context, url, error) {
                             return SfPdfViewer.network(widget.imagePath!);
                           },
                         ),
                       ),
                     )
-                  : Container(height: 250),
+                  : Container(height: 150),
             ),
           ),
           actions: [
@@ -475,10 +477,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         ),
         body: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Table(
@@ -562,39 +564,19 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Supplier name widget: your existing logic to show a text field or a row with an icon if it exists
   Widget _buildSupplierWidget() {
-    // If the supplier is not found in the list
-    if (suppliers.where((element) => element['name'] == widget.expense['supplierName']).isEmpty) {
-      return TextField(
-        enabled: !widget.isProcessed!,
-        controller: supplierController,
-        keyboardType: TextInputType.none,
-        decoration: dropdownInputDecoration,
-        onTap: _showSupplierBottomSheet,
-        maxLines: null,
-        minLines: 1,
-        textAlign: TextAlign.left,
-      );
-    } else {
-      // If found
-      return Row(
-        children: [
-          Expanded(
-            child: TextField(
-              enabled: !widget.isProcessed!,
-              controller: supplierController,
-              keyboardType: TextInputType.none,
-              decoration: dropdownInputDecoration,
-              maxLines: null,
-              minLines: 1,
-              onTap: _showSupplierBottomSheet,
-              textAlign: TextAlign.left,
-            ),
-          ),
-          const SizedBox(width: 5),
-          const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
-        ],
-      );
-    }
+    return TextField(
+      enabled: !widget.isProcessed! && !isPublishing,
+      controller: supplierController,
+      keyboardType: TextInputType.none,
+      decoration: dropdownInputDecoration.copyWith(
+        hintText: supplierController.text.isEmpty ? 'Select Supplier' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
+      onTap: _showSupplierBottomSheet,
+      maxLines: null,
+      minLines: 1,
+      textAlign: TextAlign.left,
+    );
   }
 
   void _showSupplierBottomSheet() {
@@ -773,10 +755,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Date field logic
   Widget _buildDateWidget() {
     return TextField(
-      enabled: !widget.isProcessed!,
+      enabled: !widget.isProcessed! && !isPublishing,
       keyboardType: TextInputType.none,
       controller: dateController,
-      decoration: dropdownInputDecoration,
+      decoration: dropdownInputDecoration.copyWith(
+        hintText: dateController.text.isEmpty ? 'Select Date' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
       maxLines: null,
       minLines: 1,
       onTap: _pickDate,
@@ -838,10 +823,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Currency field logic
   Widget _buildCurrencyWidget() {
     return TextField(
-      enabled: !widget.isProcessed!,
+      enabled: !widget.isProcessed! && !isPublishing,
       keyboardType: TextInputType.none,
       controller: currencyController,
-      decoration: dropdownInputDecoration,
+      decoration: dropdownInputDecoration.copyWith(
+        hintText: currencyController.text.isEmpty ? 'Select Currency' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
       maxLines: null,
       minLines: 1,
       onTap: _pickCurrency,
@@ -887,7 +875,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Ref field logic
   Widget _buildRefWidget() {
     return TextField(
-        enabled: !widget.isProcessed!,
+        enabled: !widget.isProcessed! && !isPublishing,
         controller: refController,
         decoration: plainInputDecoration.copyWith(
             hintText: refController.text.isEmpty ? 'Add Reference' : null,
@@ -936,7 +924,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Account field logic
   Widget _buildAccountWidget() {
     return TextField(
-      enabled: !widget.isProcessed!,
+      enabled: !widget.isProcessed! && !isPublishing,
       keyboardType: TextInputType.none,
       controller: accountController,
       decoration: dropdownInputDecoration.copyWith(
@@ -1164,7 +1152,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   /// Description logic
   Widget _buildDescriptionWidget() {
     return TextField(
-        enabled: !widget.isProcessed!,
+        enabled: !widget.isProcessed! && !isPublishing,
         textInputAction: TextInputAction.done,
         controller: descriptionController,
         decoration: plainInputDecoration.copyWith(
@@ -1273,7 +1261,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         ),
         child: TextField(
             focusNode: keyboardFocusNode,
-            enabled: !widget.isProcessed!,
+            enabled: !widget.isProcessed! && !isPublishing,
             keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
             textInputAction: TextInputAction.done,
             controller: totalController,
@@ -1521,107 +1509,107 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> _handlePublish() async {
-    // Initialize a list to hold the names of empty fields
-    List<String> emptyFields = [];
-
-    // Validate required fields
-    if (selectedCard == null) {
-        emptyFields.add('Payment Account');
-    }
-    if (selectedSupplier == null) {
-        emptyFields.add('Supplier');
-    }
-    if (updatedExpense['invoiceLines'][0]['amountDue'] == null) {
-        emptyFields.add('Total Amount Due');
-    }
-    if (updatedExpense['date'] == null) {
-        emptyFields.add('Date');
-    }
-
-    // If there are any empty fields, show a message
-    if (emptyFields.isNotEmpty) {
-        String fields = emptyFields.join(', ');
-        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            SnackBar(content: Text('Please fill in the following fields: $fields.')));
-        return; // Exit the function if validation fails
-    }
-
-    setState(() {
-        showSpinner = true;
+    try {
+      setState(() {
         _publishButtonChild = const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         );
-    });
+      });
 
-    // Construct the receipt map
-    Map receipt = {
-        "bankAccount": {
-            "accountID": selectedCard?['accountID'],
-            "bankAccountNumber": selectedCard?['bankAccountNumber'],
-            "currencyCode": selectedCurrency,
-            "name": selectedCard?['name'],
-            "type": selectedCard?['type']
+      // Create receipt with explicit typing
+      final Map<String, dynamic> receipt = {
+        "bankAccount": <String, dynamic>{
+          "accountID": selectedCard?['accountID'] ?? '',
+          "bankAccountNumber": selectedCard?['bankAccountNumber'] ?? '',
+          "currencyCode": selectedCurrency ?? '',
+          "name": selectedCard?['name'] ?? '',
+          "type": "BANK"
         },
-        'currency': selectedCurrency,
-        'currencyCode': selectedCurrency,
-        'contact': {
-            "contactID": selectedSupplier?['id'],
-            "name": selectedSupplier?['name'],
-            "status": "ACTIVE"
+        'currency': selectedCurrency ?? '',
+        'currencyCode': selectedCurrency ?? '',
+        'contact': <String, dynamic>{
+          "contactID": selectedSupplier?['id'] ?? '',
+          "name": selectedSupplier?['name'] ?? '',
+          "status": "ACTIVE"
         },
-        'date': updatedExpense['date'],
-        'invoiceId': updatedExpense['id'],
-        'invoiceNumber': updatedExpense['invoiceNumber'],
-        "InvoiceOrCreditNote": updatedExpense['type'],
+        'date': updatedExpense['date'] ?? '',
+        'invoiceId': updatedExpense['id'] ?? '',
+        'invoiceNumber': updatedExpense['invoiceNumber'] ?? '',
+        "InvoiceOrCreditNote": 'Receipt',
         'lineAmountTypes': 'Exclusive',
-        'lineItems': updatedExpense['invoiceLines'],
+        'lineItems': List<dynamic>.from(updatedExpense['invoiceLines'] ?? []),
         'OrganisationId': widget.selectedOrgId,
-        'paymentAccountNumber': updatedExpense['paymentAccountNumber'],
-        'paymentDate': updatedExpense['paymentDate'],
-        'paymentStatus': updatedExpense['type'] == 'Receipt' ? 1 : 0,
-        'PdfUrl': updatedExpense['pdfUrl'],
+        'paymentAccountNumber': updatedExpense['paymentAccountNumber'] ?? '',
+        'paymentDate': updatedExpense['paymentDate'] ?? updatedExpense['date'] ?? '',
+        'paymentStatus': 1,
+        'PdfUrl': updatedExpense['pdfUrl'] ?? '',
         'status': 'AUTHORISED',
-        'subTotal': updatedExpense['subTotal'],
-        'total': updatedExpense['amountDue'],
-        'totalTax': updatedExpense['totalTax'],
-        'type': updatedExpense['type'],
+        'subTotal': updatedExpense['subTotal'] ?? 0.0,
+        'total': updatedExpense['amountDue'] ?? 0.0,
+        'totalTax': updatedExpense['totalTax'] ?? 0.0,
+        'type': 'Receipt',
         "unreconciledReportIds": ""
-    };
+      };
 
-    // Your existing logic to publish the receipt
-    final resp = await ApiService.publishReceipt(receipt);
+      // Log the payload
+      print('Publishing receipt with payload: ${jsonEncode(receipt)}');
 
-    if (resp.isNotEmpty) {
+      // Make API call and handle response
+      final Map<String, dynamic> resp = await ApiService.publishReceipt(receipt);
+      
+      if (resp.isEmpty) {
+        throw Exception('Empty response received');
+      }
+
+      // Handle success
+      setState(() {
+        _publishButtonChild = Lottie.asset(
+          'assets/animations/success.json',
+          width: 50,
+          height: 50,
+          repeat: false,
+        );
+      });
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Published successfully'))
+        );
+        
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
+        );
+      }
+
+    } catch (e, stackTrace) {
+      print('Error publishing receipt: $e');
+      print('Stack trace: $stackTrace');
+
+      if (mounted) {
         setState(() {
-            _publishButtonChild = Lottie.asset(
-                'assets/animations/success.json', // Ensure you have a success animation JSON file
-                width: 50,
-                height: 50,
-                repeat: false,
-            );
+          _publishButtonChild = const Text(
+            'Publish',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+          );
         });
 
-        // Delay to show the success animation
-        await Future.delayed(const Duration(seconds: 2));
-
-        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(content: Text('Published successfully.')),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to publish: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          )
         );
-        Navigator.push(
-            navigatorKey.currentContext!,
-            MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-        );
-    } else {
+      }
+    } finally {
+      if (mounted) {
         setState(() {
-            _publishButtonChild = const Text(
-                'Publish',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
-            );
-            showSpinner = false;
+          showSpinner = false;
         });
-        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(content: Text('We were unable to publish the expense, please try again.')),
-        );
+      }
     }
   }
 

@@ -566,7 +566,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                   Text(' ${date?.formatDate()} ',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w400,
-                                          fontSize: 12,
+                                          fontSize: 20,  // Change from 12 to 20 to match Review tab
                                           color: Color(0XFF667085))),
                                   const Expanded(child: Divider()),
                                 ],
@@ -593,7 +593,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                 }
                               },
                               child: SizedBox(
-                                height: 100,
+                                height: 120,  // Change from 100 to 120 to match Review tab
                                 child: getInvoiceCardWidget(item),
                               ),
                             ),
@@ -621,7 +621,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                                 }
                               },
                               child: SizedBox(
-                                height: 100,
+                                height: 120,  // Change from 100 to 120 to match Review tab
                                 child: getInvoiceCardWidget(item),
                               ),
                             ),

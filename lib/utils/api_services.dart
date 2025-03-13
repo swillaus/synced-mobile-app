@@ -357,25 +357,40 @@ class ApiService {
     }
   }
 
-  static Future<Map> publishReceipt(receipt) async {
-    var headers = {
-      'Accept': 'application/json, text/plain, */*',
-      'Access-Control-Expose-Headers': 'authorization',
-      'authorization': 'Bearer ${User.authToken}',
-      'content-type': 'application/json',
-    };
-    var request =
-        http.Request('POST', Uri.parse('$hostUrl/api/Invoices/PublishReceipt'));
-    request.body = json.encode(receipt);
-    request.headers.addAll(headers);
+  static Future<Map<String, dynamic>> publishReceipt(Map<String, dynamic> receipt) async {
+    try {
+        var headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Access-Control-Expose-Headers': 'authorization',
+            'authorization': 'Bearer ${User.authToken}',
+            'content-type': 'application/json',
+        };
 
-    http.StreamedResponse response = await request.send();
+        var request = http.Request(
+            'POST', 
+            Uri.parse('$hostUrl/api/Invoices/publishReceipt')
+        );
+        
+        request.body = jsonEncode(receipt);
+        request.headers.addAll(headers);
 
-    if (response.statusCode == 200) {
-      return {'message': 'Expense published successfully'};
-    } else {
-      print('Error - ${response.statusCode}');
-      return {};
+        http.StreamedResponse response = await request.send();
+        var responseBody = await response.stream.bytesToString();
+        
+        print('Server response code: ${response.statusCode}');
+        print('Server response body: $responseBody');
+
+        if (response.statusCode == 200) {
+            return jsonDecode(responseBody);
+        } 
+
+        // Parse error response
+        var errorResponse = jsonDecode(responseBody);
+        throw Exception(errorResponse['Message'] ?? 'Failed to publish receipt');
+
+    } catch (e) {
+        print('API error: $e');
+        rethrow;
     }
   }
 

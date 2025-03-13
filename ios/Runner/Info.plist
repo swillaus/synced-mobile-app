@@ -11,7 +11,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.syncedhq.synced</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -39,8 +39,12 @@
 	<string>App needs access to the storage to save images and pdf of invoices</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed to capture new expense pictures</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed for audio recording features</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>App needs access to photo library to add images of saved expenses</string>
+	<key>NSSupportsCameraCapture</key>
+	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
