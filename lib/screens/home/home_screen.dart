@@ -115,37 +115,79 @@ class HomeScreenState extends State<HomeScreen>
     }
   }
   
-  // Add this widget to show the processing status
+  // Update the _buildProcessingCard widget
   Widget _buildProcessingCard() {
     if (!showUploadingInvoice) return const SizedBox.shrink();
   
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Processing Invoice',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 4,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Lottie.asset(
+                    'assets/animations/processing.json', // Add a processing animation
+                    width: 40,
+                    height: 40,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Processing Invoice',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            if (uploadingData['uploadProgress'] != null)
-              LinearProgressIndicator(
-                value: uploadingData['uploadProgress'],
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(clickableColor),
+              const SizedBox(height: 16),
+              if (uploadingData['uploadProgress'] != null)
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0,
+                    end: uploadingData['uploadProgress'],
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, value, child) {
+                    return Column(
+                      children: [
+                        LinearProgressIndicator(
+                          value: value,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(clickableColor),
+                          minHeight: 6,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${(value * 100).toInt()}%',
+                          style: TextStyle(
+                            color: clickableColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              const SizedBox(height: 8),
+              Text(
+                'File Size: ${uploadingData['size'] ?? ''}',
+                style: TextStyle(color: Colors.grey[600]),
               ),
-            const SizedBox(height: 8),
-            Text(
-              'File Size: ${uploadingData['size'] ?? ''}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -174,7 +216,7 @@ class HomeScreenState extends State<HomeScreen>
                 backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.9,
+                  width: MediaQuery.of(context).size.width * 0.95, // Increased from 0.9
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -243,44 +285,46 @@ class HomeScreenState extends State<HomeScreen>
                       ),
                       const SizedBox(height: 24),
                       
-                      // Action buttons
-                      Row(
+                      // Action buttons in a Column instead of Row
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch, // Make buttons full width
                         children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: clickableColor,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: clickableColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              onPressed: _onPressed,
-                              child: const Text(
-                                'Submit',
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            onPressed: _onPressed,
+                            child: const Text(
+                              'Submit',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8), // Add spacing between buttons
+                          Center( // Center the skip button
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                // Call your existing skip logic here
+                              },
+                              child: Text(
+                                'Skip for now',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  color: clickableColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // Call your existing skip logic here
-                        },
-                        child: Text(
-                          'Skip for now',
-                          style: TextStyle(
-                            color: clickableColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -815,6 +859,8 @@ class HomeScreenState extends State<HomeScreen>
                         processedExpenses: processedExpenses,
                         showSpinner: showSpinner,
                         selectedOrgId: selectedOrgId,
+                        showUploadingInvoice: showUploadingInvoice, // Pass this prop
+                        uploadingData: uploadingData, // Pass this prop
                       ),
                     )
                   : const TransactionsTabScreen(),
@@ -822,6 +868,6 @@ class HomeScreenState extends State<HomeScreen>
             ],
           ),
         ),
-    );
-  }
+    ); 
+  } 
 }

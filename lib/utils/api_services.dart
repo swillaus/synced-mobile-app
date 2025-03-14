@@ -357,7 +357,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> publishReceipt(Map<String, dynamic> receipt) async {
+  static Future<dynamic> publishReceipt(Map<String, dynamic> receipt) async {
     try {
         var headers = {
             'Accept': 'application/json, text/plain, */*',
@@ -381,12 +381,25 @@ class ApiService {
         print('Server response body: $responseBody');
 
         if (response.statusCode == 200) {
-            return jsonDecode(responseBody);
+            // If response is a valid UUID string, return it directly
+            if (responseBody.startsWith('"') && responseBody.endsWith('"')) {
+                return responseBody.substring(1, responseBody.length - 1);
+            }
+            // Otherwise try to parse as JSON
+            try {
+                return jsonDecode(responseBody);
+            } catch (e) {
+                return responseBody;
+            }
         } 
 
         // Parse error response
-        var errorResponse = jsonDecode(responseBody);
-        throw Exception(errorResponse['Message'] ?? 'Failed to publish receipt');
+        try {
+            var errorResponse = jsonDecode(responseBody);
+            throw Exception(errorResponse['Message'] ?? 'Failed to publish receipt');
+        } catch (e) {
+            throw Exception('Failed to publish receipt: $responseBody');
+        }
 
     } catch (e) {
         print('API error: $e');

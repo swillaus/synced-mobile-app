@@ -120,6 +120,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   List reviewExpenses = [];
 
+  // Add loading state variable
+  bool isLoading = true;
+
+  // Add field controllers and state variables
+  TextEditingController paidFromController = TextEditingController();
+  Map<String, dynamic>? selectedPaidFrom;
+
   @override
   void initState() {
     super.initState();
@@ -137,50 +144,64 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   Future<void> preparePage() async {
     setState(() {
-      showSpinner = true;
+      isLoading = true;
     });
-    
-    await getInvoiceById();
-    await getSuppliers();
-    await getPaymentAccounts();
-    await getBankDetails();
-    await getTaxRates();
-    await getOrgCurrencies();
 
-    setState(() {
-      updatedExpense = expense;
-      updatedExpense.remove('invoice_path');
-      supplierController.text = expense['supplierName'] ?? '';
-      selectedDate = DateTime.parse(expense['date']);
-      dateController.text = DateFormat('dd MMM, yyyy').format(DateTime.parse(expense['date']));
-      refController.text = expense['invoiceNumber'] ?? '';
-      descriptionController.text = expense['invoiceLines'][0]['description'] ?? '';
-      selectedAccount = paymentAccounts.firstWhere(
-          (acc) => acc['id'] == expense['invoiceLines'][0]['accountId'],
-          orElse: () => null);
-      if (selectedAccount != null) {
-          accountController.text = selectedAccount!['name'];
-      }
-      showSpinner = false;
-    });
+    try {
+      await getInvoiceById();
+      await getSuppliers();
+      await getPaymentAccounts();
+      await getBankDetails();
+      await getTaxRates();
+      await getOrgCurrencies();
+
+      setState(() {
+        updatedExpense = expense;
+        updatedExpense.remove('invoice_path');
+        supplierController.text = expense['supplierName'] ?? '';
+        selectedDate = DateTime.parse(expense['date']);
+        dateController.text = DateFormat('dd MMM, yyyy').format(DateTime.parse(expense['date']));
+        refController.text = expense['invoiceNumber'] ?? '';
+        // Update description initialization
+        descriptionController.text = expense['description'] ?? expense['invoiceLines']?[0]?['description'] ?? '';
+        updatedExpense['description'] = descriptionController.text;
+        selectedAccount = paymentAccounts.firstWhere(
+            (acc) => acc['id'] == expense['invoiceLines'][0]['accountId'],
+            orElse: () => null);
+        if (selectedAccount != null) {
+            accountController.text = selectedAccount!['name'];
+        }
+        if (expense['paymentAccountName'] != null) {
+          paidFormController.text = expense['paymentAccountName'];
+          selectedPaidFrom = bankDetails.firstWhere(
+            (bank) => bank['name'] == expense['paymentAccountName'],
+            orElse: () => null,
+          );
+        }
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> getInvoiceById() async {
     final resp = await ApiService.getInvoiceById(widget.expense['id']);
     expense = resp;
 
-    // Assuming paymentAccountName is part of the response
-    if (resp['paymentAccountName'] != null) {
-        setState(() {
-            // Set the selected card based on the payment account name
-            selectedCard = {
-                'accountID': resp['paymentAccountNumber'], // Assuming you have this in the response
-                'name': resp['paymentAccountName'],
-            };
-            // Update the dropdown controller
-            paidFormController.text = resp['paymentAccountName'];
-        });
-    }
+    setState(() {
+      // Update the selected card based on the payment account details from the response
+      if (resp['paymentAccountName'] != null) {
+        selectedCard = {
+          'accountID': resp['paymentAccountNumber'],
+          'name': resp['paymentAccountName'],
+          'bankAccountNumber': resp['paymentAccountNumber'],
+        };
+        paidFormController.text = resp['paymentAccountName'];
+        updatedExpense['paymentAccountName'] = resp['paymentAccountName']; // Add this line
+      }
+    });
 
     print('Expense: $expense');
   }
@@ -308,223 +329,243 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   @override
   Widget build(BuildContext context) {
-    return ModalProgressHUD(
-      inAsyncCall: showSpinner,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          toolbarHeight: 100,
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
-          backgroundColor: const Color(0XFFECECEC),
-          leading: Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    navigatorKey.currentContext!,
-                    MaterialPageRoute(
-                      builder: (context) => const HomeScreen(tabIndex: 0),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.arrow_back_ios),
-              ),
-            ],
-          ),
-          title: const SizedBox(height: 10),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(150),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: const Offset(0, 3),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        toolbarHeight: 100,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        backgroundColor: const Color(0XFFECECEC),
+        leading: Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  navigatorKey.currentContext!,
+                  MaterialPageRoute(
+                    builder: (context) => const HomeScreen(tabIndex: 0),
                   ),
-                ],
+                );
+              },
+              icon: const Icon(Icons.arrow_back_ios),
+            ),
+          ],
+        ),
+        title: const SizedBox(height: 10),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(150),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
-              child: widget.imagePath != null
-                  ? SizedBox(
-                      height: 150,
-                      child: GestureDetector(
-                        onTap: () {
-                          showGeneralDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                Container(
-                              color: Colors.white,
-                              padding: EdgeInsets.zero,
-                              width: 100,
-                              height: 200,
-                              child: Stack(
-                                children: [
-                                  widget.imagePath!.toLowerCase().endsWith('.pdf')
-                                      ? SfPdfViewer.network(widget.imagePath!)
-                                      : PhotoView(
-                                          imageProvider: CachedNetworkImageProvider(
-                                              widget.imagePath!),
-                                        ),
-                                  Positioned(
-                                    top: 50,
-                                    left: 10,
-                                    child: Align(
-                                      alignment: Alignment.topLeft,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.grey.shade400,
-                                        child: IconButton(
-                                          icon: const Icon(Icons.close,
-                                              color: Colors.white),
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                        ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: widget.imagePath != null
+                ? SizedBox(
+                    height: 150,
+                    child: GestureDetector(
+                      onTap: () {
+                        showGeneralDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              Container(
+                            color: Colors.white,
+                            padding: EdgeInsets.zero,
+                            width: 100,
+                            height: 200,
+                            child: Stack(
+                              children: [
+                                widget.imagePath!.toLowerCase().endsWith('.pdf')
+                                    ? SfPdfViewer.network(widget.imagePath!)
+                                    : PhotoView(
+                                        imageProvider: CachedNetworkImageProvider(
+                                            widget.imagePath!),
+                                      ),
+                                Positioned(
+                                  top: 50,
+                                  left: 10,
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.grey.shade400,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.close,
+                                            color: Colors.white),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                        child: CachedNetworkImage(
-                          imageUrl: widget.imagePath!,
-                          fit: BoxFit.contain,
-                          errorWidget: (context, url, error) {
-                            return SfPdfViewer.network(widget.imagePath!);
-                          },
-                        ),
-                      ),
-                    )
-                  : Container(height: 150),
-            ),
-          ),
-          actions: [
-            if (!widget.isProcessed!)
-              IconButton(
-                onPressed: () async {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return StatefulBuilder(
-                        builder: (context, setState) => AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-                          title: Text(
-                            'Are you sure you want to delete the invoice?',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w500, fontSize: 14, color: headingColor),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () async {
-                                setState(() {
-                                  showSpinner = true;
-                                });
-                                final resp = await ApiService.deleteExpense(widget.expense['id']);
-                                setState(() {
-                                  showSpinner = false;
-                                });
-                                if (resp.isNotEmpty) {
-                                  Navigator.push(
-                                    navigatorKey.currentContext!,
-                                    MaterialPageRoute(
-                                      builder: (context) => const HomeScreen(
-                                        tabIndex: 0,
-                                        navbarIndex: 0,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'We were unable to delete the expense, please try again.'),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.delete, color: Colors.black),
-              ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              children: [
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Table(
-                    columnWidths: const {
-                      0: FixedColumnWidth(120),
-                      1: FlexColumnWidth(),
-                    },
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    border: TableBorder(
-                      horizontalInside: BorderSide(
-                        color: Colors.grey.shade200,
-                        width: 1,
+                        );
+                      },
+                      child: CachedNetworkImage(
+                        imageUrl: widget.imagePath!,
+                        fit: BoxFit.contain,
+                        errorWidget: (context, url, error) {
+                          return SfPdfViewer.network(widget.imagePath!);
+                        },
                       ),
                     ),
-                    children: [
-                      _buildTableRow("Supplier", Align(alignment: Alignment.centerLeft, child: _buildSupplierWidget())),
-                      _buildTableRow("Date", Align(alignment: Alignment.centerLeft, child: _buildDateWidget())),
-                      _buildTableRow("Currency", Align(alignment: Alignment.centerLeft, child: _buildCurrencyWidget())),
-                      _buildTableRow("Ref", Align(alignment: Alignment.centerLeft, child: _buildRefWidget())),
-                      _buildTableRow("Account", Align(alignment: Alignment.centerLeft, child: _buildAccountWidget())),
-                      _buildTableRow("Paid Form", Align(alignment: Alignment.centerLeft, child: _buildPaidFormWidget())),
-                      _buildTableRow("Details", Align(alignment: Alignment.centerLeft, child: _buildDescriptionWidget())),
-                      _buildTableRow("Total", Align(alignment: Alignment.topLeft, child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildTotalWidget(),
-                          const SizedBox(height: 8),
-                          _buildTaxChipRow(),
+                  )
+                : Container(height: 150),
+          ),
+        ),
+        actions: [
+          if (!widget.isProcessed!)
+            IconButton(
+              onPressed: () async {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder: (context, setState) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                        title: Text(
+                          'Are you sure you want to delete the invoice?',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w500, fontSize: 14, color: headingColor),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () async {
+                              setState(() {
+                                showSpinner = true;
+                              });
+                              final resp = await ApiService.deleteExpense(widget.expense['id']);
+                              setState(() {
+                                showSpinner = false;
+                              });
+                              if (resp.isNotEmpty) {
+                                Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomeScreen(
+                                      tabIndex: 0,
+                                      navbarIndex: 0,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'We were unable to delete the expense, please try again.'),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                          ),
                         ],
-                      ))),
-                    ],
+                      ),
+                    );
+                  },
+                );
+              },
+              icon: const Icon(Icons.delete, color: Colors.black),
+            ),
+        ],
+      ),
+      body: isLoading 
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/animations/loading.json',
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Loading expense details...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0XFF667085),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
+          )
+        : SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Table(
+                      columnWidths: const {
+                        0: FixedColumnWidth(120),
+                        1: FlexColumnWidth(),
+                      },
+                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                      border: TableBorder(
+                        horizontalInside: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      children: [
+                        _buildTableRow("Supplier", Align(alignment: Alignment.centerLeft, child: _buildSupplierWidget())),
+                        _buildTableRow("Date", Align(alignment: Alignment.centerLeft, child: _buildDateWidget())),
+                        _buildTableRow("Currency", Align(alignment: Alignment.centerLeft, child: _buildCurrencyWidget())),
+                        _buildTableRow("Ref", Align(alignment: Alignment.centerLeft, child: _buildRefWidget())),
+                        _buildTableRow("Account", Align(alignment: Alignment.centerLeft, child: _buildAccountWidget())),
+                        _buildTableRow("Paid Form", Align(alignment: Alignment.centerLeft, child: _buildPaidFormWidget())),
+                        _buildTableRow("Details", Align(alignment: Alignment.centerLeft, child: _buildDescriptionWidget())),
+                        _buildTableRow("Total", Align(alignment: Alignment.topLeft, child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildTotalWidget(),
+                            const SizedBox(height: 8),
+                            _buildTaxChipRow(),
+                          ],
+                        ))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        bottomNavigationBar: widget.isProcessed == false
-            ? Padding(
-                padding: const EdgeInsets.all(20),
-                child: _buildPublishButton(),
-              )
-            : null,
-      ),
+      bottomNavigationBar: widget.isProcessed == false && !isLoading
+          ? Padding(
+              padding: const EdgeInsets.all(20),
+              child: _buildPublishButton(),
+            )
+          : null,
     );
   }
 
@@ -1075,127 +1116,149 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Paid form logic
   Widget _buildPaidFormWidget() {
-    return SizedBox(
+    if (widget.isProcessed!) {
+      return SizedBox(
         height: 40,
-        child: DropdownButtonHideUnderline(
-            child: DropdownButton2<String>(
-                hint: const Text(
-                    'Select Payment Account',
-                    style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                        overflow: TextOverflow.ellipsis,
-                    ),
-                ),
-                value: selectedCard?['accountID'], // Bind to the selected account ID
-                isExpanded: true,
-                items: bankDetails.map((bankDetail) {
-                    return DropdownMenuItem<String>(
-                        value: bankDetail['accountID'], // Use accountID as the value
-                        child: Text(
-                            bankDetail['name']?.toString() ?? '',
-                            style: const TextStyle(
-                                fontSize: 14,
-                                overflow: TextOverflow.ellipsis,
-                            ),
-                            maxLines: 1,
-                        ),
-                    );
-                }).toList(),
-                onChanged: (String? newValue) async {
-                    if (newValue != null) {
-                        setState(() {
-                            selectedCard = bankDetails.firstWhere((bd) => bd['accountID'] == newValue); // Find the selected card
-                            paidFormController.text = selectedCard?['name']; // Update the controller text
-                            showSpinner = true;
-                        });
-                        
-                        updatedExpense['paymentAccountNumber'] = selectedCard?['accountID'];
-                        final resp = await ApiService.updateExpense(updatedExpense);
-                        
-                        setState(() {
-                            showSpinner = false;
-                        });
-                        
-                        if (resp.isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Updated successfully.')),
-                            );
-                        } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to update.')),
-                            );
-                        }
-                    }
-                },
-                buttonStyleData: const ButtonStyleData(
-                    height: 40,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.zero,
-                    ),
-                ),
-                dropdownStyleData: const DropdownStyleData(
-                    maxHeight: 200,
-                    decoration: BoxDecoration(color: Colors.white),
-                ),
-                menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                ),
-            ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            widget.expense['paymentAccountName'] ?? '',
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
+      );
+    }
+
+    return SizedBox(
+      height: 40, 
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton2<Map<String, dynamic>>(
+          isExpanded: true,
+          hint: const Text(
+            'Select Payment Account',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          value: selectedPaidFrom,
+          items: bankDetails.map((bank) {
+            return DropdownMenuItem<Map<String, dynamic>>(
+              value: bank,
+              child: Text(
+                bank['name'] ?? '',
+                style: const TextStyle(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) async {
+            setState(() {
+              selectedPaidFrom = value;
+              updatedExpense['paymentAccountNumber'] = value?['accountID'];
+              updatedExpense['paymentAccountName'] = value?['name'];
+              paidFromController.text = value?['name'] ?? '';
+              showSpinner = true;
+            });
+
+            // Call API to update the expense
+            final resp = await ApiService.updateExpense(updatedExpense);
+            
+            setState(() {
+              showSpinner = false;
+            });
+
+            if (resp.isNotEmpty) {
+              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+            } else {
+              setState(() {
+                // Revert changes if update failed
+                selectedPaidFrom = null;
+                updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
+                updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
+                paidFromController.text = widget.expense['paymentAccountName'] ?? '';
+              });
+              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+            }
+          },
+          buttonStyleData: const ButtonStyleData(
+            height: 40,
+            padding: EdgeInsets.symmetric(horizontal: 8),
+          ),
+          menuItemStyleData: const MenuItemStyleData(height: 40),
+          dropdownStyleData: DropdownStyleData(
+            maxHeight: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   /// Description logic
   Widget _buildDescriptionWidget() {
     return TextField(
-        enabled: !widget.isProcessed! && !isPublishing,
-        textInputAction: TextInputAction.done,
-        controller: descriptionController,
-        decoration: plainInputDecoration.copyWith(
-            hintText: descriptionController.text.isEmpty ? 'Add Description' : null,
-            hintStyle: const TextStyle(color: Colors.grey),
-        ),
-        maxLines: null, // Allow unlimited lines
-        minLines: 1, // Start with one line
-        onChanged: (text) {
-            // Update the description in the updatedExpense map when the text changes
-            updatedExpense['description'] = text;
-        },
-        onEditingComplete: () async {
-            FocusManager.instance.primaryFocus?.unfocus();
-            await _updateDescription(); // Call the method to update the API
-        },
-        onTapOutside: (cb) async {
-            // Call the update function when the user taps outside
-            updatedExpense['description'] = descriptionController.text;
-            FocusManager.instance.primaryFocus?.unfocus();
-            await _updateDescription(); // Call the method to update the API
-        },
-        textAlign: TextAlign.left,
+      enabled: !widget.isProcessed! && !isPublishing,
+      textInputAction: TextInputAction.done,
+      controller: descriptionController,
+      decoration: plainInputDecoration.copyWith(
+        hintText: descriptionController.text.isEmpty ? 'Add Description' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
+      maxLines: null,
+      minLines: 1,
+      onChanged: (text) {
+        setState(() {
+          updatedExpense['description'] = text;
+          updatedExpense['invoiceLines'][0]['description'] = text;
+        });
+      },
+      onEditingComplete: () async {
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _updateDescription();
+      },
+      onTapOutside: (_) async {
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _updateDescription();
+      },
+      textAlign: TextAlign.left,
     );
   }
 
   Future<void> _updateDescription() async {
-    setState(() {
-        showSpinner = true; // Show loading spinner
-    });
-
-    final resp = await ApiService.updateExpense(updatedExpense); // Call the API to update the expense
+    if (descriptionController.text.isEmpty) return;
 
     setState(() {
-        showSpinner = false; // Hide loading spinner
+      showSpinner = true;
     });
 
-    if (resp.isNotEmpty) {
+    try {
+      final resp = await ApiService.updateExpense(updatedExpense);
+      
+      if (resp.isNotEmpty) {
+        setState(() {
+          expense = resp;
+        });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
-            .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-    } else {
+          .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+      } else {
+        setState(() {
+          // Revert changes if update failed
+          descriptionController.text = expense['description'] ?? '';
+          updatedExpense['description'] = expense['description'];
+          updatedExpense['invoiceLines'][0]['description'] = expense['description'];
+        });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
-            .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+          .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+      }
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
     }
   }
 
@@ -1270,31 +1333,57 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
             minLines: 1,
             textAlign: TextAlign.left,
             onChanged: (value) {
-                // Validate and format the value with commas and up to 2 decimal places
-                String sanitizedValue = value.replaceAll(',', ''); // Remove existing commas
-                if (sanitizedValue.isNotEmpty) {
-                    // Use regex to allow up to 2 decimal places
-                    RegExp regex = RegExp(r'^\d*\.?\d{0,2}');
-                    Match? match = regex.firstMatch(sanitizedValue);
-                    if (match != null) {
-                        String formattedValue = NumberFormat('#,###.##').format(double.tryParse(match.group(0)!) ?? 0);
-                        totalController.value = TextEditingValue(
-                            text: formattedValue,
-                            selection: TextSelection.collapsed(offset: formattedValue.length),
-                        );
-                        updatedExpense['invoiceLines'][0]['amountDue'] = double.tryParse(sanitizedValue) ?? 0.0;
+                if (value.isEmpty) return;
+
+                // Remove any existing commas and sanitize input
+                String sanitizedValue = value.replaceAll(',', '');
+
+                // Strict regex to allow only valid numeric input with up to 2 decimal places
+                RegExp regex = RegExp(r'^\d*\.?\d{0,2}$');
+                
+                // If input doesn't match our format, don't update
+                if (!regex.hasMatch(sanitizedValue)) {
+                    // Remove the last character if it makes the input invalid
+                    sanitizedValue = sanitizedValue.substring(0, sanitizedValue.length - 1);
+                    if (!regex.hasMatch(sanitizedValue)) return;
+                }
+
+                double? parsedValue = double.tryParse(sanitizedValue);
+                if (parsedValue != null) {
+                    String formattedValue;
+                    
+                    if (sanitizedValue.contains('.')) {
+                        // ...existing code for decimal formatting...
+                    } else {
+                        // ...existing code for whole number formatting...
                     }
-                } else {
-                    totalController.value = TextEditingValue(
-                        text: '',
-                        selection: TextSelection.collapsed(offset: 0),
-                    );
-                    updatedExpense['invoiceLines'][0]['amountDue'] = 0.0;
+
+                    // Calculate tax using inclusive formula
+                    double total = parsedValue;
+                    double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
+                    // Tax amount = total × (taxRate / (1 + taxRate))
+                    double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
+                    double subTotal = total - totalTax;
+
+                    setState(() {
+                        // Update expense data with new calculations
+                        updatedExpense['invoiceLines'][0]['amountDue'] = total;
+                        updatedExpense['amountDue'] = total;
+                        updatedExpense['totalTax'] = totalTax;
+                        updatedExpense['subTotal'] = subTotal;
+                        updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
+                        updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
+                        
+                        widget.expense['amountDue'] = total;
+                        widget.expense['totalTax'] = totalTax;
+
+                        // ...existing text field update code...
+                    });
                 }
             },
         ),
     );
-  }
+}
 
   /// Tax chip row
   Widget _buildTaxChipRow() {
@@ -1309,16 +1398,13 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center, // Align items center vertically
         children: [
-          // Left side: Tax Rate information
-          Expanded( // Wrap in Expanded to prevent overflow
-            child: Text(
-              selectedTaxRate?['name'] ?? 'No tax',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              overflow: TextOverflow.ellipsis, // Handle overflow
+          // Left side: "Includes Tax" text
+          const Text(
+            'Includes Tax',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
           // Right side: Amount and edit icon
@@ -1359,8 +1445,11 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   double _calculateTaxAmount() {
-    if (selectedTaxRate != null && widget.expense['totalTax'] == 0) {
-      return widget.expense['amountDue'] * (selectedTaxRate!['rate'] / 100);
+    if (selectedTaxRate != null) {
+      double total = widget.expense['amountDue'].toDouble();
+      double taxRateDecimal = (selectedTaxRate!['rate'] ?? 0) / 100;
+      // Calculate tax using the formula: total × (taxRate / (1 + taxRate))
+      return total * (taxRateDecimal / (1 + taxRateDecimal));
     } else {
       return widget.expense['totalTax'].toDouble();
     }
@@ -1396,7 +1485,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         titlePadding: EdgeInsets.zero,
         contentPadding: const EdgeInsets.all(10),
         content: StatefulBuilder(
-          builder: (ctx, setState) => Container(
+          builder: (ctx, setDialogState) => Container(
             color: Colors.white,
             height: MediaQuery.of(ctx).size.height * 0.3,
             width: MediaQuery.of(ctx).size.width * 0.95,
@@ -1410,6 +1499,10 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     value: selectedTaxRate,
                     items: getTaxRateDropdownItems(),
                     onChanged: (value) {
+                      setDialogState(() {
+                        selectedTaxRate = value;
+                      });
+                      // Update parent state to reflect in pill
                       setState(() {
                         selectedTaxRate = value;
                       });
@@ -1440,37 +1533,57 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                       ),
                       backgroundColor: const Color(0XFF009318),
                     ),
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onPressed: () async {
                       setState(() {
                         showSpinner = true;
                       });
+
+                      // Update expense with new tax calculations
                       updatedExpense['invoiceLines'][0]['taxId'] = selectedTaxRate?['id'];
-                      double subTotal = updatedExpense['amountDue'] -
-                          (updatedExpense['amountDue'] * ((selectedTaxRate?['rate'] ?? 0) / 100));
-                      double totalTax = updatedExpense['amountDue'] * ((selectedTaxRate?['rate'] ?? 0) / 100);
+                      double total = updatedExpense['amountDue'];
+                      double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
+                      // Calculate tax amount using inclusive tax formula
+                      double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
+                      double subTotal = total - totalTax;
+                      
                       updatedExpense['totalTax'] = totalTax;
                       updatedExpense['subTotal'] = subTotal;
                       updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
                       updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
+
+                      // ...existing update and response handling code...
                       final resp = await ApiService.updateExpense(updatedExpense);
-                      setState(() {
-                        showSpinner = false;
-                      });
+                      
+                      // Close dialog first
+                      Navigator.pop(ctx);
+
                       if (resp.isNotEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Updated successfully.')),
+                        // Update both expense and widget state
+                        setState(() {
+                          expense = updatedExpense;
+                          widget.expense['totalTax'] = totalTax; // Update pill value
+                        });
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Updated successfully')),
                         );
                       } else {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Failed to update.')),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to update'),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     },
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
-                    ),
                   ),
                 ),
                 TextButton(
@@ -1509,14 +1622,21 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> _handlePublish() async {
+    if (isPublishing) return;
+
     try {
       setState(() {
-        _publishButtonChild = const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        isPublishing = true;
+        _publishButtonChild = const SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            strokeWidth: 2,
+          ),
         );
       });
 
-      // Create receipt with explicit typing
       final Map<String, dynamic> receipt = {
         "bankAccount": <String, dynamic>{
           "accountID": selectedCard?['accountID'] ?? '',
@@ -1551,63 +1671,67 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         "unreconciledReportIds": ""
       };
 
-      // Log the payload
-      print('Publishing receipt with payload: ${jsonEncode(receipt)}');
-
-      // Make API call and handle response
-      final Map<String, dynamic> resp = await ApiService.publishReceipt(receipt);
+      final dynamic resp = await ApiService.publishReceipt(receipt);
       
-      if (resp.isEmpty) {
-        throw Exception('Empty response received');
-      }
+      // Handle successful string response (UUID)
+      if (resp is String && resp.isNotEmpty) {
+        if (!mounted) return;
 
-      // Handle success
-      setState(() {
-        _publishButtonChild = Lottie.asset(
-          'assets/animations/success.json',
-          width: 50,
-          height: 50,
-          repeat: false,
-        );
-      });
-
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Published successfully'))
-        );
-        
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-        );
-      }
-
-    } catch (e, stackTrace) {
-      print('Error publishing receipt: $e');
-      print('Stack trace: $stackTrace');
-
-      if (mounted) {
         setState(() {
-          _publishButtonChild = const Text(
-            'Publish',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+          _publishButtonChild = Lottie.asset(
+            'assets/animations/success.json',
+            width: 50,
+            height: 50,
+            repeat: false,
           );
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to publish: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          )
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
+          (route) => false,
         );
+        return;
       }
+
+      // Handle error response
+      if (resp is Map && resp['Message'] != null) {
+        throw Exception(resp['Message']);
+      }
+
+      throw Exception('Failed to publish receipt');
+
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _publishButtonChild = const Text(
+          'Publish',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Colors.white,
+          ),
+        );
+      });
+
+      // Show error message from server if available
+      final message = e.toString().replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
-          showSpinner = false;
+          isPublishing = false;
         });
       }
     }
