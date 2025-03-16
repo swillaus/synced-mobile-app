@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:currency_picker/currency_picker.dart';
@@ -196,7 +197,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         selectedCard = {
           'accountID': resp['paymentAccountNumber'],
           'name': resp['paymentAccountName'],
-          'bankAccountNumber': resp['paymentAccountNumber'],
+          'bankAccountNumber': resp['bankAccountNumber'],
         };
         paidFormController.text = resp['paymentAccountName'];
         updatedExpense['paymentAccountName'] = resp['paymentAccountName']; // Add this line
@@ -1198,9 +1199,16 @@ void _showPaidFromBottomSheet() {
                         // Close bottom sheet immediately
                         Navigator.pop(context);
 
-                        // Update UI state
+                        // Update UI state and selectedCard
                         setState(() {
                           selectedPaidFrom = bankDetails[index];
+                          selectedCard = {
+                            'accountID': bankDetails[index]['accountID'],
+                            'name': bankDetails[index]['name'],
+                            'bankAccountNumber': bankDetails[index]['bankAccountNumber'],
+                            'currencyCode': selectedCurrency,
+                            'type': 'BANK'
+                          };
                           paidFormController.text = bankDetails[index]['name'];
                           updatedExpense['paymentAccountNumber'] = bankDetails[index]['accountID'];
                           updatedExpense['paymentAccountName'] = bankDetails[index]['name'];
@@ -1215,6 +1223,7 @@ void _showPaidFromBottomSheet() {
                           } else {
                             setState(() {
                               selectedPaidFrom = null;
+                              selectedCard = null;
                               updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
                               updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
                               paidFormController.text = widget.expense['paymentAccountName'] ?? '';
@@ -1225,6 +1234,7 @@ void _showPaidFromBottomSheet() {
                         } catch (e) {
                           setState(() {
                             selectedPaidFrom = null;
+                            selectedCard = null;
                             updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
                             updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
                             paidFormController.text = widget.expense['paymentAccountName'] ?? '';
@@ -1711,233 +1721,113 @@ Widget _buildPaidFromListTile(int index) {
   }
 
   Future<void> _handlePublish() async {
-  if (isPublishing) return;
+    if (isPublishing) return;
 
-  // Validation checks
-  List<String> missingFields = [];
-
-  // Check supplier
-  if (supplierController.text.isEmpty) {
-    missingFields.add('Supplier');
-  }
-
-  // Check date
-  if (dateController.text.isEmpty) {
-    missingFields.add('Date');
-  }
-
-  // Check currency
-  if (currencyController.text.isEmpty) {
-    missingFields.add('Currency');
-  }
-
-  // Check reference
-  if (refController.text.isEmpty) {
-    missingFields.add('Reference');
-  }
-
-  // Check account
-  if (accountController.text.isEmpty) {
-    missingFields.add('Account');
-  }
-
-  // Check paid from
-  if (paidFormController.text.isEmpty) {
-    missingFields.add('Paid From');
-  }
-
-  // Check total
-  double total = double.tryParse(totalController.text.replaceAll(',', '')) ?? 0;
-  if (total <= 0) {
-    missingFields.add('Total must be greater than 0');
-  }
-
-  // If any validations failed, show error and return
-  if (missingFields.isNotEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Please complete the following:\n${missingFields.join('\n')}',
-        ),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 5),
-      ),
-    );
-    return;
-  }
-
-  // Check if supplier needs to be created
-  if (selectedSupplier == null || selectedSupplier!['id'] == null) {
-    // Show confirmation dialog
-    bool? shouldCreateSupplier = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-        title: const Text(
-          'New Supplier',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Would you like to add "${supplierController.text}" as a new supplier?',
-          style: const TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.black, fontSize: 14),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Add Supplier',
-              style: TextStyle(color: Color(0XFF009318), fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldCreateSupplier != true) {
-      return; // User cancelled the operation
-    }
-
-    // Create new supplier
     try {
-      final supplierResp = await ApiService.createSupplier(supplierController.text);
-      if (supplierResp.isEmpty || supplierResp['supplierId'] == null) {
-        throw Exception('Failed to create supplier');
-      }
-      
-      // Update selectedSupplier with new supplier data
-      selectedSupplier = {
-        'id': supplierResp['supplierId'],
-        'name': supplierController.text,
-      };
+        // Initialize validation
+        List<String> missingFields = [];
+        if (selectedCard == null) missingFields.add('Paid From Account');
+        if (selectedSupplier == null) missingFields.add('Supplier');
+        if (selectedAccount == null) missingFields.add('Account');
+        if (totalController.text.isEmpty || double.parse(totalController.text.replaceAll(',', '')) <= 0) {
+            missingFields.add('Total Amount');
+        }
+
+        // Show validation message if fields are missing
+        if (missingFields.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Please fill in the following fields: ${missingFields.join(", ")}'))
+            );
+            return;
+        }
+
+        // Show loading state
+        setState(() {
+            isPublishing = true;
+            _publishButtonChild = const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            );
+        });
+
+        // Prepare receipt data
+        final Map<String, dynamic> receipt = {
+            'contact': {
+                "contactID": selectedSupplier!['id'],
+                "name": selectedSupplier!['name'],
+                "status": "ACTIVE"
+            },
+            'bankAccount': {
+                "accountID": selectedCard!['accountID'],
+                "bankAccountNumber": selectedCard!['bankAccountNumber'],
+                "currencyCode": selectedCurrency,
+                "name": selectedCard!['name'],
+                "type": "BANK"
+            },
+            'currency': selectedCurrency,
+            'currencyCode': selectedCurrency,
+            'date': updatedExpense['date'],
+            'invoiceId': updatedExpense['id'],
+            'invoiceNumber': refController.text,
+            'InvoiceOrCreditNote': 'Receipt',
+            'lineAmountTypes': 'Exclusive',
+            'lineItems': updatedExpense['invoiceLines'],
+            'OrganisationId': widget.selectedOrgId,
+            'paymentAccountNumber': selectedCard!['accountID'],
+            'paymentDate': updatedExpense['date'],
+            'paymentStatus': 1,
+            'PdfUrl': updatedExpense['pdfUrl'],
+            'status': 'AUTHORISED',
+            'subTotal': updatedExpense['subTotal'],
+            'total': updatedExpense['amountDue'],
+            'totalTax': updatedExpense['totalTax'],
+            'type': 'EXP',
+            'unreconciledReportIds': ''
+        };
+
+        // Call API
+        final resp = await ApiService.publishReceipt(receipt);
+
+        if (resp.isNotEmpty) {
+            setState(() {
+                _publishButtonChild = Lottie.asset(
+                    'assets/animations/success.json',
+                    width: 50,
+                    height: 50,
+                    repeat: false,
+                );
+            });
+
+            await Future.delayed(const Duration(milliseconds: 1500));
+            
+            if (!mounted) return;
+            
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
+            );
+        } else {
+            throw Exception('Failed to publish receipt');
+        }
+
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to create supplier'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-  }
+        if (!mounted) return;
+        
+        setState(() {
+            isPublishing = false;
+            _publishButtonChild = const Text(
+                'Publish',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+            );
+        });
 
-  try {
-    setState(() {
-      isPublishing = true;
-      _publishButtonChild = const SizedBox(
-        height: 24,
-        width: 24,
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          strokeWidth: 2,
-        ),
-      );
-    });
-
-    final Map<String, dynamic> receipt = {
-      "bankAccount": <String, dynamic>{
-        "accountID": selectedCard?['accountID'] ?? '',
-        "bankAccountNumber": selectedCard?['bankAccountNumber'] ?? '',
-        "currencyCode": selectedCurrency ?? '',
-        "name": selectedCard?['name'] ?? '',
-        "type": "BANK"
-      },
-      'currency': selectedCurrency ?? '',
-      'currencyCode': selectedCurrency ?? '',
-      'contact': <String, dynamic>{
-        "contactID": selectedSupplier?['id'] ?? '',
-        "name": selectedSupplier?['name'] ?? '',
-        "status": "ACTIVE"
-      },
-      'date': updatedExpense['date'] ?? '',
-      'invoiceId': updatedExpense['id'] ?? '',
-      'invoiceNumber': updatedExpense['invoiceNumber'] ?? '',
-      "InvoiceOrCreditNote": 'Receipt',
-      'lineAmountTypes': 'Exclusive',
-      'lineItems': List<dynamic>.from(updatedExpense['invoiceLines'] ?? []),
-      'OrganisationId': widget.selectedOrgId,
-      'paymentAccountNumber': updatedExpense['paymentAccountNumber'] ?? '',
-      'paymentDate': updatedExpense['paymentDate'] ?? updatedExpense['date'] ?? '',
-      'paymentStatus': 1,
-      'PdfUrl': updatedExpense['pdfUrl'] ?? '',
-      'status': 'AUTHORISED',
-      'subTotal': updatedExpense['subTotal'] ?? 0.0,
-      'total': updatedExpense['amountDue'] ?? 0.0,
-      'totalTax': updatedExpense['totalTax'] ?? 0.0,
-      'type': 'Receipt',
-      "unreconciledReportIds": ""
-    };
-
-    final dynamic resp = await ApiService.publishReceipt(receipt);
-    
-    // Handle successful string response (UUID)
-    if (resp is String && resp.isNotEmpty) {
-      if (!mounted) return;
-
-      setState(() {
-        _publishButtonChild = Lottie.asset(
-          'assets/animations/success.json',
-          width: 50,
-          height: 50,
-          repeat: false,
+        final message = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(message),
+                backgroundColor: Colors.red,
+            ),
         );
-      });
-
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-        (route) => false,
-      );
-      return;
     }
-
-    // Handle error response
-    if (resp is Map && resp['Message'] != null) {
-      throw Exception(resp['Message']);
-    }
-
-    throw Exception('Failed to publish receipt');
-
-  } catch (e) {
-    if (!mounted) return;
-    
-    setState(() {
-      _publishButtonChild = const Text(
-        'Publish',
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          color: Colors.white,
-        ),
-      );
-    });
-
-    // Show error message from server if available
-    final message = e.toString().replaceAll('Exception: ', '');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        isPublishing = false;
-      });
-    }
-  }
 }
 
   TableRow _buildTableRow(String label, Widget widgetOnRight) {

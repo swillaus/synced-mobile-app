@@ -345,6 +345,12 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
           expense: expense,
           isProcessed: false,
           selectedOrgId: widget.selectedOrgId,
+          onUpdate: (updatedExpense) {
+            setState(() {
+              widget.reviewExpenses[index] = updatedExpense;
+            });
+            widget.reviewPagingController.refresh();
+          },
         );
       },
     );
@@ -359,6 +365,12 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
           expense: expense,
           isProcessed: true,
           selectedOrgId: widget.selectedOrgId,
+          onUpdate: (updatedExpense) {
+            setState(() {
+              widget.processedExpenses[index] = updatedExpense;
+            });
+            widget.processedPagingController.refresh();
+          },
         );
       },
     );
@@ -585,18 +597,21 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                         ? const AlwaysScrollableScrollPhysics()
                         : const NeverScrollableScrollPhysics(),
                     builderDelegate: PagedChildBuilderDelegate<dynamic>(
-                      noItemsFoundIndicatorBuilder: (context) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: Text(
-                            'No expenses found matching "${reviewSearchTerm}"',
-                            style: const TextStyle(
-                              color: Color(0XFF667085),
-                              fontSize: 14,
+                      firstPageErrorIndicatorBuilder: (context) => noExpenseWidget,
+                      noItemsFoundIndicatorBuilder: (context) => reviewSearchTerm.isEmpty 
+                        ? noExpenseWidget
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No expenses found matching "${reviewSearchTerm}"',
+                                style: const TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
                       itemBuilder: (context, item, index) {
                         // Filter items based on search term
                         final filteredExpenses = widget.reviewExpenses.where((expense) {
@@ -750,18 +765,32 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
                         ? const AlwaysScrollableScrollPhysics()
                         : const NeverScrollableScrollPhysics(),
                     builderDelegate: PagedChildBuilderDelegate<dynamic>(
-                      noItemsFoundIndicatorBuilder: (context) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: Text(
-                            'No expenses found matching "${processedSearchTerm}"',
-                            style: const TextStyle(
-                              color: Color(0XFF667085),
-                              fontSize: 14,
+                      noItemsFoundIndicatorBuilder: (context) => processedSearchTerm.isEmpty 
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No processed expenses yet',
+                                style: TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No expenses found matching "${processedSearchTerm}"',
+                                style: const TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
                       itemBuilder: (context, item, index) {
                         // Filter items based on search term
                         final filteredExpenses = widget.processedExpenses.where((expense) {
@@ -876,21 +905,23 @@ class ExpenseCard extends StatelessWidget {
   final Map<dynamic, dynamic> expense;
   final bool isProcessed;
   final String selectedOrgId;
+  final Function(Map<dynamic, dynamic>)? onUpdate; // Add this
 
   const ExpenseCard({
     Key? key,
     required this.expense,
     required this.isProcessed,
     required this.selectedOrgId,
+    this.onUpdate,  // Add this
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {  // Make this async
         final imagePath = expense['invoice_path'] as String?;
         if (imagePath != null) {
-          Navigator.push(
+          final result = await Navigator.push(  // Get the result
             navigatorKey.currentContext!,
             MaterialPageRoute(
               builder: (context) => UpdateExpenseData(
@@ -901,6 +932,11 @@ class ExpenseCard extends StatelessWidget {
               ),
             ),
           );
+          
+          // Handle the update result
+          if (result != null && result is Map<dynamic, dynamic>) {
+            onUpdate?.call(result);  // Call the update callback if provided
+          }
         }
       },
       child: Card(

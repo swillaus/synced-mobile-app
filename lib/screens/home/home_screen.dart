@@ -198,8 +198,6 @@ class HomeScreenState extends State<HomeScreen>
   void startScan() async {
     if (!showUploadingInvoice) {
       if (await Permission.camera.request().isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Please scan one page only")));
         imagesPath = await CunningDocumentScanner.getPictures(
             noOfPages: 1, isGalleryImportAllowed: true);
         setState(() {});

@@ -374,6 +374,11 @@ class ApiService {
         request.body = jsonEncode(receipt);
         request.headers.addAll(headers);
 
+        // Print the request body
+        JsonEncoder encoder = new JsonEncoder.withIndent('  ');
+        String prettyPrint = encoder.convert(jsonDecode(request.body));
+        print('Request body: $prettyPrint');
+
         http.StreamedResponse response = await request.send();
         var responseBody = await response.stream.bytesToString();
         
