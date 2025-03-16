@@ -52,6 +52,8 @@ class HomeScreenState extends State<HomeScreen>
   bool showSpinner = false;
   TextEditingController notesController = TextEditingController();
   late TabController tabController;
+  bool showUploadingInvoice = false;
+  Map<String, dynamic> uploadingData = {};
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -374,7 +376,8 @@ class HomeScreenState extends State<HomeScreen>
   List<String> getOrgNames() {
     return organisations
         .map((org) => org['organisationName'] as String)
-        .toList();
+        .toList()
+        ..sort(); // Sort alphabetically
   }
 
   Future<void> getUnprocessedExpenses(int page, String searchTerm) async {
@@ -832,7 +835,6 @@ class HomeScreenState extends State<HomeScreen>
               FloatingActionButtonLocation.centerDocked,
           body: Column(
             children: [
-              if (showUploadingInvoice) _buildProcessingCard(),
               Expanded(
                 child: selectedNavBarIndex == 0
                   ? SmartRefresher(
@@ -859,8 +861,8 @@ class HomeScreenState extends State<HomeScreen>
                         processedExpenses: processedExpenses,
                         showSpinner: showSpinner,
                         selectedOrgId: selectedOrgId,
-                        showUploadingInvoice: showUploadingInvoice, // Pass this prop
-                        uploadingData: uploadingData, // Pass this prop
+                        showUploadingInvoice: showUploadingInvoice,  // Pass the value
+                        uploadingData: uploadingData,  // Pass the data
                       ),
                     )
                   : const TransactionsTabScreen(),

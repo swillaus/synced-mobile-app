@@ -93,7 +93,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
     focusedBorder: InputBorder.none,
     filled: true,
     fillColor: Colors.white,
-    alignLabelWithHint: true,
+    alignLabelWithHint: false, // Changed from true
     constraints: BoxConstraints(maxHeight: 40, minWidth: double.infinity),
     suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.grey),
   );
@@ -616,7 +616,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       onTap: _showSupplierBottomSheet,
       maxLines: null,
       minLines: 1,
-      textAlign: TextAlign.left,
+      textAlign: TextAlign.left, // Ensure left alignment
     );
   }
 
@@ -769,29 +769,58 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Widget _buildSupplierListTile(int index) {
-    bool isSelected =
-    (selectedSupplier?['id'] == filteredSuppliers[index]['id'] &&
-        !filteredSuppliers[index]['name'].toString().startsWith('+ Add'));
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-      height: 50,
-      child: isSelected
-          ? Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            filteredSuppliers[index]['name'],
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+  bool isSelected = (selectedSupplier?['id'] == filteredSuppliers[index]['id'] &&
+      !filteredSuppliers[index]['name'].toString().startsWith('+ Add'));
+  bool isNewSupplier = filteredSuppliers[index]['name'].toString().startsWith('+ Add');
+  
+  return Container(
+    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+    height: 50,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              if (isNewSupplier) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0XFF009318).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'New',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0XFF009318),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  isNewSupplier 
+                      ? filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', '')
+                      : filteredSuppliers[index]['name'],
+                  style: const TextStyle(
+                    fontSize: 14, 
+                    fontWeight: FontWeight.w500,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
+        if (isSelected)
           const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
-        ],
-      )
-          : Text(
-        filteredSuppliers[index]['name'],
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   /// Date field logic
   Widget _buildDateWidget() {
@@ -892,6 +921,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         });
         updatedExpense['currency'] = currencyController.text;
         FocusManager.instance.primaryFocus?.unfocus();
+        
         final resp = await ApiService.updateExpense(updatedExpense);
         setState(() {
           showSpinner = false;
@@ -899,6 +929,8 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
         if (resp.isNotEmpty) {
           setState(() {
             updatedExpense = updatedExpense;
+            // Force refresh of total and tax displays
+            totalController.text = totalController.text;
           });
           ScaffoldMessenger.of(navigatorKey.currentContext!)
               .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
@@ -976,7 +1008,7 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       ),
       maxLines: 1,
       onTap: _showAccountBottomSheet,
-      textAlign: TextAlign.left,
+      textAlign: TextAlign.left, // Ensure left alignment
       style: const TextStyle(
         overflow: TextOverflow.ellipsis,
       ),
@@ -1044,40 +1076,43 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () async {
+                          // Close bottom sheet immediately
+                          Navigator.pop(context);
+                          
+                          // Update UI state
                           setState(() {
                             selectedAccount = filteredPaymentAccounts[index];
-                            accountController.text =
-                            filteredPaymentAccounts[index]['name'];
+                            accountController.text = filteredPaymentAccounts[index]['name'];
                             accountSearchController.clear();
                             filteredPaymentAccounts = paymentAccounts;
                           });
 
-                          updatedExpense['invoiceLines'][0]['accountId'] =
-                          selectedAccount!['id'];
-                          updatedExpense['invoiceLines'][0]['accountName'] =
-                          selectedAccount!['name'];
+                          // Prepare update
+                          updatedExpense['invoiceLines'][0]['accountId'] = selectedAccount!['id'];
+                          updatedExpense['invoiceLines'][0]['accountName'] = selectedAccount!['name'];
 
-                          FocusManager.instance.primaryFocus?.unfocus();
-                          final resp = await ApiService.updateExpense(updatedExpense);
-                          setState(() {
-                            showSpinner = false;
-                          });
-                          if (resp.isNotEmpty) {
+                          // Make API call in background
+                          try {
+                            final resp = await ApiService.updateExpense(updatedExpense);
+                            if (resp.isNotEmpty) {
+                              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                  .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                            } else {
+                              setState(() {
+                                selectedAccount = null;
+                                accountController.text = '';
+                              });
+                              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                  .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                            }
+                          } catch (e) {
                             setState(() {
-                              updatedExpense = updatedExpense;
+                              selectedAccount = null;
+                              accountController.text = '';
                             });
                             ScaffoldMessenger.of(navigatorKey.currentContext!)
-                                .showSnackBar(const SnackBar(
-                                content: Text('Updated successfully.')));
-                          } else {
-                            setState(() {
-                              updatedExpense = widget.expense;
-                            });
-                            ScaffoldMessenger.of(navigatorKey.currentContext!)
-                                .showSnackBar(const SnackBar(
-                                content: Text('Failed to update.')));
+                                .showSnackBar(const SnackBar(content: Text('Failed to update.')));
                           }
-                          Navigator.pop(context);
                         },
                         child: _buildAccountListTile(index),
                       );
@@ -1116,88 +1151,125 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Paid form logic
   Widget _buildPaidFormWidget() {
-    if (widget.isProcessed!) {
-      return SizedBox(
-        height: 40,
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            widget.expense['paymentAccountName'] ?? '',
-            style: const TextStyle(fontSize: 14),
+  return TextField(
+    enabled: !widget.isProcessed! && !isPublishing,
+    keyboardType: TextInputType.none,
+    controller: paidFormController,
+    decoration: dropdownInputDecoration.copyWith(
+      hintText: 'Select Payment Account',
+      hintStyle: const TextStyle(color: Colors.grey),
+      // Add contentPadding to ensure text doesn't overlap with the dropdown icon
+      contentPadding: const EdgeInsets.fromLTRB(8, 4, 40, 4),
+    ),
+    maxLines: 1,
+    onTap: _showPaidFromBottomSheet,
+    textAlign: TextAlign.left, // Ensure left alignment
+    style: const TextStyle(
+      overflow: TextOverflow.ellipsis,
+    ),
+  );
+}
+
+void _showPaidFromBottomSheet() {
+  showModalBottomSheet(
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.all(20),
+          height: MediaQuery.of(context).size.height * 0.9,
+          width: double.maxFinite,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.separated(
+                  separatorBuilder: (context, index) => const Divider(),
+                  shrinkWrap: true,
+                  itemCount: bankDetails.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () async {
+                        // Close bottom sheet immediately
+                        Navigator.pop(context);
+
+                        // Update UI state
+                        setState(() {
+                          selectedPaidFrom = bankDetails[index];
+                          paidFormController.text = bankDetails[index]['name'];
+                          updatedExpense['paymentAccountNumber'] = bankDetails[index]['accountID'];
+                          updatedExpense['paymentAccountName'] = bankDetails[index]['name'];
+                        });
+
+                        // Make API call in background
+                        try {
+                          final resp = await ApiService.updateExpense(updatedExpense);
+                          if (resp.isNotEmpty) {
+                            ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                          } else {
+                            setState(() {
+                              selectedPaidFrom = null;
+                              updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
+                              updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
+                              paidFormController.text = widget.expense['paymentAccountName'] ?? '';
+                            });
+                            ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                          }
+                        } catch (e) {
+                          setState(() {
+                            selectedPaidFrom = null;
+                            updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
+                            updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
+                            paidFormController.text = widget.expense['paymentAccountName'] ?? '';
+                          });
+                          ScaffoldMessenger.of(navigatorKey.currentContext!)
+                              .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                        }
+                      },
+                      child: _buildPaidFromListTile(index),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       );
-    }
+    },
+  );
+}
 
-    return SizedBox(
-      height: 40, 
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton2<Map<String, dynamic>>(
-          isExpanded: true,
-          hint: const Text(
-            'Select Payment Account',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+Widget _buildPaidFromListTile(int index) {
+  bool isSelected = (selectedPaidFrom != null &&
+      selectedPaidFrom!['accountID'] == bankDetails[index]['accountID']);
+  
+  return Container(
+    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+    height: 50,
+    child: isSelected
+      ? Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              bankDetails[index]['name'],
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-          ),
-          value: selectedPaidFrom,
-          items: bankDetails.map((bank) {
-            return DropdownMenuItem<Map<String, dynamic>>(
-              value: bank,
-              child: Text(
-                bank['name'] ?? '',
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-              ),
-            );
-          }).toList(),
-          onChanged: (value) async {
-            setState(() {
-              selectedPaidFrom = value;
-              updatedExpense['paymentAccountNumber'] = value?['accountID'];
-              updatedExpense['paymentAccountName'] = value?['name'];
-              paidFromController.text = value?['name'] ?? '';
-              showSpinner = true;
-            });
-
-            // Call API to update the expense
-            final resp = await ApiService.updateExpense(updatedExpense);
-            
-            setState(() {
-              showSpinner = false;
-            });
-
-            if (resp.isNotEmpty) {
-              ScaffoldMessenger.of(navigatorKey.currentContext!)
-                .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-            } else {
-              setState(() {
-                // Revert changes if update failed
-                selectedPaidFrom = null;
-                updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
-                updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
-                paidFromController.text = widget.expense['paymentAccountName'] ?? '';
-              });
-              ScaffoldMessenger.of(navigatorKey.currentContext!)
-                .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-            }
-          },
-          buttonStyleData: const ButtonStyleData(
-            height: 40,
-            padding: EdgeInsets.symmetric(horizontal: 8),
-          ),
-          menuItemStyleData: const MenuItemStyleData(height: 40),
-          dropdownStyleData: DropdownStyleData(
-            maxHeight: 200,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+            const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
+          ],
+        )
+      : Text(
+          bankDetails[index]['name'],
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
-      ),
-    );
-  }
+  );
+}
 
   /// Description logic
   Widget _buildDescriptionWidget() {
@@ -1322,127 +1394,144 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                 ),
             ],
         ),
-        child: TextField(
-            focusNode: keyboardFocusNode,
-            enabled: !widget.isProcessed! && !isPublishing,
-            keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
-            textInputAction: TextInputAction.done,
-            controller: totalController,
-            decoration: plainInputDecoration,
-            maxLines: null,
-            minLines: 1,
-            textAlign: TextAlign.left,
-            onChanged: (value) {
-                if (value.isEmpty) return;
+        child: Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            // Currency symbol
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Text(
+                selectedCurrency != null ? 
+                  NumberFormat().simpleCurrencySymbol(selectedCurrency!) : 
+                  '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: widget.isProcessed! || isPublishing ? Colors.grey : Colors.black87,
+                ),
+              ),
+            ),
+            // Total TextField with left padding for currency symbol
+            Padding(
+              padding: const EdgeInsets.only(left: 24.0),
+              child: TextField(
+                focusNode: keyboardFocusNode,
+                enabled: !widget.isProcessed! && !isPublishing,
+                keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
+                textInputAction: TextInputAction.done,
+                controller: totalController,
+                decoration: plainInputDecoration,
+                maxLines: null,
+                minLines: 1,
+                textAlign: TextAlign.left,
+                onChanged: (value) {
+                    if (value.isEmpty) return;
 
-                // Remove any existing commas and sanitize input
-                String sanitizedValue = value.replaceAll(',', '');
-
-                // Strict regex to allow only valid numeric input with up to 2 decimal places
-                RegExp regex = RegExp(r'^\d*\.?\d{0,2}$');
-                
-                // If input doesn't match our format, don't update
-                if (!regex.hasMatch(sanitizedValue)) {
-                    // Remove the last character if it makes the input invalid
-                    sanitizedValue = sanitizedValue.substring(0, sanitizedValue.length - 1);
-                    if (!regex.hasMatch(sanitizedValue)) return;
-                }
-
-                double? parsedValue = double.tryParse(sanitizedValue);
-                if (parsedValue != null) {
-                    String formattedValue;
+                    // Remove any existing commas and sanitize input
+                    String sanitizedValue = value.replaceAll(',', '');
                     
-                    if (sanitizedValue.contains('.')) {
-                        // ...existing code for decimal formatting...
-                    } else {
-                        // ...existing code for whole number formatting...
+                    // Strict regex to allow only valid numeric input with exactly 2 decimal places
+                    RegExp regex = RegExp(r'^\d*\.?\d{0,2}$');
+                    
+                    // If input doesn't match our format, revert to previous valid value
+                    if (!regex.hasMatch(sanitizedValue)) {
+                        totalController.text = totalController.text.substring(0, totalController.text.length - 1);
+                        totalController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: totalController.text.length)
+                        );
+                        return;
                     }
 
-                    // Calculate tax using inclusive formula
-                    double total = parsedValue;
-                    double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
-                    // Tax amount = total × (taxRate / (1 + taxRate))
-                    double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
-                    double subTotal = total - totalTax;
+                    double? parsedValue = double.tryParse(sanitizedValue);
+                    if (parsedValue != null) {
+                        // Calculate tax using inclusive formula
+                        double total = parsedValue;
+                        double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
+                        double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
+                        double subTotal = total - totalTax;
 
-                    setState(() {
-                        // Update expense data with new calculations
-                        updatedExpense['invoiceLines'][0]['amountDue'] = total;
-                        updatedExpense['amountDue'] = total;
-                        updatedExpense['totalTax'] = totalTax;
-                        updatedExpense['subTotal'] = subTotal;
-                        updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
-                        updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
-                        
-                        widget.expense['amountDue'] = total;
-                        widget.expense['totalTax'] = totalTax;
-
-                        // ...existing text field update code...
-                    });
-                }
-            },
+                        setState(() {
+                            // Update expense data with new calculations
+                            updatedExpense['invoiceLines'][0]['amountDue'] = total;
+                            updatedExpense['amountDue'] = total;
+                            updatedExpense['totalTax'] = totalTax;
+                            updatedExpense['subTotal'] = subTotal;
+                            updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
+                            updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
+                            
+                            widget.expense['amountDue'] = total;
+                            widget.expense['totalTax'] = totalTax;
+                        });
+                    }
+                },
+              ),
+            ),
+          ],
         ),
     );
 }
 
   /// Tax chip row
   Widget _buildTaxChipRow() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0XFFF2FFF5),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0XFF009318), width: 1),
+  final bool isDisabled = widget.isProcessed! || isPublishing;
+  
+  return Container(
+    decoration: BoxDecoration(
+      color: isDisabled ? const Color(0xFFF5F5F5) : const Color(0XFFF2FFF5),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: isDisabled ? Colors.grey : const Color(0XFF009318),
+        width: 1
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center, // Align items center vertically
-        children: [
-          // Left side: "Includes Tax" text
-          const Text(
-            'Includes Tax',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Includes Tax',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDisabled ? Colors.grey : Colors.black87,
           ),
-          // Right side: Amount and edit icon
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${widget.expense['currency'] is String ? NumberFormat().simpleCurrencySymbol(widget.expense['currency']) : ''}${_calculateTaxAmount().toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${selectedCurrency != null ? NumberFormat().simpleCurrencySymbol(selectedCurrency!) : ''}'
+              '${NumberFormat("#,##0.00").format(_calculateTaxAmount())}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDisabled ? Colors.grey : Colors.black87,
               ),
-              if (!widget.isProcessed!) ...[
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () => _showTaxDialog(context), // Use local context
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0XFF009318).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.edit_outlined,
-                      color: Color(0XFF009318),
-                      size: 16,
-                    ),
+            ),
+            if (!isDisabled) ...[
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () => _showTaxDialog(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0XFF009318).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    color: Color(0XFF009318),
+                    size: 16,
                   ),
                 ),
-              ]
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+              ),
+            ]
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   double _calculateTaxAmount() {
     if (selectedTaxRate != null) {
@@ -1622,120 +1711,234 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> _handlePublish() async {
-    if (isPublishing) return;
+  if (isPublishing) return;
 
+  // Validation checks
+  List<String> missingFields = [];
+
+  // Check supplier
+  if (supplierController.text.isEmpty) {
+    missingFields.add('Supplier');
+  }
+
+  // Check date
+  if (dateController.text.isEmpty) {
+    missingFields.add('Date');
+  }
+
+  // Check currency
+  if (currencyController.text.isEmpty) {
+    missingFields.add('Currency');
+  }
+
+  // Check reference
+  if (refController.text.isEmpty) {
+    missingFields.add('Reference');
+  }
+
+  // Check account
+  if (accountController.text.isEmpty) {
+    missingFields.add('Account');
+  }
+
+  // Check paid from
+  if (paidFormController.text.isEmpty) {
+    missingFields.add('Paid From');
+  }
+
+  // Check total
+  double total = double.tryParse(totalController.text.replaceAll(',', '')) ?? 0;
+  if (total <= 0) {
+    missingFields.add('Total must be greater than 0');
+  }
+
+  // If any validations failed, show error and return
+  if (missingFields.isNotEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Please complete the following:\n${missingFields.join('\n')}',
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+    return;
+  }
+
+  // Check if supplier needs to be created
+  if (selectedSupplier == null || selectedSupplier!['id'] == null) {
+    // Show confirmation dialog
+    bool? shouldCreateSupplier = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+        title: const Text(
+          'New Supplier',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Would you like to add "${supplierController.text}" as a new supplier?',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.black, fontSize: 14),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Add Supplier',
+              style: TextStyle(color: Color(0XFF009318), fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCreateSupplier != true) {
+      return; // User cancelled the operation
+    }
+
+    // Create new supplier
     try {
-      setState(() {
-        isPublishing = true;
-        _publishButtonChild = const SizedBox(
-          height: 24,
-          width: 24,
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            strokeWidth: 2,
-          ),
-        );
-      });
-
-      final Map<String, dynamic> receipt = {
-        "bankAccount": <String, dynamic>{
-          "accountID": selectedCard?['accountID'] ?? '',
-          "bankAccountNumber": selectedCard?['bankAccountNumber'] ?? '',
-          "currencyCode": selectedCurrency ?? '',
-          "name": selectedCard?['name'] ?? '',
-          "type": "BANK"
-        },
-        'currency': selectedCurrency ?? '',
-        'currencyCode': selectedCurrency ?? '',
-        'contact': <String, dynamic>{
-          "contactID": selectedSupplier?['id'] ?? '',
-          "name": selectedSupplier?['name'] ?? '',
-          "status": "ACTIVE"
-        },
-        'date': updatedExpense['date'] ?? '',
-        'invoiceId': updatedExpense['id'] ?? '',
-        'invoiceNumber': updatedExpense['invoiceNumber'] ?? '',
-        "InvoiceOrCreditNote": 'Receipt',
-        'lineAmountTypes': 'Exclusive',
-        'lineItems': List<dynamic>.from(updatedExpense['invoiceLines'] ?? []),
-        'OrganisationId': widget.selectedOrgId,
-        'paymentAccountNumber': updatedExpense['paymentAccountNumber'] ?? '',
-        'paymentDate': updatedExpense['paymentDate'] ?? updatedExpense['date'] ?? '',
-        'paymentStatus': 1,
-        'PdfUrl': updatedExpense['pdfUrl'] ?? '',
-        'status': 'AUTHORISED',
-        'subTotal': updatedExpense['subTotal'] ?? 0.0,
-        'total': updatedExpense['amountDue'] ?? 0.0,
-        'totalTax': updatedExpense['totalTax'] ?? 0.0,
-        'type': 'Receipt',
-        "unreconciledReportIds": ""
+      final supplierResp = await ApiService.createSupplier(supplierController.text);
+      if (supplierResp.isEmpty || supplierResp['supplierId'] == null) {
+        throw Exception('Failed to create supplier');
+      }
+      
+      // Update selectedSupplier with new supplier data
+      selectedSupplier = {
+        'id': supplierResp['supplierId'],
+        'name': supplierController.text,
       };
-
-      final dynamic resp = await ApiService.publishReceipt(receipt);
-      
-      // Handle successful string response (UUID)
-      if (resp is String && resp.isNotEmpty) {
-        if (!mounted) return;
-
-        setState(() {
-          _publishButtonChild = Lottie.asset(
-            'assets/animations/success.json',
-            width: 50,
-            height: 50,
-            repeat: false,
-          );
-        });
-
-        await Future.delayed(const Duration(milliseconds: 1500));
-
-        if (!mounted) return;
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-          (route) => false,
-        );
-        return;
-      }
-
-      // Handle error response
-      if (resp is Map && resp['Message'] != null) {
-        throw Exception(resp['Message']);
-      }
-
-      throw Exception('Failed to publish receipt');
-
     } catch (e) {
-      if (!mounted) return;
-      
-      setState(() {
-        _publishButtonChild = const Text(
-          'Publish',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Colors.white,
-          ),
-        );
-      });
-
-      // Show error message from server if available
-      final message = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
+        const SnackBar(
+          content: Text('Failed to create supplier'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isPublishing = false;
-        });
-      }
+      return;
     }
   }
+
+  try {
+    setState(() {
+      isPublishing = true;
+      _publishButtonChild = const SizedBox(
+        height: 24,
+        width: 24,
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          strokeWidth: 2,
+        ),
+      );
+    });
+
+    final Map<String, dynamic> receipt = {
+      "bankAccount": <String, dynamic>{
+        "accountID": selectedCard?['accountID'] ?? '',
+        "bankAccountNumber": selectedCard?['bankAccountNumber'] ?? '',
+        "currencyCode": selectedCurrency ?? '',
+        "name": selectedCard?['name'] ?? '',
+        "type": "BANK"
+      },
+      'currency': selectedCurrency ?? '',
+      'currencyCode': selectedCurrency ?? '',
+      'contact': <String, dynamic>{
+        "contactID": selectedSupplier?['id'] ?? '',
+        "name": selectedSupplier?['name'] ?? '',
+        "status": "ACTIVE"
+      },
+      'date': updatedExpense['date'] ?? '',
+      'invoiceId': updatedExpense['id'] ?? '',
+      'invoiceNumber': updatedExpense['invoiceNumber'] ?? '',
+      "InvoiceOrCreditNote": 'Receipt',
+      'lineAmountTypes': 'Exclusive',
+      'lineItems': List<dynamic>.from(updatedExpense['invoiceLines'] ?? []),
+      'OrganisationId': widget.selectedOrgId,
+      'paymentAccountNumber': updatedExpense['paymentAccountNumber'] ?? '',
+      'paymentDate': updatedExpense['paymentDate'] ?? updatedExpense['date'] ?? '',
+      'paymentStatus': 1,
+      'PdfUrl': updatedExpense['pdfUrl'] ?? '',
+      'status': 'AUTHORISED',
+      'subTotal': updatedExpense['subTotal'] ?? 0.0,
+      'total': updatedExpense['amountDue'] ?? 0.0,
+      'totalTax': updatedExpense['totalTax'] ?? 0.0,
+      'type': 'Receipt',
+      "unreconciledReportIds": ""
+    };
+
+    final dynamic resp = await ApiService.publishReceipt(receipt);
+    
+    // Handle successful string response (UUID)
+    if (resp is String && resp.isNotEmpty) {
+      if (!mounted) return;
+
+      setState(() {
+        _publishButtonChild = Lottie.asset(
+          'assets/animations/success.json',
+          width: 50,
+          height: 50,
+          repeat: false,
+        );
+      });
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
+        (route) => false,
+      );
+      return;
+    }
+
+    // Handle error response
+    if (resp is Map && resp['Message'] != null) {
+      throw Exception(resp['Message']);
+    }
+
+    throw Exception('Failed to publish receipt');
+
+  } catch (e) {
+    if (!mounted) return;
+    
+    setState(() {
+      _publishButtonChild = const Text(
+        'Publish',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          color: Colors.white,
+        ),
+      );
+    });
+
+    // Show error message from server if available
+    final message = e.toString().replaceAll('Exception: ', '');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        isPublishing = false;
+      });
+    }
+  }
+}
 
   TableRow _buildTableRow(String label, Widget widgetOnRight) {
     return TableRow(
