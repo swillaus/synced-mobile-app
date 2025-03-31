@@ -18,6 +18,7 @@ import 'package:synced/utils/database_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lottie/lottie.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 bool showUploadingInvoice = false;
 Map<String, dynamic> uploadingData = {};
@@ -215,118 +216,135 @@ class HomeScreenState extends State<HomeScreen>
               builder: (context, setState) => Dialog(
                 backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.95, // Increased from 0.9
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Tell us about this expense',
-                            style: TextStyle(
-                              color: headingColor,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 24),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Chat-like message
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(12),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16), // Added horizontal padding
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.9,
                         ),
-                        child: const Text(
-                          'Adding some details helps with expense tracking and approvals. What is this expense for?',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF374151),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).viewInsets.bottom,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Input field
-                      TextField(
-                        controller: notesController,
-                        keyboardType: TextInputType.multiline,
-                        textCapitalization: TextCapitalization.sentences,
-                        maxLines: 4,
-                        style: const TextStyle(fontSize: 16),
-                        decoration: InputDecoration(
-                          hintText: 'E.g. Office supplies for Q1, Team lunch meeting...',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                          filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: clickableColor),
-                          ),
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-                        autofocus: true,
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Action buttons in a Column instead of Row
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch, // Make buttons full width
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: clickableColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header with close button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Expense details',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ],
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            onPressed: _onPressed,
-                            child: const Text(
-                              'Submit',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8), // Add spacing between buttons
-                          Center( // Center the skip button
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                // Call your existing skip logic here
-                              },
-                              child: Text(
-                                'Skip for now',
-                                style: TextStyle(
-                                  color: clickableColor,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                              const SizedBox(height: 16),
+
+                              // Message box
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Adding some details helps with expense tracking and approvals. What is this expense for?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF374151),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 16),
+
+                              // Input field
+                              TextField(
+                                controller: notesController,
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization: TextCapitalization.sentences,
+                                maxLines: null,
+                                minLines: 3,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: 'E.g. Office supplies for Q1, Team lunch meeting...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF9FAFB),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: clickableColor),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Action buttons
+                              Column(
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: clickableColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      onPressed: _onPressed,
+                                      child: const Text(
+                                        'Submit',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      'Skip',
+                                      style: TextStyle(
+                                        color: clickableColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -779,13 +797,13 @@ class HomeScreenState extends State<HomeScreen>
             child: BottomNavigationBar(
               items: [
                 BottomNavigationBarItem(
-                  icon: Image.asset('assets/nav_bar/expenses-grey.png', height: 30, width: 30),
-                  activeIcon: Image.asset('assets/nav_bar/expenses-yellow.png', height: 30, width: 30),
+                  icon: SvgPicture.asset('assets/nav_bar/expenses-grey.svg', height: 25, width: 25),
+                  activeIcon: SvgPicture.asset('assets/nav_bar/expenses-yellow.svg', height: 25, width: 25),
                   label: 'Expenses',
                 ),
                 BottomNavigationBarItem(
-                  icon: Image.asset('assets/nav_bar/transactions-grey.png', height: 30, width: 30),
-                  activeIcon: Image.asset('assets/nav_bar/transactions-yellow.png', height: 30, width: 30),
+                  icon: SvgPicture.asset('assets/nav_bar/transactions-grey.svg', height: 25, width: 25),
+                  activeIcon: SvgPicture.asset('assets/nav_bar/transactions-yellow.svg', height: 25, width: 25),
                   label: 'Transactions',
                 ),
               ],

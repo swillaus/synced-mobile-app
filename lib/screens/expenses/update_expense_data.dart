@@ -606,20 +606,20 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Supplier name widget: your existing logic to show a text field or a row with an icon if it exists
   Widget _buildSupplierWidget() {
-    return TextField(
-      enabled: !widget.isProcessed! && !isPublishing,
-      controller: supplierController,
-      keyboardType: TextInputType.none,
-      decoration: dropdownInputDecoration.copyWith(
-        hintText: supplierController.text.isEmpty ? 'Select Supplier' : null,
-        hintStyle: const TextStyle(color: Colors.grey),
-      ),
-      onTap: _showSupplierBottomSheet,
-      maxLines: null,
-      minLines: 1,
-      textAlign: TextAlign.left, // Ensure left alignment
-    );
-  }
+  return TextField(
+    enabled: !widget.isProcessed! && !isPublishing,
+    controller: supplierController,
+    keyboardType: TextInputType.none,
+    decoration: dropdownInputDecoration.copyWith(
+      hintText: supplierController.text.isEmpty ? 'Select Supplier' : null,
+      hintStyle: const TextStyle(color: Colors.grey),
+    ),
+    onTap: _showSupplierBottomSheet,
+    maxLines: null,
+    minLines: 1,
+    textAlign: TextAlign.left,
+  );
+}
 
   void _showSupplierBottomSheet() {
     // Same logic you had for showing suppliers
@@ -1324,6 +1324,7 @@ Widget _buildPaidFromListTile(int index) {
       if (resp.isNotEmpty) {
         setState(() {
           expense = resp;
+          descriptionController.clear(); // Clear the input field after successful submission
         });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
           .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
@@ -1347,138 +1348,138 @@ Widget _buildPaidFromListTile(int index) {
   /// Total logic
   Widget _buildTotalWidget() {
     return KeyboardActions(
-        bottomAvoiderScrollPhysics: const NeverScrollableScrollPhysics(),
-        disableScroll: true,
-        config: KeyboardActionsConfig(
-            nextFocus: false,
-            keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
-            keyboardBarColor: const Color(0xFFCAD1D9),
-            actions: [
-                KeyboardActionsItem(
-                    focusNode: keyboardFocusNode,
-                    toolbarButtons: [
-                        (node) {
-                            return GestureDetector(
-                                onTap: () async {
-                                    node.unfocus();
-                                    setState(() {
-                                        showSpinner = true;
-                                    });
-                                    // Update the amount due in the updatedExpense map
-                                    updatedExpense['invoiceLines'][0]['amountDue'] =
-                                        double.parse(totalController.text.replaceAll(',', '')); // Remove commas for parsing
-                                    updatedExpense['amountDue'] = double.parse(totalController.text.replaceAll(',', ''));
-                                    
-                                    // Call the API to update the expense
-                                    final resp = await ApiService.updateExpense(updatedExpense);
-                                    setState(() {
-                                        showSpinner = false;
-                                    });
-                                    if (resp.isNotEmpty) {
-                                        setState(() {
-                                            updatedExpense = updatedExpense;
-                                        });
-                                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                                            .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-                                    } else {
-                                        setState(() {
-                                            updatedExpense = widget.expense;
-                                        });
-                                        ScaffoldMessenger.of(navigatorKey.currentContext!)
-                                            .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-                                    }
-                                },
-                                child: Container(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: const Text(
-                                        'Done',
-                                        style: TextStyle(
-                                            color: Color(0xFF0978ED),
-                                            fontWeight: FontWeight.bold,
-                                        ),
-                                    ),
-                                ),
-                            );
-                        }
-                    ],
-                ),
+      bottomAvoiderScrollPhysics: const NeverScrollableScrollPhysics(),
+      disableScroll: true,
+      config: KeyboardActionsConfig(
+        nextFocus: false,
+        keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+        keyboardBarColor: const Color(0xFFCAD1D9),
+        actions: [
+          KeyboardActionsItem(
+            focusNode: keyboardFocusNode,
+            toolbarButtons: [
+              (node) {
+                return GestureDetector(
+                  onTap: () async {
+                    node.unfocus();
+                    setState(() {
+                      showSpinner = true;
+                    });
+                    // Update the amount due in the updatedExpense map
+                    updatedExpense['invoiceLines'][0]['amountDue'] =
+                        double.parse(totalController.text.replaceAll(',', '')); // Remove commas for parsing
+                    updatedExpense['amountDue'] =
+                        double.parse(totalController.text.replaceAll(',', '')); // Fixed missing closing parenthesis
+
+                    // Call the API to update the expense
+                    final resp = await ApiService.updateExpense(updatedExpense);
+                    setState(() {
+                      showSpinner = false;
+                    });
+                    if (resp.isNotEmpty) {
+                      setState(() {
+                        updatedExpense = updatedExpense;
+                      });
+                      ScaffoldMessenger.of(navigatorKey.currentContext!)
+                          .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                    } else {
+                      setState(() {
+                        updatedExpense = widget.expense;
+                      });
+                      ScaffoldMessenger.of(navigatorKey.currentContext!)
+                          .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12.0),
+                    child: const Text(
+                      'Done',
+                      style: TextStyle(
+                        color: Color(0xFF0978ED),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              }
             ],
-        ),
-        child: Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            // Currency symbol
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Text(
-                selectedCurrency != null ? 
-                  NumberFormat().simpleCurrencySymbol(selectedCurrency!) : 
-                  '',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: widget.isProcessed! || isPublishing ? Colors.grey : Colors.black87,
-                ),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          // Currency symbol
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Text(
+              selectedCurrency != null
+                  ? NumberFormat().simpleCurrencySymbol(selectedCurrency!)
+                  : '',
+              style: TextStyle(
+                fontSize: 14,
+                color: widget.isProcessed! || isPublishing ? Colors.grey : Colors.black87,
               ),
             ),
-            // Total TextField with left padding for currency symbol
-            Padding(
-              padding: const EdgeInsets.only(left: 24.0),
-              child: TextField(
-                focusNode: keyboardFocusNode,
-                enabled: !widget.isProcessed! && !isPublishing,
-                keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
-                textInputAction: TextInputAction.done,
-                controller: totalController,
-                decoration: plainInputDecoration,
-                maxLines: null,
-                minLines: 1,
-                textAlign: TextAlign.left,
-                onChanged: (value) {
-                    if (value.isEmpty) return;
+          ),
+          // Total TextField with left padding for currency symbol
+          Padding(
+            padding: const EdgeInsets.only(left: 24.0),
+            child: TextField(
+              focusNode: keyboardFocusNode,
+              enabled: !widget.isProcessed! && !isPublishing,
+              keyboardType: TextInputType.numberWithOptions(decimal: true), // Numeric keypad
+              textInputAction: TextInputAction.done,
+              controller: totalController,
+              decoration: plainInputDecoration,
+              maxLines: null,
+              minLines: 1,
+              textAlign: TextAlign.left,
+              onChanged: (value) {
+                if (value.isEmpty) return;
 
-                    // Remove any existing commas and sanitize input
-                    String sanitizedValue = value.replaceAll(',', '');
-                    
-                    // Strict regex to allow only valid numeric input with exactly 2 decimal places
-                    RegExp regex = RegExp(r'^\d*\.?\d{0,2}$');
-                    
-                    // If input doesn't match our format, revert to previous valid value
-                    if (!regex.hasMatch(sanitizedValue)) {
-                        totalController.text = totalController.text.substring(0, totalController.text.length - 1);
-                        totalController.selection = TextSelection.fromPosition(
-                            TextPosition(offset: totalController.text.length)
-                        );
-                        return;
-                    }
+                // Remove any existing commas and sanitize input
+                String sanitizedValue = value.replaceAll(',', '');
 
-                    double? parsedValue = double.tryParse(sanitizedValue);
-                    if (parsedValue != null) {
-                        // Calculate tax using inclusive formula
-                        double total = parsedValue;
-                        double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
-                        double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
-                        double subTotal = total - totalTax;
+                // Strict regex to allow only valid numeric input with exactly 2 decimal places
+                RegExp regex = RegExp(r'^\d*\.?\d{0,2}$');
 
-                        setState(() {
-                            // Update expense data with new calculations
-                            updatedExpense['invoiceLines'][0]['amountDue'] = total;
-                            updatedExpense['amountDue'] = total;
-                            updatedExpense['totalTax'] = totalTax;
-                            updatedExpense['subTotal'] = subTotal;
-                            updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
-                            updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
-                            
-                            widget.expense['amountDue'] = total;
-                            widget.expense['totalTax'] = totalTax;
-                        });
-                    }
-                },
-              ),
+                // If input doesn't match our format, revert to previous valid value
+                if (!regex.hasMatch(sanitizedValue)) {
+                  totalController.text = totalController.text.substring(0, totalController.text.length - 1);
+                  totalController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: totalController.text.length));
+                  return;
+                }
+
+                double? parsedValue = double.tryParse(sanitizedValue);
+                if (parsedValue != null) {
+                  // Calculate tax using inclusive formula
+                  double total = parsedValue;
+                  double taxRateDecimal = (selectedTaxRate?['rate'] ?? 0) / 100;
+                  double totalTax = total * (taxRateDecimal / (1 + taxRateDecimal));
+                  double subTotal = total - totalTax;
+
+                  setState(() {
+                    // Update expense data with new calculations
+                    updatedExpense['invoiceLines'][0]['amountDue'] = total;
+                    updatedExpense['amountDue'] = total;
+                    updatedExpense['totalTax'] = totalTax;
+                    updatedExpense['subTotal'] = subTotal;
+                    updatedExpense['invoiceLines'][0]['subTotal'] = subTotal;
+                    updatedExpense['invoiceLines'][0]['totalTax'] = totalTax;
+
+                    widget.expense['amountDue'] = total;
+                    widget.expense['totalTax'] = totalTax;
+                  });
+                }
+              },
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
-}
+  }
 
   /// Tax chip row
   Widget _buildTaxChipRow() {
@@ -1721,161 +1722,220 @@ Widget _buildPaidFromListTile(int index) {
   }
 
   Future<void> _handlePublish() async {
-  if (isPublishing) return;
+    if (isPublishing) return;
 
-  try {
-    // Initialize validation
-    List<String> missingFields = [];
-    if (selectedCard == null) missingFields.add('Paid From Account');
-    if (totalController.text.isEmpty || double.parse(totalController.text.replaceAll(',', '')) <= 0) {
-      missingFields.add('Total Amount');
-    }
-    if (selectedAccount == null) missingFields.add('Account');
-
-    // Show validation message if fields are missing (except supplier)
-    if (missingFields.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in the following fields: ${missingFields.join(", ")}'))
-      );
-      return;
-    }
-
-    // Check if supplier needs to be created
-    if (selectedSupplier == null && supplierController.text.isNotEmpty) {
-      bool shouldCreateSupplier = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('New Contact'),
-          content: Text('Would you like to add "${supplierController.text}" as a new contact?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes, Add Contact'),
-            ),
-          ],
-        ),
-      ) ?? false;
-
-      if (shouldCreateSupplier) {
-        // Create new supplier
-        final resp = await ApiService.createSupplier(supplierController.text);
-        if (resp.isNotEmpty) {
-          selectedSupplier = {
-            'id': resp['supplierId'],
-            'name': supplierController.text,
-            'status': 'ACTIVE'
-          };
-        } else {
-          throw Exception('Failed to create new contact');
-        }
-      } else {
-        return; // User cancelled
+    try {
+      // Initialize validation
+      List<String> missingFields = [];
+      if (selectedCard == null) missingFields.add('Paid From Account');
+      if (totalController.text.isEmpty || double.parse(totalController.text.replaceAll(',', '')) <= 0) {
+        missingFields.add('Total Amount');
       }
-    } else if (selectedSupplier == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or add a supplier'))
-      );
-      return;
-    }
+      if (selectedAccount == null) missingFields.add('Account');
 
-    // Show loading state
-    setState(() {
-      isPublishing = true;
-      _publishButtonChild = const CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      );
-    });
+      // Show validation message if fields are missing (except supplier)
+      if (missingFields.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill in the following fields: ${missingFields.join(", ")}'))
+        );
+        return;
+      }
 
-    // Construct complete receipt
-    final Map<String, dynamic> receipt = {
-      "bankAccount": {
-        "accountID": selectedCard!['accountID'],
-        "bankAccountNumber": selectedCard!['bankAccountNumber'],
-        "currencyCode": selectedCurrency,
-        "name": selectedCard!['name'],
-        "type": "BANK"
-      },
-      'currency': selectedCurrency,
-      'currencyCode': selectedCurrency,
-      'contact': {
-        "contactID": selectedSupplier!['id'],
-        "name": selectedSupplier!['name'],
-        "status": "ACTIVE"
-      },
-      'date': updatedExpense['date'],
-      'invoiceId': updatedExpense['id'],
-      'invoiceNumber': updatedExpense['invoiceNumber'],
-      "InvoiceOrCreditNote": updatedExpense['type'],
-      'lineAmountTypes': 'Exclusive',
-      'lineItems': updatedExpense['invoiceLines'],
-      'OrganisationId': widget.selectedOrgId,
-      'paymentAccountNumber': selectedCard!['accountID'],
-      'paymentDate': updatedExpense['date'],
-      'paymentStatus': updatedExpense['type'] == 'Receipt' ? 1 : 0,
-      'PdfUrl': updatedExpense['pdfUrl'],
-      'status': 'AUTHORISED',
-      'subTotal': updatedExpense['subTotal'],
-      'total': updatedExpense['amountDue'],
-      'totalTax': updatedExpense['totalTax'],
-      'type': updatedExpense['type'],
-      "unreconciledReportIds": ""
-    };
+      // Check if supplier needs to be created
+      if (selectedSupplier == null && supplierController.text.isNotEmpty) {
+        bool shouldCreateSupplier = await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('New Contact'),
+            content: Text('Would you like to add "${supplierController.text}" as a new contact?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Yes, Add Contact'),
+              ),
+            ],
+          ),
+        ) ?? false;
 
-    // Call publish API
-    final resp = await ApiService.publishReceipt(receipt);
+        if (shouldCreateSupplier) {
+          // Create new supplier
+          final resp = await ApiService.createSupplier(supplierController.text);
+          if (resp.isNotEmpty) {
+            selectedSupplier = {
+              'id': resp['supplierId'],
+              'name': supplierController.text,
+              'status': 'ACTIVE'
+            };
+          } else {
+            throw Exception('Failed to create new contact');
+          }
+        } else {
+          return; // User cancelled
+        }
+      } else if (selectedSupplier == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select or add a supplier'))
+        );
+        return;
+      }
 
-    if (resp.isNotEmpty) {
+      // Show loading state
       setState(() {
-        _publishButtonChild = Lottie.asset(
-          'assets/animations/success.json',
-          width: 50,
-          height: 50,
-          repeat: false,
+        isPublishing = true;
+        _publishButtonChild = const CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         );
       });
 
-      await Future.delayed(const Duration(seconds: 2));
+      // Construct complete receipt
+      final Map<String, dynamic> receipt = {
+        "bankAccount": {
+          "accountID": selectedCard!['accountID'],
+          "bankAccountNumber": selectedCard!['bankAccountNumber'],
+          "currencyCode": selectedCurrency,
+          "name": selectedCard!['name'],
+          "type": "BANK"
+        },
+        'currency': selectedCurrency,
+        'currencyCode': selectedCurrency,
+        'contact': {
+          "contactID": selectedSupplier!['id'],
+          "name": selectedSupplier!['name'],
+          "status": "ACTIVE"
+        },
+        'date': updatedExpense['date'],
+        'invoiceId': updatedExpense['id'],
+        'invoiceNumber': updatedExpense['invoiceNumber'],
+        "InvoiceOrCreditNote": updatedExpense['type'],
+        'lineAmountTypes': 'Exclusive',
+        'lineItems': updatedExpense['invoiceLines'],
+        'OrganisationId': widget.selectedOrgId,
+        'paymentAccountNumber': selectedCard!['accountID'],
+        'paymentDate': updatedExpense['date'],
+        'paymentStatus': updatedExpense['type'] == 'Receipt' ? 1 : 0,
+        'PdfUrl': updatedExpense['pdfUrl'],
+        'status': 'AUTHORISED',
+        'subTotal': updatedExpense['subTotal'],
+        'total': updatedExpense['amountDue'],
+        'totalTax': updatedExpense['totalTax'],
+        'type': updatedExpense['type'],
+        "unreconciledReportIds": ""
+      };
 
-      if (!mounted) return;
+      // Call publish API
+      final resp = await ApiService.publishReceipt(receipt);
+
+      if (resp.isNotEmpty) {
+        setState(() {
+          _publishButtonChild = Lottie.asset(
+            'assets/animations/success.json',
+            width: 50,
+            height: 50,
+            repeat: false,
+          );
+        });
+
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Published successfully'))
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
+        );
+      } else if (resp == null) {
+        throw Exception('No response from the server. Please try again later.');
+      } else {
+        throw Exception('Failed to publish receipt');
+      }
+    } catch (e) {
+      setState(() {
+        isPublishing = false;
+        _publishButtonChild = const Text(
+          'Publish',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+        );
+      });
+
+      // Handle 204 No Content specifically
+      String errorMessage = e.toString().replaceAll('Exception:', '').trim();
+      if (errorMessage.contains('204')) {
+        errorMessage = 'The server returned no content. Please verify your data and try again.';
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Published successfully'))
+        SnackBar(
+          content: Text('Failed to publish: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
       );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen(tabIndex: 0)),
-      );
-    } else {
-      throw Exception('Failed to publish receipt');
     }
-  } catch (e) {
-    setState(() {
-      isPublishing = false;
-      _publishButtonChild = const Text(
-        'Publish',
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
-      );
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to publish: ${e.toString().replaceAll('Exception:', '')}'),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
   TableRow _buildTableRow(String label, Widget widgetOnRight) {
+    if (label == "Supplier") {
+      bool isNewSupplier = !suppliers.any((s) => s['name'] == supplierController.text);
+      return TableRow(
+        children: [
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (supplierController.text.isNotEmpty && isNewSupplier) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0XFFFEF0C7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'New',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0XFFDC6803),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: widgetOnRight,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Return regular table row for other fields
     return TableRow(
       children: [
         TableCell(
-          verticalAlignment: TableCellVerticalAlignment.middle, // Change to middle
+          verticalAlignment: TableCellVerticalAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
@@ -1888,7 +1948,7 @@ Widget _buildPaidFromListTile(int index) {
           ),
         ),
         TableCell(
-          verticalAlignment: TableCellVerticalAlignment.middle, // Change to middle
+          verticalAlignment: TableCellVerticalAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: widgetOnRight,

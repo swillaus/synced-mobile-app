@@ -217,112 +217,133 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
   Widget _buildProcessingCard() {
     if (!widget.showUploadingInvoice) return const SizedBox.shrink();
 
-    // Calculate progress with slower rate
     double progress = (widget.uploadingData['uploadProgress'] ?? 0) * 0.7;
     bool isNearlyComplete = progress >= 0.69;
     bool hasDetails = widget.uploadingData['details'] != null;
 
     // Handle refresh when details are received
     if (hasDetails) {
-      // Use Future.microtask to avoid setState during build
       Future.microtask(() {
         if (mounted && widget.uploadingData['details'] != null) {
-          // Add the new expense to the list immediately
           setState(() {
             widget.reviewExpenses.insert(0, widget.uploadingData['details']);
           });
-          
-          // Trigger list refresh
           widget.reviewPagingController.refresh();
-          
-          // Clear uploading state
           widget.uploadingData.clear();
         }
       });
     }
 
     return Card(
-      elevation: 4,
-      shadowColor: Colors.grey,
+      elevation: 8,
+      shadowColor: Colors.black26,
       color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-        padding: const EdgeInsets.all(5),
+        height: 120, // Match expense card height
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
-            // Left side - Image/File preview
+            // Left side - Image/Animation
             SizedBox(
-              width: MediaQuery.of(context).size.width * 0.2,
+              width: MediaQuery.of(context).size.width * 0.25,
+              height: MediaQuery.of(context).size.width * 0.25,
               child: widget.uploadingData['path'] != null
-                  ? SizedBox(
-                      height: 75,
-                      width: 75,
-                      child: Image.file(File(widget.uploadingData['path'])),
+                  ? Image.file(
+                      File(widget.uploadingData['path']),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                      ), // Fallback for invalid image
                     )
-                  : const CircularProgressIndicator(),
+                  : Lottie.asset(
+                      'assets/animations/processing.json',
+                      fit: BoxFit.contain,
+                    ),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 16),
+
             // Right side - Progress info
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Chip(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100)
-                      ),
-                      side: const BorderSide(color: Color(0XFFF6CA58)),
-                      backgroundColor: const Color(0XFFFFFEF4),
-                      label: Row(
-                        children: [
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                            child: CircularProgressIndicator(
-                              color: Color(0XFF667085),
-                              strokeWidth: 2,
-                            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                          const SizedBox(width: 5),
-                          Text(
-                            isNearlyComplete ? 'Finalizing...' : 'Processing',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0XFF667085),
-                            ),
+                          decoration: BoxDecoration(
+                            color: const Color(0XFFFFFEF4),
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(color: const Color(0XFFF6CA58)),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                height: 12,
+                                width: 12,
+                                child: CircularProgressIndicator(
+                                  color: Color(0XFF667085),
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  isNearlyComplete ? ' ' : 'Processing',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0XFF667085),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.25),
-                    Text(
-                      widget.uploadingData['size'] ?? '0.77Mb',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 10,
-                        color: Color(0XFF667085),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          widget.uploadingData['size'] ?? '0.77Mb',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            color: Color(0XFF667085),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                if (!hasDetails) ...[
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    child: Center(
+                    ],
+                  ),
+                  if (!hasDetails) ...[
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         minHeight: 6,
                         value: progress,
                         valueColor: AlwaysStoppedAnimation(clickableColor),
+                        backgroundColor: const Color(0xFFF3F4F6),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ],
         ),
