@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
@@ -10,32 +9,113 @@ import 'package:synced/screens/expenses/update_expense_data.dart';
 import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:lottie/lottie.dart';
+
+// Define the DateTime extension for formatDate and isSameDate
+extension DateHelper on DateTime {
+  String formatDate() {
+    final formatter = DateFormat("d MMMM y"); // Format the date as "d MMMM y"
+    return formatter.format(this);
+  }
+
+  bool isSameDate(DateTime other) {
+    return year == other.year && month == other.month && day == other.day;
+  }
+}
 
 class ExpensesTabScreen extends StatefulWidget {
   final TabController tabController;
-  final PagingController reviewPagingController, processedPagingController;
-  final List reviewExpenses, processedExpenses;
+  final PagingController reviewPagingController;
+  final PagingController processedPagingController;
+  final List reviewExpenses;
+  final List processedExpenses;
   final bool showSpinner;
-  const ExpensesTabScreen(
-      {super.key,
-      required this.tabController,
-      required this.reviewPagingController,
-      required this.processedPagingController,
-      required this.reviewExpenses,
-      required this.processedExpenses,
-      required this.showSpinner});
+  final String selectedOrgId;
+  final bool showUploadingInvoice;
+  final Map<String, dynamic> uploadingData;
+
+  const ExpensesTabScreen({
+    Key? key,
+    required this.tabController,
+    required this.reviewPagingController,
+    required this.processedPagingController,
+    required this.reviewExpenses,
+    required this.processedExpenses,
+    required this.showSpinner,
+    required this.selectedOrgId,
+    required this.showUploadingInvoice,
+    required this.uploadingData,
+  }) : super(key: key);
 
   @override
   State<ExpensesTabScreen> createState() => _ExpensesTabScreenState();
 }
 
-class _ExpensesTabScreenState extends State<ExpensesTabScreen>
-    with SingleTickerProviderStateMixin {
+class _ExpensesTabScreenState extends State<ExpensesTabScreen> {
   bool showSpinner = false;
   final Debouncer reviewDebouncer = Debouncer();
   final Debouncer processedDebouncer = Debouncer();
   ScrollController reviewScrollController = ScrollController();
   ScrollController processedScrollController = ScrollController();
+  TextEditingController reviewSearchController = TextEditingController();
+  TextEditingController processedSearchController = TextEditingController();
+  String reviewSearchTerm = '';
+  String processedSearchTerm = '';
+
+  // Add noExpenseWidget as a getter
+  Widget get noExpenseWidget => Center(
+    child: Column(
+      children: [
+        const SizedBox(height: 30),
+        Image.asset(
+          'assets/no-expense.png',
+          height: MediaQuery.of(navigatorKey.currentContext!).size.height * 0.25,
+        ),
+        const SizedBox(height: 30),
+        const Text(
+          'No expenses yet!',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const Text(
+          'Scan a receipt to add your expense record here',
+          style: TextStyle(
+            color: Color(0XFF667085),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        const SizedBox(height: 30),
+        ElevatedButton(
+          onPressed: () {
+            final homeScreenState =
+                context.findAncestorStateOfType<HomeScreenState>();
+            if (homeScreenState != null) {
+              homeScreenState.startScan();
+            }
+          },
+          style: ButtonStyle(
+            shape: MaterialStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+            fixedSize: MaterialStateProperty.all(
+              Size(
+                MediaQuery.of(navigatorKey.currentContext!).size.width * 0.8,
+                MediaQuery.of(navigatorKey.currentContext!).size.height * 0.06,
+              ),
+            ),
+            backgroundColor: MaterialStateProperty.all(clickableColor),
+          ),
+          child: const Text('Scan now', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
 
   @override
   void dispose() {
@@ -47,149 +127,385 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    Widget noExpenseWidget = Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 30),
-          Image.asset('assets/no-expense.png',
-              height: MediaQuery.of(navigatorKey.currentContext!).size.height *
-                  0.25),
-          const SizedBox(height: 30),
-          const Text('No expenses yet!',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600)),
-          const Text('Scan receipt to add your expense record here',
-              style: TextStyle(
-                  color: Color(0XFF667085),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400)),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () => Navigator.pushReplacement(
-                navigatorKey.currentContext!,
-                MaterialPageRoute(
-                    builder: (context) => const HomeScreen(tabIndex: 0))),
-            style: ButtonStyle(
-                shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0))),
-                fixedSize: WidgetStateProperty.all(Size(
-                    MediaQuery.of(navigatorKey.currentContext!).size.width *
-                        0.8,
-                    MediaQuery.of(navigatorKey.currentContext!).size.height *
-                        0.06)),
-                backgroundColor: WidgetStateProperty.all(clickableColor)),
-            child:
-                const Text('Scan now', style: TextStyle(color: Colors.white)),
-          )
-        ],
+  void didUpdateWidget(covariant ExpensesTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedOrgId != widget.selectedOrgId) {
+      // Organization has changed, load new data
+      _loadDataForNewOrg();
+    }
+  }
+
+  Future<void> _loadDataForNewOrg() async {
+    setState(() {
+      showSpinner = true;
+      // Clear existing data
+      widget.reviewExpenses.clear();
+      widget.processedExpenses.clear();
+      // Reset search terms and controllers
+      reviewSearchController.clear();
+      processedSearchController.clear();
+      reviewSearchTerm = '';
+      processedSearchTerm = '';
+    });
+
+    try {
+      // Reset both paging controllers completely
+      widget.reviewPagingController.itemList?.clear();
+      widget.processedPagingController.itemList?.clear();
+      
+      // Reset the page keys
+      widget.reviewPagingController.nextPageKey = 1;
+      widget.processedPagingController.nextPageKey = 1;
+      
+      // Trigger a complete refresh of both controllers
+      widget.reviewPagingController.refresh();
+      widget.processedPagingController.refresh();
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error refreshing data: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
+    }
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: widget.tabController.index == 0 
+            ? reviewSearchController 
+            : processedSearchController,
+        decoration: InputDecoration(
+          hintText: 'Search expenses...',
+          border: InputBorder.none,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              if (widget.tabController.index == 0) {
+                reviewSearchController.clear();
+                reviewSearchTerm = '';
+              } else {
+                processedSearchController.clear();
+                processedSearchTerm = '';
+              }
+              setState(() {});
+            },
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {
+            if (widget.tabController.index == 0) {
+              reviewSearchTerm = value;
+            } else {
+              processedSearchTerm = value;
+            }
+          });
+        },
       ),
     );
+  }
 
+  Widget _buildProcessingCard() {
+    if (!widget.showUploadingInvoice) return const SizedBox.shrink();
+
+    double progress = (widget.uploadingData['uploadProgress'] ?? 0) * 0.7;
+    bool isNearlyComplete = progress >= 0.69;
+    bool hasDetails = widget.uploadingData['details'] != null;
+
+    // Handle refresh when details are received
+    if (hasDetails) {
+      Future.microtask(() {
+        if (mounted && widget.uploadingData['details'] != null) {
+          setState(() {
+            widget.reviewExpenses.insert(0, widget.uploadingData['details']);
+          });
+          widget.reviewPagingController.refresh();
+          widget.uploadingData.clear();
+        }
+      });
+    }
+
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black26,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        height: 120, // Match expense card height
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            // Left side - Image/Animation
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.25,
+              height: MediaQuery.of(context).size.width * 0.25,
+              child: widget.uploadingData['path'] != null
+                  ? Image.file(
+                      File(widget.uploadingData['path']),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                      ), // Fallback for invalid image
+                    )
+                  : Lottie.asset(
+                      'assets/animations/processing.json',
+                      fit: BoxFit.contain,
+                    ),
+            ),
+            const SizedBox(width: 16),
+
+            // Right side - Progress info
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0XFFFFFEF4),
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(color: const Color(0XFFF6CA58)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                height: 12,
+                                width: 12,
+                                child: CircularProgressIndicator(
+                                  color: Color(0XFF667085),
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  isNearlyComplete ? ' ' : 'Processing',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0XFF667085),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          widget.uploadingData['size'] ?? '0.77Mb',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            color: Color(0XFF667085),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!hasDetails) ...[
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        minHeight: 6,
+                        value: progress,
+                        valueColor: AlwaysStoppedAnimation(clickableColor),
+                        backgroundColor: const Color(0xFFF3F4F6),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewList() {
+    if (widget.reviewExpenses.isEmpty) {
+      return Center(
+        child: noExpenseWidget,
+      );
+    }
+
+    return ListView.builder(
+      itemCount: widget.reviewExpenses.length,
+      itemBuilder: (context, index) {
+        final expense = widget.reviewExpenses[index];
+        return ExpenseCard(
+          expense: expense,
+          isProcessed: false,
+          selectedOrgId: widget.selectedOrgId,
+          onUpdate: (updatedExpense) {
+            setState(() {
+              widget.reviewExpenses[index] = updatedExpense;
+            });
+            widget.reviewPagingController.refresh();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProcessedList() {
+    return ListView.builder(
+      itemCount: widget.processedExpenses.length,
+      itemBuilder: (context, index) {
+        final expense = widget.processedExpenses[index];
+        return ExpenseCard(
+          expense: expense,
+          isProcessed: true,
+          selectedOrgId: widget.selectedOrgId,
+          onUpdate: (updatedExpense) {
+            setState(() {
+              widget.processedExpenses[index] = updatedExpense;
+            });
+            widget.processedPagingController.refresh();
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     Widget getInvoiceWidget(Map matchData) {
-      late Widget invoiceImage;
-      invoiceImage = CachedNetworkImage(
+      return CachedNetworkImage(
         imageUrl: matchData['invoice_path'],
+        placeholder: (context, url) => const CircularProgressIndicator(),
         errorWidget: (context, url, error) {
-          return SfPdfViewer.network(matchData['invoice_path'],
-              canShowPageLoadingIndicator: false,
-              canShowScrollHead: false,
-              canShowScrollStatus: false);
+          return SfPdfViewer.network(
+            matchData['invoice_path'],
+            canShowPageLoadingIndicator: false,
+            canShowScrollHead: false,
+            canShowScrollStatus: false,
+          );
         },
       );
-      return invoiceImage;
     }
 
     Widget getInvoiceCardWidget(item) {
       var f = NumberFormat("###,###.##", "en_US");
 
       return Card(
-        elevation: 4,
-        shadowColor: Colors.grey,
+        elevation: 8,
+        shadowColor: Colors.black26,
         color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
             children: [
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.2,
+                width: MediaQuery.of(context).size.width * 0.25,
                 child: item['invoice_path'] != null
                     ? SizedBox(
-                        height: MediaQuery.of(context).size.width * 0.2,
-                        width: MediaQuery.of(context).size.width * 0.2,
+                        height: MediaQuery.of(context).size.width * 0.25,
+                        width: MediaQuery.of(context).size.width * 0.25,
                         child: getInvoiceWidget(item))
                     : appLoader,
               ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: item['supplierName'] != null
-                              ? Text(item['supplierName'],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0XFF344054)))
-                              : SizedBox(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.375),
-                        ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.2,
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: FittedBox(
-                            fit: BoxFit.fitWidth,
-                            child: Text(
-                              item['amountDue'] != null
-                                  ? f.format(item['amountDue'])
-                                  : "",
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Color(0XFF101828)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item['supplierName'] ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0XFF344054),
                             ),
                           ),
                         ),
-                      )
-                    ],
-                  ),
-                  if (item['accountName'] != null) ...[
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Chip(
-                        padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100)),
-                        side: BorderSide(
-                          color: clickableColor,
+                        Flexible(
+                          child: Text(
+                            item['amountDue'] != null ? f.format(item['amountDue']) : "",
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.green,
+                            ),
+                          ),
                         ),
-                        label: Text(item['accountName']),
-                        color: const WidgetStatePropertyAll(Color(0XFFFFFEF4)),
-                        labelStyle: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0XFF667085)),
+                      ],
+                    ),
+                    if (item['accountName'] != null) ...[
+                      const SizedBox(height: 8),
+                      Chip(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        side: BorderSide(color: clickableColor),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '💼 ',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Flexible(
+                              child: Text(
+                                item['accountName'],
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0XFFFFFEF4),
                       ),
-                    )
-                  ]
-                ],
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -197,20 +513,214 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
       );
     }
 
+
     Widget getPageContent() {
       if (showSpinner || widget.showSpinner) {
-        return appLoader;
-      } else if (widget.reviewExpenses.isEmpty &&
-          widget.processedExpenses.isEmpty &&
-          !showUploadingInvoice &&
-          reviewSearchController.text.isEmpty &&
-          processedSearchController.text.isEmpty) {
-        return noExpenseWidget;
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                'assets/animations/loading.json',
+                width: 300,
+                height: 300,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Text('Error loading animation');
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Loading expenses...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0XFF667085),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
       }
 
       return TabBarView(
         controller: widget.tabController,
         children: [
+          // Review Tab
+          Container(
+            color: const Color(0xfffbfbfb),
+            padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
+            child: Column(
+              children: [
+                // Search Bar
+                SizedBox(
+                  height: 48,
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xfff3f3f3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(5.0),
+                        borderSide: const BorderSide(color: Colors.transparent)
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(5.0),
+                        borderSide: const BorderSide(color: Colors.transparent)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(5.0),
+                        borderSide: const BorderSide(color: Colors.transparent)
+                      ),
+                      focusColor: const Color(0XFF8E8E8E),
+                      hintText: 'Search',
+                      hintStyle: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        color: Color(0XFF8E8E8E)
+                      ),
+                      prefixIcon: const Icon(Icons.search),
+                      prefixIconColor: const Color(0XFF8E8E8E)
+                    ),
+                    controller: reviewSearchController,
+                    onChanged: (value) {
+                      reviewDebouncer.debounce(
+                        duration: const Duration(milliseconds: 250),
+                        onDebounce: () {
+                          setState(() {
+                            reviewSearchTerm = value;
+                          });
+                          widget.reviewPagingController.refresh();
+                        }
+                      );
+                    },
+                    onEditingComplete: () {
+                      if (reviewSearchController.text != reviewSearchTerm) {
+                        setState(() {
+                          reviewSearchTerm = reviewSearchController.text;
+                        });
+                        widget.reviewPagingController.refresh();
+                      }
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Processing Card
+                if (widget.showUploadingInvoice) _buildProcessingCard(),
+
+                // Expense List
+                Expanded(
+                  child: PagedListView(
+                    shrinkWrap: true,
+                    pagingController: widget.reviewPagingController,
+                    scrollController: reviewScrollController,
+                    physics: widget.tabController.index == 0
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    builderDelegate: PagedChildBuilderDelegate<dynamic>(
+                      firstPageErrorIndicatorBuilder: (context) => noExpenseWidget,
+                      noItemsFoundIndicatorBuilder: (context) => reviewSearchTerm.isEmpty 
+                        ? noExpenseWidget
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No expenses found matching "${reviewSearchTerm}"',
+                                style: const TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                      itemBuilder: (context, item, index) {
+                        // Filter items based on search term
+                        final filteredExpenses = widget.reviewExpenses.where((expense) {
+                          if (reviewSearchTerm.isEmpty) return true;
+                          
+                          final searchLower = reviewSearchTerm.toLowerCase();
+                          final supplierName = (expense['supplierName'] ?? '').toString().toLowerCase();
+                          final accountName = (expense['accountName'] ?? '').toString().toLowerCase();
+                          final amount = (expense['amountDue'] ?? '').toString();
+                          
+                          return supplierName.contains(searchLower) ||
+                                 accountName.contains(searchLower) ||
+                                 amount.contains(searchLower);
+                        }).toList();
+
+                        // Check if current index is within filtered results
+                        if (filteredExpenses.isEmpty || index >= filteredExpenses.length) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final currentItem = filteredExpenses[index];
+                        bool isSameDate = true;
+                        DateTime? date;
+
+                        if (currentItem['date'] != null) {
+                          final String dateString = currentItem['date'];
+                          date = DateTime.parse(dateString);
+                          if (index == 0) {
+                            isSameDate = false;
+                          } else if (index > 0 && filteredExpenses[index - 1]['date'] != null) {
+                            final String prevDateString = filteredExpenses[index - 1]['date'];
+                            final DateTime prevDate = DateTime.parse(prevDateString);
+                            isSameDate = date.isSameDate(prevDate);
+                          }
+                        }
+
+                        return Column(
+                          children: [
+                            if (index == 0 || !isSameDate) ...[
+                              if (currentItem['date'] != null) ...[
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Expanded(child: Divider()),
+                                    Text(
+                                      ' ${date?.formatDate()} ',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                        color: Color(0XFF667085),
+                                      ),
+                                    ),
+                                    const Expanded(child: Divider()),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                            ],
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                    builder: (context) => UpdateExpenseData(
+                                      expense: currentItem,
+                                      imagePath: currentItem['invoice_path'],
+                                      isProcessed: false,
+                                      selectedOrgId: widget.selectedOrgId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: SizedBox(
+                                height: 120, // Changed from 100 to 120 to match processed tab
+                                child: getInvoiceCardWidget(currentItem),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Processed Tab
           Container(
             color: const Color(0xfffbfbfb),
             padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
@@ -219,7 +729,7 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
             child: Column(
               children: [
                 SizedBox(
-                    height: 48,
+                    height: 50,
                     child: TextFormField(
                       decoration: InputDecoration(
                           filled: true,
@@ -227,403 +737,347 @@ class _ExpensesTabScreenState extends State<ExpensesTabScreen>
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
                               borderSide:
-                                  const BorderSide(color: Colors.transparent)),
+                              const BorderSide(color: Colors.transparent)),
                           focusColor: const Color(0XFF8E8E8E),
                           hintText: 'Search',
                           hintStyle: const TextStyle(
                               fontWeight: FontWeight.w500,
-                              fontSize: 14,
+                              fontSize: 16, // Font size increased by 20%
                               color: Color(0XFF8E8E8E)),
                           prefixIcon: const Icon(Icons.search),
                           prefixIconColor: const Color(0XFF8E8E8E)),
-                      onChanged: (value) async {
-                        reviewDebouncer.debounce(
-                            duration: const Duration(milliseconds: 250),
-                            onDebounce: () {
-                              setState(() {
-                                reviewSearchTerm = value;
-                              });
-                              widget.reviewPagingController.refresh();
-                            });
-                      },
-                      onEditingComplete: () async {
-                        if (reviewSearchController.text != reviewSearchTerm) {
-                          setState(() {
-                            reviewSearchTerm = reviewSearchController.text;
-                          });
-                          widget.reviewPagingController.refresh();
-                        }
-                        FocusManager.instance.primaryFocus?.unfocus();
-                      },
-                      controller: reviewSearchController,
-                    )),
-                const SizedBox(height: 10),
-                if (showUploadingInvoice) ...[
-                  SizedBox(
-                    height: 100,
-                    child: Card(
-                      color: Colors.white,
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6)),
-                        padding: const EdgeInsets.only(
-                            top: 5, left: 10, right: 5, bottom: 12),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                                height: 75,
-                                width: 75,
-                                child: uploadingData['path'] != null
-                                    ? Image.file(File(uploadingData['path']))
-                                    : appLoader),
-                            const SizedBox(width: 20),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Chip(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(100)),
-                                        side: const BorderSide(
-                                          color: Color(0XFFF6CA58),
-                                        ),
-                                        backgroundColor:
-                                            const Color(0XFFFFFEF4),
-                                        label: const Row(
-                                          children: [
-                                            SizedBox(
-                                              height: 10,
-                                              width: 10,
-                                              child: CircularProgressIndicator(
-                                                color: Color(0XFF667085),
-                                                strokeWidth: 2,
-                                              ),
-                                            ),
-                                            SizedBox(width: 5),
-                                            Text('Processing',
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0XFF667085)))
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.25),
-                                    Align(
-                                      alignment: Alignment.topRight,
-                                      child: Text(
-                                          uploadingData['size'] ?? '0.77Mb',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w400,
-                                              fontSize: 10,
-                                              color: Color(0XFF667085))),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
-                                if (uploadingData['uploadProgress'] < 1) ...[
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.6,
-                                    child: Center(
-                                      child: LinearProgressIndicator(
-                                          minHeight: 6,
-                                          value:
-                                              uploadingData['uploadProgress'],
-                                          valueColor: AlwaysStoppedAnimation(
-                                              clickableColor)),
-                                    ),
-                                  )
-                                ]
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                Expanded(
-                    flex: showUploadingInvoice ? 5 : 8,
-                    child: PagedListView(
-                        shrinkWrap: true,
-                        pagingController: widget.reviewPagingController,
-                        scrollController: reviewScrollController,
-                        physics: widget.tabController.index == 0
-                            ? const AlwaysScrollableScrollPhysics()
-                            : const NeverScrollableScrollPhysics(),
-                        builderDelegate: PagedChildBuilderDelegate(
-                            itemBuilder: (context, item, index) {
-                          bool isSameDate = true;
-                          DateTime? date;
-                          final item = widget.reviewExpenses[index];
-                          if (index == 0) {
-                            isSameDate = false;
-                          }
-                          if (widget.reviewExpenses[index]['date'] != null) {
-                            final String dateString =
-                                widget.reviewExpenses[index]['date'];
-                            date = DateTime.parse(dateString);
-                            if (index == 0) {
-                              isSameDate = false;
-                            } else if (widget.reviewExpenses[index - 1]
-                                    ['date'] !=
-                                null) {
-                              final String prevDateString =
-                                  widget.reviewExpenses[index - 1]['date'];
-                              final DateTime prevDate =
-                                  DateTime.parse(prevDateString);
-                              isSameDate = date.isSameDate(prevDate);
-                            }
-                          }
-                          if (index == 0 || !(isSameDate)) {
-                            return Column(children: [
-                              if (widget.reviewExpenses[index]['date'] !=
-                                  null) ...[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Expanded(child: Divider()),
-                                    Text(' ${date?.formatDate()} ',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 12,
-                                            color: Color(0XFF667085))),
-                                    const Expanded(child: Divider()),
-                                  ],
-                                ),
-                                const SizedBox(height: 10)
-                              ],
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: false)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          } else {
-                            return Column(children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: false)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          }
-                        })))
-              ],
-            ),
-          ),
-          Container(
-            color: const Color(0xfffbfbfb),
-            padding: const EdgeInsets.only(top: 15, left: 15, right: 15),
-            height: MediaQuery.of(context).size.height * 0.8,
-            width: double.maxFinite,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 48,
-                  child: TextField(
-                    decoration: InputDecoration(
-                        filled: true,
-                        fillColor: const Color(0xfff3f3f3),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                            borderSide:
-                                const BorderSide(color: Colors.transparent)),
-                        focusColor: const Color(0XFF8E8E8E),
-                        hintText: 'Search',
-                        hintStyle: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: Color(0XFF8E8E8E)),
-                        prefixIcon: const Icon(Icons.search),
-                        prefixIconColor: const Color(0XFF8E8E8E)),
-                    onChanged: (value) async {
-                      processedDebouncer.debounce(
+                      onChanged: (value) {
+                        processedDebouncer.debounce(
                           duration: const Duration(milliseconds: 250),
                           onDebounce: () {
                             setState(() {
                               processedSearchTerm = value;
                             });
                             widget.processedPagingController.refresh();
+                          }
+                        );
+                      },
+                      onEditingComplete: () async {
+                        if (processedSearchController.text != processedSearchTerm) {
+                          setState(() {
+                            processedSearchTerm = processedSearchController.text;
                           });
-                    },
-                    onEditingComplete: () async {
-                      if (processedSearchController.text !=
-                          processedSearchTerm) {
-                        setState(() {
-                          processedSearchTerm = processedSearchController.text;
-                        });
-                        widget.processedPagingController.refresh();
-                      }
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    },
-                    controller: processedSearchController,
-                  ),
-                ),
+                          widget.processedPagingController.refresh();
+                        }
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
+                      controller: processedSearchController,
+                    )),
                 const SizedBox(height: 10),
                 Expanded(
-                    child: PagedListView(
-                        shrinkWrap: true,
-                        pagingController: widget.processedPagingController,
-                        scrollController: processedScrollController,
-                        physics: widget.tabController.index == 1
-                            ? const AlwaysScrollableScrollPhysics()
-                            : const NeverScrollableScrollPhysics(),
-                        builderDelegate: PagedChildBuilderDelegate(
-                            itemBuilder: (context, item, index) {
-                          bool isSameDate = true;
-                          final String dateString =
-                              widget.processedExpenses[index]['date'];
-                          final DateTime date = DateTime.parse(dateString);
-                          final item = widget.processedExpenses[index];
-                          if (index == 0) {
-                            isSameDate = false;
-                          } else {
-                            final String prevDateString =
-                                widget.processedExpenses[index - 1]['date'];
-                            final DateTime prevDate =
-                                DateTime.parse(prevDateString);
-                            isSameDate = date.isSameDate(prevDate);
+                  child: PagedListView(
+                    shrinkWrap: true,
+                    pagingController: widget.processedPagingController,
+                    scrollController: processedScrollController,
+                    physics: widget.tabController.index == 1
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    builderDelegate: PagedChildBuilderDelegate<dynamic>(
+                      noItemsFoundIndicatorBuilder: (context) => processedSearchTerm.isEmpty 
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No processed expenses yet',
+                                style: TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                'No expenses found matching "${processedSearchTerm}"',
+                                style: const TextStyle(
+                                  color: Color(0XFF667085),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                      itemBuilder: (context, item, index) {
+                        // Filter items based on search term
+                        final filteredExpenses = widget.processedExpenses.where((expense) {
+                          if (processedSearchTerm.isEmpty) return true;
+                          
+                          final searchLower = processedSearchTerm.toLowerCase();
+                          final supplierName = (expense['supplierName'] ?? '').toString().toLowerCase();
+                          final accountName = (expense['accountName'] ?? '').toString().toLowerCase();
+                          final amount = (expense['amountDue'] ?? '').toString();
+                          
+                          return supplierName.contains(searchLower) ||
+                                 accountName.contains(searchLower) ||
+                                 amount.contains(searchLower);
+                        }).toList();
+
+                        // Check if current index is within filtered results
+                        if (filteredExpenses.isEmpty || index >= filteredExpenses.length) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final currentItem = filteredExpenses[index];
+                        bool isSameDate = true;
+                        DateTime? date;
+
+                        if (currentItem['date'] != null) {
+                          final dateString = currentItem['date'] as String?;
+                          if (dateString != null) {
+                            date = DateTime.parse(dateString);
+                            if (index == 0) {
+                              isSameDate = false;
+                            } else if (index > 0 && filteredExpenses[index - 1]['date'] != null) {
+                              final prevDateString = filteredExpenses[index - 1]['date'] as String?;
+                              if (prevDateString != null) {
+                                final DateTime prevDate = DateTime.parse(prevDateString);
+                                isSameDate = date.isSameDate(prevDate);
+                              }
+                            }
                           }
-                          if (index == 0 || !(isSameDate)) {
-                            return Column(children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Expanded(child: Divider()),
-                                  Text(' ${date.formatDate()} ',
+                        }
+
+                        return Column(
+                          children: [
+                            if (index == 0 || !isSameDate) ...[
+                              if (currentItem['date'] != null) ...[
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Expanded(child: Divider()),
+                                    Text(
+                                      ' ${date?.formatDate()} ',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 12,
-                                          color: Color(0XFF667085))),
-                                  const Expanded(child: Divider()),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: true)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 20,
+                                        color: Color(0XFF667085),
+                                      ),
+                                    ),
+                                    const Expanded(child: Divider()),
+                                  ],
                                 ),
+                                const SizedBox(height: 10),
+                              ],
+                            ],
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  navigatorKey.currentContext!,
+                                  MaterialPageRoute(
+                                    builder: (context) => UpdateExpenseData(
+                                      expense: currentItem,
+                                      imagePath: currentItem['invoice_path'],
+                                      isProcessed: true,
+                                      selectedOrgId: widget.selectedOrgId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: SizedBox(
+                                height: 120,
+                                child: getInvoiceCardWidget(currentItem),
                               ),
-                              const SizedBox(height: 10),
-                            ]);
-                          } else {
-                            return Column(children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      navigatorKey.currentContext!,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              UpdateExpenseData(
-                                                  expense: item,
-                                                  imagePath:
-                                                      item['invoice_path'],
-                                                  isProcessed: true)));
-                                },
-                                child: SizedBox(
-                                  height: 100,
-                                  child: getInvoiceCardWidget(item),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ]);
-                          }
-                        })))
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       );
     }
 
     return getPageContent();
   }
-}
 
-const String dateFormatter = "d MMMM y";
-
-extension DateHelper on DateTime {
-  String formatDate() {
-    final formatter = DateFormat(dateFormatter);
-    return formatter.format(this);
-  }
-
-  bool isSameDate(DateTime other) {
-    return year == other.year && month == other.month && day == other.day;
-  }
-
-  int getDifferenceInDaysWithNow() {
-    final now = DateTime.now();
-    return now.difference(this).inDays;
+  void updateDetails(String value) {
+    // Implement the logic to update the details
+    // This could involve updating the local state or sending the data to a backend
+    print('Details updated: $value');
+    // Example: update the local state or call an API
+    // setState(() {
+    //   // Update the relevant state variable
+    // });
   }
 }
+
+// Add ExpenseCard widget
+class ExpenseCard extends StatelessWidget {
+  final Map<dynamic, dynamic> expense;
+  final bool isProcessed;
+  final String selectedOrgId;
+  final Function(Map<dynamic, dynamic>)? onUpdate; // Add this
+
+  const ExpenseCard({
+    Key? key,
+    required this.expense,
+    required this.isProcessed,
+    required this.selectedOrgId,
+    this.onUpdate,  // Add this
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {  // Make this async
+        final imagePath = expense['invoice_path'] as String?;
+        if (imagePath != null) {
+          final result = await Navigator.push(  // Get the result
+            navigatorKey.currentContext!,
+            MaterialPageRoute(
+              builder: (context) => UpdateExpenseData(
+                expense: expense,
+                imagePath: imagePath,
+                isProcessed: isProcessed,
+                selectedOrgId: selectedOrgId,
+              ),
+            ),
+          );
+          
+          // Handle the update result
+          if (result != null && result is Map<dynamic, dynamic>) {
+            onUpdate?.call(result);  // Call the update callback if provided
+          }
+        }
+      },
+      child: Card(
+        elevation: 8,
+        shadowColor: Colors.black26,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.25,
+                child: expense['invoice_path'] != null
+                    ? SizedBox(
+                        height: MediaQuery.of(context).size.width * 0.25,
+                        width: MediaQuery.of(context).size.width * 0.25,
+                        child: _buildInvoiceWidget(expense),
+                      )
+                    : const CircularProgressIndicator(),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildExpenseDetails(expense),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceWidget(Map matchData) {
+    return CachedNetworkImage(
+      imageUrl: matchData['invoice_path'],
+      placeholder: (context, url) => const CircularProgressIndicator(),
+      errorWidget: (context, url, error) {
+        return SfPdfViewer.network(
+          matchData['invoice_path'],
+          canShowPageLoadingIndicator: false,
+          canShowScrollHead: false,
+          canShowScrollStatus: false,
+        );
+      },
+    );
+  }
+
+  Widget _buildExpenseDetails(Map<dynamic, dynamic> expense) {
+    var f = NumberFormat("###,###.##", "en_US");
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                expense['supplierName'] ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0XFF344054),
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                expense['amountDue'] != null
+                    ? f.format(expense['amountDue'])
+                    : "",
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (expense['accountName'] != null) ...[
+          const SizedBox(height: 8),
+          Chip(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(50),
+            ),
+            side: BorderSide(color: clickableColor),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '💼 ',
+                  style: TextStyle(fontSize: 16),
+                ),
+                Flexible(
+                  child: Text(
+                    expense['accountName'],
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0XFFFFFEF4),
+          ),
+        ],
+      ],
+    );
+  }
+}
+

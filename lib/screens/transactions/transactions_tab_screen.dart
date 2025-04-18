@@ -74,6 +74,92 @@ class _TransactionsTabScreenState extends State<TransactionsTabScreen> {
     reportsRefreshController.refreshCompleted();
   }
 
+  Widget _buildTransactionRow(Map<String, dynamic> transaction) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Icon or Image
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.account_balance_wallet,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Transaction Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction['title'] ?? 'Transaction Title',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      transaction['date'] ?? 'Transaction Date',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Amount
+              Flexible(
+                child: Text(
+                  transaction['amount'] ?? '\$0.00',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: transaction['isCredit'] == true
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -861,7 +947,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                                                   .add(transaction);
                                             }
                                           }
-                                          ;
                                           setState(() {});
                                         },
                                         child: Chip(

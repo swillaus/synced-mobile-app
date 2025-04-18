@@ -16,6 +16,9 @@ import 'package:synced/utils/api_services.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lottie/lottie.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 bool showUploadingInvoice = false;
 Map<String, dynamic> uploadingData = {};
@@ -30,10 +33,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.tabIndex = 0, this.navbarIndex = 0});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   List organisations = [];
   List reviewExpenses = [];
@@ -50,6 +53,8 @@ class _HomeScreenState extends State<HomeScreen>
   bool showSpinner = false;
   TextEditingController notesController = TextEditingController();
   late TabController tabController;
+  bool showUploadingInvoice = false;
+  Map<String, dynamic> uploadingData = {};
 
   Future<String> getFileSize(String filepath, int decimals) async {
     var file = File(filepath);
@@ -66,42 +71,134 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  _onPressed() {
-    Navigator.pop(navigatorKey.currentContext!);
+  void _onPressed() async {
+    Navigator.pop(context);
+    
     setState(() {
       showUploadingInvoice = true;
       uploadingData = {
         'path': imagesPath!.first,
         'size': fileSize,
-        'uploadProgress': 0.0
+        'uploadProgress': 0.0,
+        'status': 'Processing...'
       };
       selectedNavBarIndex = 0;
     });
-    ApiService.uploadInvoice(imagesPath!.first, selectedOrgId,
-            notesController.text, uploadCallback)
-        .then((uploadResp) {
+  
+    try {
+      final uploadResp = await ApiService.uploadInvoice(
+        imagesPath!.first,
+        selectedOrgId,
+        notesController.text,
+        uploadCallback
+      );
+  
+      if (uploadResp.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('We were unable to process the image, please try again.')
+          )
+        );
+        return;
+      }
+  
+      // Replace refresh with getUnprocessedExpenses
+      await getUnprocessedExpenses(1, reviewSearchTerm);
+      notesController.clear();
+  
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading: ${e.toString()}'))
+      );
+    } finally {
       setState(() {
         showUploadingInvoice = false;
         uploadingData = {};
       });
-      notesController.clear();
-      if (uploadResp.isEmpty) {
-        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'We were unable to process the image, please try again.')));
-        return;
-      } else {
-        reviewPagingController.refresh();
-      }
-    });
+    }
+  }
+  
+  // Update the _buildProcessingCard widget
+  Widget _buildProcessingCard() {
+    if (!showUploadingInvoice) return const SizedBox.shrink();
+  
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 4,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Lottie.asset(
+                    'assets/animations/processing.json', // Add a processing animation
+                    width: 40,
+                    height: 40,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Processing Invoice',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (uploadingData['uploadProgress'] != null)
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0,
+                    end: uploadingData['uploadProgress'],
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, value, child) {
+                    return Column(
+                      children: [
+                        LinearProgressIndicator(
+                          value: value,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(clickableColor),
+                          minHeight: 6,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${(value * 100).toInt()}%',
+                          style: TextStyle(
+                            color: clickableColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              const SizedBox(height: 8),
+              Text(
+                'File Size: ${uploadingData['size'] ?? ''}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void startScan() async {
     if (!showUploadingInvoice) {
       if (await Permission.camera.request().isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Please scan one page only")));
         imagesPath = await CunningDocumentScanner.getPictures(
             noOfPages: 1, isGalleryImportAllowed: true);
         setState(() {});
@@ -113,145 +210,146 @@ class _HomeScreenState extends State<HomeScreen>
         if (imagesPath?.isNotEmpty ?? false) {
           fileSize = await getFileSize(imagesPath!.first, 1);
           showDialog(
-              barrierDismissible: false,
-              context: navigatorKey.currentContext!,
-              builder: (context) => StatefulBuilder(
-                  builder: (context, setState) => SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: AlertDialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0)),
-                          insetPadding: const EdgeInsets.all(10),
-                          backgroundColor: Colors.white,
-                          title: Container(
-                            decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10)),
-                                color: Color(0XFFF9FAFB),
-                                border: Border(
-                                    bottom: BorderSide(color: Colors.grey))),
-                            height: MediaQuery.of(context).size.height * 0.065,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Padding(
-                                  padding: EdgeInsets.only(
-                                      left: MediaQuery.of(context).size.width *
-                                          0.075),
-                                  child: Text('Add Note (Optional)',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: headingColor))),
-                            ),
+            barrierDismissible: false,
+            context: navigatorKey.currentContext!,
+            builder: (context) => StatefulBuilder(
+              builder: (context, setState) => Dialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16), // Added horizontal padding
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.9,
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).viewInsets.bottom,
                           ),
-                          titlePadding: const EdgeInsets.all(0),
-                          content: Container(
-                            color: Colors.white,
-                            width: MediaQuery.of(navigatorKey.currentContext!)
-                                    .size
-                                    .width *
-                                0.9,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  keyboardType: TextInputType.multiline,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  decoration: InputDecoration(
-                                      hintText: 'Add expense details',
-                                      focusColor: Colors.grey.shade400,
-                                      border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey.shade400,
-                                              width: 0.4)),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey.shade400,
-                                              width: 0.4))),
-                                  maxLines: 5,
-                                  controller: notesController,
-                                  autofocus: true,
-                                  enabled: true,
-                                ),
-                                const SizedBox(height: 20),
-                                ElevatedButton(
-                                  style: ButtonStyle(
-                                      shape: WidgetStateProperty.all<
-                                              RoundedRectangleBorder>(
-                                          RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0))),
-                                      fixedSize: WidgetStateProperty.all(Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.9,
-                                          40)),
-                                      backgroundColor: WidgetStateProperty.all(
-                                          const Color(0XFF009318))),
-                                  onPressed: _onPressed,
-                                  child: const Text(
-                                    'Submit',
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header with close button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Expense details',
                                     style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Message box
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Adding some details helps with expense tracking and approvals. What is this expense for?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF374151),
                                   ),
                                 ),
-                                TextButton(
-                                    onPressed: () async {
-                                      Navigator.pop(
-                                          navigatorKey.currentContext!);
-                                      setState(() {
-                                        showUploadingInvoice = true;
-                                        uploadingData = {
-                                          'path': imagesPath!.first,
-                                          'size': fileSize
-                                        };
-                                        selectedNavBarIndex = 0;
-                                      });
-                                      ApiService.uploadInvoice(
-                                              imagesPath!.first,
-                                              selectedOrgId,
-                                              '',
-                                              uploadCallback)
-                                          .then((uploadResp) {
-                                        showUploadingInvoice = false;
-                                        uploadingData = {};
-                                        if (uploadResp.isEmpty) {
-                                          ScaffoldMessenger.of(
-                                                  navigatorKey.currentContext!)
-                                              .showSnackBar(const SnackBar(
-                                                  content: Text(
-                                                      'We were unable to process the image, please try again.')));
-                                          return;
-                                        } else {
-                                          Navigator.push(
-                                              navigatorKey.currentContext!,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      UpdateExpenseData(
-                                                          expense: uploadResp,
-                                                          imagePath:
-                                                              'https://syncedblobstaging.blob.core.windows.net/invoices/${uploadResp['pdfUrl']}',
-                                                          isProcessed: false)));
-                                        }
-                                      });
-                                    },
-                                    child: const Text('Skip',
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Input field
+                              TextField(
+                                controller: notesController,
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization: TextCapitalization.sentences,
+                                maxLines: null,
+                                minLines: 3,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: 'E.g. Office supplies for Q1, Team lunch meeting...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF9FAFB),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: clickableColor),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Action buttons
+                              Column(
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: clickableColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      onPressed: _onPressed,
+                                      child: const Text(
+                                        'Submit',
                                         style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0XFFFF4E4E))))
-                              ],
-                            ),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      'Skip',
+                                      style: TextStyle(
+                                        color: clickableColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      )));
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
         }
       } else if (await Permission.camera.isPermanentlyDenied) {
         openAppSettings();
@@ -279,45 +377,78 @@ class _HomeScreenState extends State<HomeScreen>
     return entries;
   }
 
-  getUnprocessedExpenses(page, searchTerm) async {
-    final resp = await ApiService.getExpenses(
-        false, selectedOrgId, searchTerm, page, pageSize);
-    if (page == 1) {
-      reviewExpenses.clear();
-    }
-    if (resp.isNotEmpty) {
-      setState(() {
-        reviewExpenses += resp['invoices'];
-      });
-    }
-
+  String? getSelectedOrgName() {
+    if (organisations.isEmpty) return null;
     try {
-      final isLastPage = resp['invoices'].length < pageSize;
-      if (isLastPage) {
-        reviewPagingController.appendLastPage(resp['invoices']);
-      } else {
-        final nextPageKey = page + 1;
-        reviewPagingController.appendPage(resp['invoices'], nextPageKey);
-      }
-    } catch (error) {
-      reviewPagingController.error = error;
+      return organisations.firstWhere(
+        (org) => org['organisationID'] == selectedOrgId,
+        orElse: () => organisations[0],
+      )['organisationName'] as String;
+    } catch (e) {
+      return null;
     }
-    setState(() {
-      showSpinner = false;
-    });
-    refreshController.loadComplete();
-    refreshController.refreshCompleted();
+  }
 
-    for (var exp in reviewExpenses) {
-      exp['invoice_path'] =
+  List<String> getOrgNames() {
+    return organisations
+        .map((org) => org['organisationName'] as String)
+        .toList()
+        ..sort(); // Sort alphabetically
+  }
+
+  Future<void> getUnprocessedExpenses(int page, String searchTerm) async {
+    try {
+      final resp = await ApiService.getExpenses(
+        false, selectedOrgId, searchTerm, page, pageSize);
+      
+      if (resp.isEmpty) {
+        reviewPagingController.error = 'No data available';
+        reviewExpenses.clear();
+        setState(() {});
+        return;
+      }
+
+      final invoices = resp['invoices'] as List;
+      
+      if (page == 1) {
+        reviewExpenses.clear();
+      }
+
+      setState(() {
+        reviewExpenses.addAll(invoices);
+      });
+
+      final isLastPage = invoices.length < pageSize;
+      if (isLastPage) {
+        reviewPagingController.appendLastPage(invoices);
+      } else {
+        reviewPagingController.appendPage(invoices, page + 1);
+      }
+
+      // Update invoice paths
+      for (var exp in reviewExpenses) {
+        exp['invoice_path'] = 
           'https://syncedblobstaging.blob.core.windows.net/invoices/${exp['invoicePdfUrl']}';
+      }
+
+      setState(() {});
+    } catch (e) {
+      reviewPagingController.error = e;
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
+      refreshController.loadComplete();
+      refreshController.refreshCompleted();
     }
-    setState(() {});
   }
 
   getProcessedExpenses(page, searchTerm) async {
+    // print('Fetching processed expenses for page: $page with searchTerm: $searchTerm');
     final resp = await ApiService.getExpenses(
         true, selectedOrgId, searchTerm, page, pageSize);
+    // print('API response for processed expenses: $resp');
+
     if (page == 1) {
       processedExpenses.clear();
     }
@@ -336,6 +467,7 @@ class _HomeScreenState extends State<HomeScreen>
         processedPagingController.appendPage(resp['invoices'], nextPageKey);
       }
     } catch (error) {
+      print('Error loading processed expenses: $error');
       processedPagingController.error = error;
     }
 
@@ -370,36 +502,48 @@ class _HomeScreenState extends State<HomeScreen>
     getOrganisations();
   }
 
-  getOrganisations() async {
+  Future<void> getOrganisations() async {
     setState(() {
       showSpinner = true;
     });
 
-    final resp = await ApiService.getOrganisations();
-    if (!resp['failed']) {
-      organisations = resp['data'];
-      if (selectedOrgId.isEmpty && organisations.isNotEmpty) {
-        selectedOrgId = organisations[0]['organisationID'];
+    try {
+      final resp = await ApiService.getOrganisations();
+      if (!resp['failed']) {
+        organisations = resp['data'];
+        if (selectedOrgId.isEmpty && organisations.isNotEmpty) {
+          selectedOrgId = organisations[0]['organisationID'];
+        }
       }
-    }
-    if (selectedOrgId.isNotEmpty) {
-      final resp = await ApiService.getDefaultCurrency(selectedOrgId);
-      setState(() {
-        defaultCurrency = resp['currency'] ?? 'USD';
-      });
-      await getUnprocessedExpenses(1, '');
-      await getProcessedExpenses(1, '');
-    } else {
+      
+      if (selectedOrgId.isNotEmpty) {
+        final currencyResp = await ApiService.getDefaultCurrency(selectedOrgId);
+        setState(() {
+          defaultCurrency = currencyResp['currency'] ?? 'USD';
+        });
+        
+        // Fix: Remove Future.wait and call methods sequentially
+        await getUnprocessedExpenses(1, reviewSearchTerm);
+        await getProcessedExpenses(1, processedSearchTerm);
+      } else {
+        setState(() {
+          showSpinner = false;
+          reviewPagingController.nextPageKey = 1;
+          processedPagingController.nextPageKey = 1;
+        });
+        refreshController.loadComplete();
+        refreshController.refreshCompleted();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select or create an organization.'))
+        );
+      }
+    } catch (e) {
       setState(() {
         showSpinner = false;
-        reviewPagingController.nextPageKey = 1;
-        processedPagingController.nextPageKey = 1;
       });
-      refreshController.loadComplete();
-      refreshController.refreshCompleted();
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-          const SnackBar(
-              content: Text('Please select or create an organization.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading organizations: ${e.toString()}'))
+      );
     }
   }
 
@@ -421,7 +565,17 @@ class _HomeScreenState extends State<HomeScreen>
       inAsyncCall: showSpinner,
       opacity: 1.0,
       color: Colors.white,
-      progressIndicator: appLoader,
+      progressIndicator: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          appLoader,
+          Lottie.asset(
+            'assets/animations/loading.json',
+            width: 300,
+            height: 300,
+          ),
+        ],
+      ),
       child: Scaffold(
           extendBody: true,
           resizeToAvoidBottomInset: false,
@@ -433,93 +587,168 @@ class _HomeScreenState extends State<HomeScreen>
             centerTitle: true,
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
               children: [
-                const SizedBox(width: 25),
+                // Left spacer
+                const SizedBox(width: 35),  // Decrease from 40 to 35
+                
+                // Center dropdown
                 SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: DropdownButtonHideUnderline(
-                        child: DropdownButton(
-                            alignment: AlignmentDirectional.center,
-                            dropdownColor: Colors.white,
-                            isExpanded: true,
-                            selectedItemBuilder: (BuildContext context) {
-                              return organisations.map<Widget>((org) {
-                                return Container(
-                                    alignment: Alignment.center,
-                                    child: Center(
-                                      child: Text(org['organisationName'],
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center),
-                                    ));
-                              }).toList();
-                            },
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black),
-                            onChanged: (value) async {
-                              if (showUploadingInvoice) {
-                                ScaffoldMessenger.of(
-                                        navigatorKey.currentContext!)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text(
-                                            'Expense currently progressing. Please wait for completion and try again')));
-                                return;
-                              }
-                              setState(() {
-                                showSpinner = true;
-                                selectedOrgId = value!;
-                              });
-                              reviewPagingController.refresh();
-                              processedPagingController.refresh();
-                            },
-                            menuWidth: MediaQuery.of(context).size.width,
-                            items: getDropdownEntries(),
-                            value: selectedOrgId))),
+                  // Increase width from 0.6 to 0.7 to show more characters
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  child: DropdownSearch<String>(
+                    dropdownButtonProps: const DropdownButtonProps(
+                      icon: SizedBox.shrink(),
+                    ),
+                    popupProps: PopupProps.dialog(
+                      showSearchBox: true,
+                      itemBuilder: (context, item, isSelected) {
+                        return ListTile(
+                          title: Text(item),
+                          selected: isSelected,
+                        );
+                      },
+                      searchFieldProps: const TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: "Search organization",
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
+                    ),
+                    items: getOrgNames(),
+                    onChanged: (String? selectedOrgName) async {
+                      if (showUploadingInvoice) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text(
+                            'Expense currently progressing. Please wait for completion and try again'
+                          ))
+                        );
+                        return;
+                      }
+
+                      if (selectedOrgName == null) return;
+
+                      try {
+                        final newOrgId = organisations.firstWhere(
+                          (org) => org['organisationName'] == selectedOrgName
+                        )['organisationID'] as String;
+                        
+                        setState(() {
+                          selectedOrgId = newOrgId;
+                          showSpinner = true;
+                        });
+
+                        // Get currency for new org
+                        final currencyResp = await ApiService.getDefaultCurrency(newOrgId);
+                        setState(() {
+                          defaultCurrency = currencyResp['currency'] ?? 'USD';
+                        });
+
+                        // Clear existing data
+                        reviewExpenses.clear();
+                        processedExpenses.clear();
+
+                        // Reset paging controllers
+                        reviewPagingController.itemList?.clear();
+                        processedPagingController.itemList?.clear();
+                        reviewPagingController.nextPageKey = 1;
+                        processedPagingController.nextPageKey = 1;
+
+                        // Get expenses for the new organization
+                        await getUnprocessedExpenses(1, reviewSearchTerm);
+                        await getProcessedExpenses(1, processedSearchTerm);
+
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error switching organization: ${e.toString()}'))
+                        );
+                      } finally {
+                        setState(() {
+                          showSpinner = false;
+                        });
+                      }
+                    },
+                    selectedItem: getSelectedOrgName(),
+                    dropdownDecoratorProps: const DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        border: InputBorder.none,
+                        fillColor: Colors.white,
+                        filled: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 0), // Remove horizontal padding
+                      ),
+                    ),
+                    dropdownBuilder: (context, selectedItem) {
+                      return Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(width: 10), // Add left padding
+                            Flexible(
+                              child: Text(
+                                selectedItem ?? '',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, size: 24),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                
+                // Right menu - keep width consistent with left spacer
                 SizedBox(
-                  width: 25,
+                  width: 35,  // Match left spacer width
                   child: PopupMenuButton<int>(
                     color: Colors.white,
                     icon: const Icon(Icons.more_vert, size: 25),
                     onSelected: (item) async {
                       switch (item) {
                         case 0:
-                          if (!await launchUrl(
-                              Uri.parse('https://help.syncedhq.com/en/'))) {
+                          if (!await launchUrl(Uri.parse('https://help.syncedhq.com/en/'))) {
                             throw Exception('Could not launch help center');
                           }
                           break;
                         case 1:
-                          final DatabaseHelper _db = DatabaseHelper();
-                          await _db.deleteUsers();
+                          final DatabaseHelper db = DatabaseHelper();
+                          await db.deleteUsers();
                           selectedOrgId = '';
                           Navigator.pushReplacement(
-                              navigatorKey.currentContext!,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginPage()));
+                            navigatorKey.currentContext!,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
                           break;
                       }
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem<int>(
-                          value: 0,
-                          child: Row(
-                            children: [
-                              Icon(Icons.business_center_outlined),
-                              SizedBox(width: 10),
-                              Text('Help Center')
-                            ],
-                          )),
+                        value: 0,
+                        child: Row(
+                          children: [
+                            Icon(Icons.business_center_outlined),
+                            SizedBox(width: 10),
+                            Text('Help Center')
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem<int>(
-                          value: 1,
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout),
-                              SizedBox(width: 10),
-                              Text('Logout')
-                            ],
-                          )),
+                        value: 1,
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout),
+                            SizedBox(width: 10),
+                            Text('Logout')
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -531,12 +760,18 @@ class _HomeScreenState extends State<HomeScreen>
                     labelColor: clickableColor,
                     unselectedLabelColor: textColor,
                     indicatorSize: TabBarIndicatorSize.tab,
-                    tabs: const [
+                    tabs: [
                       Tab(
-                        text: 'For Review',
+                        child: Text(
+                          'For Review',
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
                       Tab(
-                        text: 'Processed',
+                        child: Text(
+                          'In Processed',
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
                     ],
                     controller: tabController)
@@ -546,40 +781,48 @@ class _HomeScreenState extends State<HomeScreen>
             padding: EdgeInsets.zero,
             margin: EdgeInsets.zero,
             decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0XFFECECEC)))),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
+                ),
+              ],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
             child: BottomNavigationBar(
               items: [
                 BottomNavigationBarItem(
-                    icon: Image.asset('assets/nav_bar/expenses-grey.png',
-                        height: 25, width: 25),
-                    activeIcon: Image.asset(
-                        'assets/nav_bar/expenses-yellow.png',
-                        height: 25,
-                        width: 25),
-                    label: 'Expenses'),
+                  icon: SvgPicture.asset('assets/nav_bar/expenses-grey.svg', height: 25, width: 25),
+                  activeIcon: SvgPicture.asset('assets/nav_bar/expenses-yellow.svg', height: 25, width: 25),
+                  label: 'Expenses',
+                ),
                 BottomNavigationBarItem(
-                    icon: Image.asset('assets/nav_bar/transactions-grey.png',
-                        height: 30, width: 30),
-                    activeIcon: Image.asset(
-                        'assets/nav_bar/transactions-yellow.png',
-                        height: 30,
-                        width: 30),
-                    label: 'Transactions'),
+                  icon: SvgPicture.asset('assets/nav_bar/transactions-grey.svg', height: 25, width: 25),
+                  activeIcon: SvgPicture.asset('assets/nav_bar/transactions-yellow.svg', height: 25, width: 25),
+                  label: 'Transactions',
+                ),
               ],
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.white,
               selectedItemColor: clickableColor,
               unselectedItemColor: const Color(0XFF888888),
-              selectedFontSize: 11,
-              unselectedFontSize: 11,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
               selectedLabelStyle: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: clickableColor),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                color: clickableColor,
+              ),
               unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: Color(0XFF888888)),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                color: Color(0XFF888888),
+              ),
               showSelectedLabels: true,
               showUnselectedLabels: true,
               currentIndex: selectedNavBarIndex,
@@ -606,9 +849,10 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
-          body: showSpinner
-              ? appLoader
-              : selectedNavBarIndex == 0
+          body: Column(
+            children: [
+              Expanded(
+                child: selectedNavBarIndex == 0
                   ? SmartRefresher(
                       controller: refreshController,
                       onRefresh: () async {
@@ -616,12 +860,12 @@ class _HomeScreenState extends State<HomeScreen>
                           setState(() {
                             reviewSearchTerm = '';
                           });
-                          reviewPagingController.refresh();
+                          await getUnprocessedExpenses(1, '');
                         } else {
                           setState(() {
                             processedSearchTerm = '';
                           });
-                          processedPagingController.refresh();
+                          await getProcessedExpenses(1, '');
                         }
                       },
                       onLoading: getOrganisations,
@@ -632,9 +876,16 @@ class _HomeScreenState extends State<HomeScreen>
                         reviewExpenses: reviewExpenses,
                         processedExpenses: processedExpenses,
                         showSpinner: showSpinner,
+                        selectedOrgId: selectedOrgId,
+                        showUploadingInvoice: showUploadingInvoice,  // Pass the value
+                        uploadingData: uploadingData,  // Pass the data
                       ),
                     )
-                  : const TransactionsTabScreen()),
-    );
-  }
+                  : const TransactionsTabScreen(),
+              ),
+            ],
+          ),
+        ),
+    ); 
+  } 
 }

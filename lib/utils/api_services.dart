@@ -357,25 +357,58 @@ class ApiService {
     }
   }
 
-  static Future<Map> publishReceipt(receipt) async {
-    var headers = {
-      'Accept': 'application/json, text/plain, */*',
-      'Access-Control-Expose-Headers': 'authorization',
-      'authorization': 'Bearer ${User.authToken}',
-      'content-type': 'application/json',
-    };
-    var request =
-        http.Request('POST', Uri.parse('$hostUrl/api/Invoices/PublishReceipt'));
-    request.body = json.encode(receipt);
-    request.headers.addAll(headers);
+  static Future<dynamic> publishReceipt(Map<String, dynamic> receipt) async {
+    try {
+        var headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Access-Control-Expose-Headers': 'authorization',
+            'authorization': 'Bearer ${User.authToken}',
+            'content-type': 'application/json',
+        };
 
-    http.StreamedResponse response = await request.send();
+        var request = http.Request(
+            'POST', 
+            Uri.parse('$hostUrl/api/Invoices/publishReceipt')
+        );
+        
+        request.body = jsonEncode(receipt);
+        request.headers.addAll(headers);
 
-    if (response.statusCode == 200) {
-      return {'message': 'Expense published successfully'};
-    } else {
-      print('Error - ${response.statusCode}');
-      return {};
+        // Print the request body
+        JsonEncoder encoder = new JsonEncoder.withIndent('  ');
+        String prettyPrint = encoder.convert(jsonDecode(request.body));
+        print('Request body: $prettyPrint');
+
+        http.StreamedResponse response = await request.send();
+        var responseBody = await response.stream.bytesToString();
+        
+        print('Server response code: ${response.statusCode}');
+        print('Server response body: $responseBody');
+
+        if (response.statusCode == 200) {
+            // If response is a valid UUID string, return it directly
+            if (responseBody.startsWith('"') && responseBody.endsWith('"')) {
+                return responseBody.substring(1, responseBody.length - 1);
+            }
+            // Otherwise try to parse as JSON
+            try {
+                return jsonDecode(responseBody);
+            } catch (e) {
+                return responseBody;
+            }
+        } 
+
+        // Parse error response
+        try {
+            var errorResponse = jsonDecode(responseBody);
+            throw Exception(errorResponse['Message'] ?? 'Failed to publish receipt');
+        } catch (e) {
+            throw Exception('Failed to publish receipt: $responseBody');
+        }
+
+    } catch (e) {
+        print('API error: $e');
+        rethrow;
     }
   }
 
@@ -420,6 +453,7 @@ class ApiService {
     if (response.statusCode == 200) {
       var res = await response.stream.bytesToString();
       var jsonRes = jsonDecode(res);
+      print('SUCCESS CODE BY ID - ${jsonRes['paymentAccountName']}');
       return jsonRes;
     } else {
       print('Get invoice by id API - ${response.reasonPhrase}');
@@ -612,7 +646,7 @@ class ApiService {
     var request = http.Request(
         'GET',
         Uri.parse(
-            '$hostUrl/api/Organisation/getOrganizationDefaultCurrency?id=ee437f5b-8067-419e-9492-715314225cd3'));
+            '$hostUrl/api/Organisation/getOrganizationDefaultCurrency?id=$orgId'));
 
     request.headers.addAll(headers);
 

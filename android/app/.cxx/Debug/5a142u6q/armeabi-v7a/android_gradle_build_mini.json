@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/samwill/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/samwill/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/samwill/development/synced-mobile-app/android/app/.cxx/Debug/5a142u6q/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/samwill/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/samwill/development/synced-mobile-app/android/app/.cxx/Debug/5a142u6q/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

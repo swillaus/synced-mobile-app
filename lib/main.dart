@@ -11,6 +11,7 @@ import 'package:synced/screens/home/home_screen.dart';
 import 'package:synced/utils/constants.dart';
 import 'package:synced/utils/database_helper.dart';
 import 'package:synced/utils/dynamic_link_handler.dart';
+import 'package:flutter_svg/flutter_svg.dart';  // Add this import
 
 String selectedOrgId = '';
 String defaultCurrency = 'USD';
@@ -121,158 +122,155 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return OnBoardingSlider(
-      imageVerticalOffset: -50,
+      imageVerticalOffset: 0,
       centerBackground: true,
       hasSkip: true,
       skipFunctionOverride: () => Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const LoginPage(),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      ),
+      skipTextButton: Text(
+        'Skip',
+        style: TextStyle(
+          color: textColor.withOpacity(0.7),
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
       ),
-      skipTextButton: Text('Skip',
-          style: TextStyle(
-              color: textColor, fontSize: 16, fontWeight: FontWeight.w500)),
       onFinish: () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          ),
+          MaterialPageRoute(builder: (context) => const LoginPage()),
         );
       },
-      finishButtonText: '➔',
       finishButtonStyle: FinishButtonStyle(
         shape: const CircleBorder(),
         backgroundColor: clickableColor,
       ),
-      finishButtonTextStyle: const TextStyle(color: Colors.white, fontSize: 18),
+      finishButtonText: '→',
+      finishButtonTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 24,
+        fontWeight: FontWeight.w300,
+      ),
       controllerColor: clickableColor,
       totalPage: 3,
       headerBackgroundColor: Colors.white,
       pageBackgroundColor: Colors.white,
       background: [
-        Image.asset(
-          'assets/onboarding/onboarding_screen_1.png',
-          height: 600,
+        Container(
+          padding: const EdgeInsets.only(bottom: 60),
+          child: SvgPicture.asset(
+            'assets/onboarding/onboarding_screen_1.svg',
+            height: 400,
+            placeholderBuilder: (context) => Container(
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
         ),
-        Image.asset(
-          'assets/onboarding/onboarding_screen_2.png',
-          height: 600,
+        Container(
+          padding: const EdgeInsets.only(bottom: 60),
+          child: SvgPicture.asset(
+            'assets/onboarding/onboarding_screen_2.svg',
+            height: 400,
+            placeholderBuilder: (context) => Container(
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
         ),
-        Image.asset(
-          'assets/onboarding/onboarding_screen_3.png',
-          height: 600,
+        Container(
+          padding: const EdgeInsets.only(bottom: 60),
+          child: SvgPicture.asset(
+            'assets/onboarding/onboarding_screen_3.svg',
+            height: 400,
+            placeholderBuilder: (context) => Container(
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
         ),
       ],
-      speed: 1.8,
+      speed: 1.5, // Slightly slower for smoother transitions
       pageBodies: [
-        Container(
-          alignment: Alignment.centerLeft,
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(
-                height: 450,
-              ),
-              Text(
-                'Scan Receipts With Ease',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              Text(
-                'Quickly capture and upload your receipts directly from your phone.',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        _buildOnboardingPage(
+          'Scan Receipts With Ease',
+          'Quickly capture and upload your receipts directly from your phone.',
         ),
-        Container(
-          alignment: Alignment.centerLeft,
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(
-                height: 450,
-              ),
-              Text(
-                'Organize Your Expenses',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              Text(
-                'Automatically categorize and consolidate receipts into detailed reports.',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        _buildOnboardingPage(
+          'Organize Your Expenses',
+          'Automatically categorize and consolidate receipts into detailed reports.',
         ),
-        Container(
-          alignment: Alignment.centerLeft,
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(
-                height: 450,
-              ),
-              Text(
-                'Submit and Get Reimbursed',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              Text(
-                'Generate professional reports and send them for approval or payment in just a few taps.',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        _buildOnboardingPage(
+          'Submit and Get Reimbursed',
+          'Generate professional reports and send them for approval or payment in just a few taps.',
         ),
       ],
+    );
+  }
+
+  Widget _buildOnboardingPage(String title, String description) {
+    return Container(
+      alignment: Alignment.center,
+      width: MediaQuery.of(context).size.width,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 28.0,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.8),
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
     );
   }
 }

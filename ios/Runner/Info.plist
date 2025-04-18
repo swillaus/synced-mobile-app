@@ -19,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>1.1.2</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>2</string>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 	<key>LSApplicationCategoryType</key>
@@ -39,8 +39,12 @@
 	<string>App needs access to the storage to save images and pdf of invoices</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed to capture new expense pictures</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed for audio recording features</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>App needs access to photo library to add images of saved expenses</string>
+	<key>NSSupportsCameraCapture</key>
+	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -59,5 +63,7 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

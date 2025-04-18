@@ -82,7 +82,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           fontWeight: FontWeight.w500)),
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                Text('Enter your email',
+                Text('Email',
                     style: TextStyle(
                         color: headingColor,
                         fontSize: 14,

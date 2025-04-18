@@ -137,7 +137,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 const SizedBox(height: 15),
                 ElevatedButton(
                   style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0))),
                       fixedSize: WidgetStateProperty.all(Size(
@@ -222,7 +222,7 @@ class _PasswordChangedState extends State<PasswordChanged> {
             const SizedBox(height: 15),
             ElevatedButton(
               style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0))),
                   fixedSize: WidgetStateProperty.all(Size(

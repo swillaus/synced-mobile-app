@@ -38,18 +38,19 @@ android {
 
     signingConfigs {
         debug {
-            keyAlias 'syncedhq'
-            keyPassword 'syncedhq'
-            storeFile file('release.jks')
-            storePassword 'syncedhq'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+            storeFile file('debug.keystore')  // Corrected path for debug.keystore
+            storePassword 'android'
         }
         release {
             keyAlias 'syncedhq'
             keyPassword 'syncedhq'
-            storeFile file('release.jks')
+            storeFile file('release.jks')  // Correct path for release keystore
             storePassword 'syncedhq'
         }
     }
+
 
     buildTypes {
         release {
