@@ -606,20 +606,23 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Supplier name widget: your existing logic to show a text field or a row with an icon if it exists
   Widget _buildSupplierWidget() {
-  return TextField(
-    enabled: !widget.isProcessed! && !isPublishing,
-    controller: supplierController,
-    keyboardType: TextInputType.none,
-    decoration: dropdownInputDecoration.copyWith(
-      hintText: supplierController.text.isEmpty ? 'Select Supplier' : null,
-      hintStyle: const TextStyle(color: Colors.grey),
-    ),
-    onTap: _showSupplierBottomSheet,
-    maxLines: null,
-    minLines: 1,
-    textAlign: TextAlign.left,
-  );
-}
+    return TextField(
+      enabled: !widget.isProcessed! && !isPublishing,
+      controller: supplierController,
+      keyboardType: TextInputType.none,
+      decoration: dropdownInputDecoration.copyWith(
+        hintText: supplierController.text.isEmpty ? 'Select Supplier' : null,
+        hintStyle: const TextStyle(color: Colors.grey),
+      ),
+      onTap: _showSupplierBottomSheet,
+      maxLines: 1, // Force single line
+      minLines: 1,
+      textAlign: TextAlign.left,
+      style: const TextStyle(
+        overflow: TextOverflow.ellipsis, // Truncate with ellipsis if too long
+      ),
+    );
+  }
 
   void _showSupplierBottomSheet() {
     // Same logic you had for showing suppliers
@@ -692,9 +695,18 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () async {
-                          await _handleSupplierSelection(index);
+                          // Immediately update UI and close the bottom sheet
+                          selectedSupplier = filteredSuppliers[index];
+                          supplierController.text = selectedSupplier!['name'];
+                          setState(() {
+                            supplierSearchController.clear();
+                            filteredSuppliers = suppliers;
+                            supplierController.text = selectedSupplier!['name'];
+                          });
                           Navigator.pop(context);
-                          preparePage();
+
+                          // Now perform the API update in the background (no await here)
+                          _handleSupplierSelection(index);
                         },
                         child: _buildSupplierListTile(index),
                       );
@@ -715,113 +727,119 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
   }
 
   Future<void> _handleSupplierSelection(int index) async {
-    if (filteredSuppliers[index]['name'].startsWith('+ Add ')) {
-      if (supplierSearchController.text.isNotEmpty) {
-        final resp = await ApiService.createSupplier(supplierSearchController.text);
-        selectedSupplier = {
-          'id': resp['supplierId'],
-          'name': supplierSearchController.text,
-        };
-        supplierController.text = supplierSearchController.text;
-      } else {
-        final resp = await ApiService.createSupplier(
-          filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', ''),
-        );
-        selectedSupplier = {
-          'id': resp['supplierId'],
-          'name': filteredSuppliers[index]['name']
+    try {
+      // Only perform API update and state sync here
+      if (filteredSuppliers[index]['name'].startsWith('+ Add ')) {
+        if (supplierSearchController.text.isNotEmpty) {
+          final resp = await ApiService.createSupplier(supplierSearchController.text);
+          selectedSupplier = {
+            'id': resp['supplierId'],
+            'name': supplierSearchController.text,
+          };
+          supplierController.text = supplierSearchController.text;
+        } else {
+          final resp = await ApiService.createSupplier(
+            filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', ''),
+          );
+          selectedSupplier = {
+            'id': resp['supplierId'],
+            'name': filteredSuppliers[index]['name']
+                .toString()
+                .replaceAll('+ Add ', ''),
+          };
+          supplierController.text = filteredSuppliers[index]['name']
               .toString()
-              .replaceAll('+ Add ', ''),
-        };
-        supplierController.text = filteredSuppliers[index]['name']
-            .toString()
-            .replaceAll('+ Add ', '');
+              .replaceAll('+ Add ', '');
+        }
       }
-    } else {
-      selectedSupplier = filteredSuppliers[index];
-    }
 
-    setState(() {
-      supplierSearchController.clear();
-      filteredSuppliers = suppliers;
-    });
+      updatedExpense['supplierName'] = selectedSupplier!['name'];
+      updatedExpense['supplierId'] = selectedSupplier!['id'];
 
-    updatedExpense['supplierName'] = selectedSupplier!['name'];
-    updatedExpense['supplierId'] = selectedSupplier!['id'];
-
-    FocusManager.instance.primaryFocus?.unfocus();
-    final resp = await ApiService.updateExpense(updatedExpense);
-    setState(() {
-      showSpinner = false;
-    });
-    if (resp.isNotEmpty) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      final resp = await ApiService.updateExpense(updatedExpense);
       setState(() {
-        updatedExpense = updatedExpense;
+        showSpinner = false;
+        if (resp.isNotEmpty) {
+          expense['supplierName'] = selectedSupplier!['name'];
+        }
       });
+      if (resp.isNotEmpty) {
+        setState(() {
+          updatedExpense = updatedExpense;
+        });
+        ScaffoldMessenger.of(navigatorKey.currentContext!)
+            .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+      } else {
+        setState(() {
+          updatedExpense = widget.expense;
+        });
+        ScaffoldMessenger.of(navigatorKey.currentContext!)
+            .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+      }
+    } catch (e, st) {
+      debugPrint('Error updating supplier: $e\n$st');
       ScaffoldMessenger.of(navigatorKey.currentContext!)
-          .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-    } else {
+        .showSnackBar(const SnackBar(content: Text('An error occurred. Please try again.')));
       setState(() {
-        updatedExpense = widget.expense;
+        showSpinner = false;
       });
-      ScaffoldMessenger.of(navigatorKey.currentContext!)
-          .showSnackBar(const SnackBar(content: Text('Failed to update.')));
     }
   }
 
   Widget _buildSupplierListTile(int index) {
-  bool isSelected = (selectedSupplier?['id'] == filteredSuppliers[index]['id'] &&
-      !filteredSuppliers[index]['name'].toString().startsWith('+ Add'));
-  bool isNewSupplier = filteredSuppliers[index]['name'].toString().startsWith('+ Add');
-  
-  return Container(
-    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-    height: 50,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              if (isNewSupplier) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0XFF009318).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
+    bool isSelected = (selectedSupplier?['id'] == filteredSuppliers[index]['id'] &&
+        !filteredSuppliers[index]['name'].toString().startsWith('+ Add'));
+    bool isNewSupplier = filteredSuppliers[index]['name'].toString().startsWith('+ Add');
+    
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+      height: 50,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                if (isNewSupplier) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0XFF009318).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'New',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0XFF009318),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  child: const Text(
-                    'New',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0XFF009318),
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 8),
+                ],
+                Flexible(
+                  child: Text(
+                    isNewSupplier 
+                        ? filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', '')
+                        : filteredSuppliers[index]['name'],
+                    style: const TextStyle(
+                      fontSize: 14, 
+                      fontWeight: FontWeight.w500,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
               ],
-              Flexible(
-                child: Text(
-                  isNewSupplier 
-                      ? filteredSuppliers[index]['name'].toString().replaceAll('+ Add ', '')
-                      : filteredSuppliers[index]['name'],
-                  style: const TextStyle(
-                    fontSize: 14, 
-                    fontWeight: FontWeight.w500,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        if (isSelected)
-          const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
-      ],
-    ),
-  );
-}
+          if (isSelected)
+            const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
+        ],
+      ),
+    );
+  }
 
   /// Date field logic
   Widget _buildDateWidget() {
@@ -1004,12 +1022,12 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
       decoration: dropdownInputDecoration.copyWith(
         hintText: 'Select Account',
         hintStyle: const TextStyle(color: Colors.grey),
-        // Add contentPadding to ensure text doesn't overlap with the dropdown icon
         contentPadding: const EdgeInsets.fromLTRB(8, 4, 40, 4),
       ),
       maxLines: 1,
+      minLines: 1,
       onTap: _showAccountBottomSheet,
-      textAlign: TextAlign.left, // Ensure left alignment
+      textAlign: TextAlign.left,
       style: const TextStyle(
         overflow: TextOverflow.ellipsis,
       ),
@@ -1152,75 +1170,86 @@ class _UpdateExpenseDataState extends State<UpdateExpenseData> {
 
   /// Paid form logic
   Widget _buildPaidFormWidget() {
-  return TextField(
-    enabled: !widget.isProcessed! && !isPublishing,
-    keyboardType: TextInputType.none,
-    controller: paidFormController,
-    decoration: dropdownInputDecoration.copyWith(
-      hintText: 'Select Payment Account',
-      hintStyle: const TextStyle(color: Colors.grey),
-      // Add contentPadding to ensure text doesn't overlap with the dropdown icon
-      contentPadding: const EdgeInsets.fromLTRB(8, 4, 40, 4),
-    ),
-    maxLines: 1,
-    onTap: _showPaidFromBottomSheet,
-    textAlign: TextAlign.left, // Ensure left alignment
-    style: const TextStyle(
-      overflow: TextOverflow.ellipsis,
-    ),
-  );
-}
+    return TextField(
+      enabled: !widget.isProcessed! && !isPublishing,
+      keyboardType: TextInputType.none,
+      controller: paidFormController,
+      decoration: dropdownInputDecoration.copyWith(
+        hintText: 'Select Payment Account',
+        hintStyle: const TextStyle(color: Colors.grey),
+        contentPadding: const EdgeInsets.fromLTRB(8, 4, 40, 4),
+      ),
+      maxLines: 1,
+      minLines: 1,
+      onTap: _showPaidFromBottomSheet,
+      textAlign: TextAlign.left,
+      style: const TextStyle(
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
 
-void _showPaidFromBottomSheet() {
-  showModalBottomSheet(
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) => Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          padding: const EdgeInsets.all(20),
-          height: MediaQuery.of(context).size.height * 0.9,
-          width: double.maxFinite,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.separated(
-                  separatorBuilder: (context, index) => const Divider(),
-                  shrinkWrap: true,
-                  itemCount: bankDetails.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () async {
-                        // Close bottom sheet immediately
-                        Navigator.pop(context);
+  void _showPaidFromBottomSheet() {
+    showModalBottomSheet(
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.all(20),
+            height: MediaQuery.of(context).size.height * 0.9,
+            width: double.maxFinite,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.separated(
+                    separatorBuilder: (context, index) => const Divider(),
+                    shrinkWrap: true,
+                    itemCount: bankDetails.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () async {
+                          // Close bottom sheet immediately
+                          Navigator.pop(context);
 
-                        // Update UI state and selectedCard
-                        setState(() {
-                          selectedPaidFrom = bankDetails[index];
-                          selectedCard = {
-                            'accountID': bankDetails[index]['accountID'],
-                            'name': bankDetails[index]['name'],
-                            'bankAccountNumber': bankDetails[index]['bankAccountNumber'],
-                            'currencyCode': selectedCurrency,
-                            'type': 'BANK'
-                          };
-                          paidFormController.text = bankDetails[index]['name'];
-                          updatedExpense['paymentAccountNumber'] = bankDetails[index]['accountID'];
-                          updatedExpense['paymentAccountName'] = bankDetails[index]['name'];
-                        });
+                          // Update UI state and selectedCard
+                          setState(() {
+                            selectedPaidFrom = bankDetails[index];
+                            selectedCard = {
+                              'accountID': bankDetails[index]['accountID'],
+                              'name': bankDetails[index]['name'],
+                              'bankAccountNumber': bankDetails[index]['bankAccountNumber'],
+                              'currencyCode': selectedCurrency,
+                              'type': 'BANK'
+                            };
+                            paidFormController.text = bankDetails[index]['name'];
+                            updatedExpense['paymentAccountNumber'] = bankDetails[index]['accountID'];
+                            updatedExpense['paymentAccountName'] = bankDetails[index]['name'];
+                          });
 
-                        // Make API call in background
-                        try {
-                          final resp = await ApiService.updateExpense(updatedExpense);
-                          if (resp.isNotEmpty) {
-                            ScaffoldMessenger.of(navigatorKey.currentContext!)
-                                .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
-                          } else {
+                          // Make API call in background
+                          try {
+                            final resp = await ApiService.updateExpense(updatedExpense);
+                            if (resp.isNotEmpty) {
+                              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                  .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
+                            } else {
+                              setState(() {
+                                selectedPaidFrom = null;
+                                selectedCard = null;
+                                updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
+                                updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
+                                paidFormController.text = widget.expense['paymentAccountName'] ?? '';
+                              });
+                              ScaffoldMessenger.of(navigatorKey.currentContext!)
+                                  .showSnackBar(const SnackBar(content: Text('Failed to update.')));
+                            }
+                          } catch (e) {
                             setState(() {
                               selectedPaidFrom = null;
                               selectedCard = null;
@@ -1231,55 +1260,44 @@ void _showPaidFromBottomSheet() {
                             ScaffoldMessenger.of(navigatorKey.currentContext!)
                                 .showSnackBar(const SnackBar(content: Text('Failed to update.')));
                           }
-                        } catch (e) {
-                          setState(() {
-                            selectedPaidFrom = null;
-                            selectedCard = null;
-                            updatedExpense['paymentAccountNumber'] = widget.expense['paymentAccountNumber'];
-                            updatedExpense['paymentAccountName'] = widget.expense['paymentAccountName'];
-                            paidFormController.text = widget.expense['paymentAccountName'] ?? '';
-                          });
-                          ScaffoldMessenger.of(navigatorKey.currentContext!)
-                              .showSnackBar(const SnackBar(content: Text('Failed to update.')));
-                        }
-                      },
-                      child: _buildPaidFromListTile(index),
-                    );
-                  },
+                        },
+                        child: _buildPaidFromListTile(index),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-Widget _buildPaidFromListTile(int index) {
-  bool isSelected = (selectedPaidFrom != null &&
-      selectedPaidFrom!['accountID'] == bankDetails[index]['accountID']);
-  
-  return Container(
-    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-    height: 50,
-    child: isSelected
-      ? Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              bankDetails[index]['name'],
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ],
             ),
-            const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
-          ],
-        )
-      : Text(
-          bankDetails[index]['name'],
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-  );
-}
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaidFromListTile(int index) {
+    bool isSelected = (selectedPaidFrom != null &&
+        selectedPaidFrom!['accountID'] == bankDetails[index]['accountID']);
+    
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+      height: 50,
+      child: isSelected
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                bankDetails[index]['name'],
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const Icon(Icons.check_circle_outline, color: Colors.green, size: 25),
+            ],
+          )
+        : Text(
+            bankDetails[index]['name'],
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+    );
+  }
 
   /// Description logic
   Widget _buildDescriptionWidget() {
@@ -1320,17 +1338,15 @@ Widget _buildPaidFromListTile(int index) {
 
     try {
       final resp = await ApiService.updateExpense(updatedExpense);
-      
       if (resp.isNotEmpty) {
         setState(() {
           expense = resp;
-          descriptionController.clear(); // Clear the input field after successful submission
+          descriptionController.text = updatedExpense['description'] ?? '';
         });
         ScaffoldMessenger.of(navigatorKey.currentContext!)
           .showSnackBar(const SnackBar(content: Text('Updated successfully.')));
       } else {
         setState(() {
-          // Revert changes if update failed
           descriptionController.text = expense['description'] ?? '';
           updatedExpense['description'] = expense['description'];
           updatedExpense['invoiceLines'][0]['description'] = expense['description'];
@@ -1338,6 +1354,11 @@ Widget _buildPaidFromListTile(int index) {
         ScaffoldMessenger.of(navigatorKey.currentContext!)
           .showSnackBar(const SnackBar(content: Text('Failed to update.')));
       }
+    } catch (e, st) {
+      // Log error (optional)
+      debugPrint('Error updating description: $e\n$st');
+      ScaffoldMessenger.of(navigatorKey.currentContext!)
+        .showSnackBar(const SnackBar(content: Text('An error occurred. Please try again.')));
     } finally {
       setState(() {
         showSpinner = false;
@@ -1483,66 +1504,66 @@ Widget _buildPaidFromListTile(int index) {
 
   /// Tax chip row
   Widget _buildTaxChipRow() {
-  final bool isDisabled = widget.isProcessed! || isPublishing;
-  
-  return Container(
-    decoration: BoxDecoration(
-      color: isDisabled ? const Color(0xFFF5F5F5) : const Color(0XFFF2FFF5),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(
-        color: isDisabled ? Colors.grey : const Color(0XFF009318),
-        width: 1
-      ),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Includes Tax',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDisabled ? Colors.grey : Colors.black87,
-          ),
+    final bool isDisabled = widget.isProcessed! || isPublishing;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDisabled ? const Color(0xFFF5F5F5) : const Color(0XFFF2FFF5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDisabled ? Colors.grey : const Color(0XFF009318),
+          width: 1
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${selectedCurrency != null ? NumberFormat().simpleCurrencySymbol(selectedCurrency!) : ''}'
-              '${NumberFormat("#,##0.00").format(_calculateTaxAmount())}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDisabled ? Colors.grey : Colors.black87,
-              ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Includes Tax',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDisabled ? Colors.grey : Colors.black87,
             ),
-            if (!isDisabled) ...[
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => _showTaxDialog(context),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0XFF009318).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.edit_outlined,
-                    color: Color(0XFF009318),
-                    size: 16,
-                  ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${selectedCurrency != null ? NumberFormat().simpleCurrencySymbol(selectedCurrency!) : ''}'
+                '${NumberFormat("#,##0.00").format(_calculateTaxAmount())}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDisabled ? Colors.grey : Colors.black87,
                 ),
               ),
-            ]
-          ],
-        ),
-      ],
-    ),
-  );
-}
+              if (!isDisabled) ...[
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => _showTaxDialog(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0XFF009318).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      color: Color(0XFF009318),
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   double _calculateTaxAmount() {
     if (selectedTaxRate != null) {
@@ -1931,7 +1952,110 @@ Widget _buildPaidFromListTile(int index) {
       );
     }
 
-    // Return regular table row for other fields
+    // For Account and Paid Form, show "New" badge if user text doesn't match any existing option
+    if (label == "Account") {
+      bool isNewAccount = accountController.text.isNotEmpty &&
+        !paymentAccounts.any((a) => a['name'] == accountController.text);
+      return TableRow(
+        children: [
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isNewAccount) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0XFFFEF0C7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'New',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0XFFDC6803),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: widgetOnRight,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (label == "Paid Form") {
+      bool isNewPaidForm = paidFormController.text.isNotEmpty &&
+        !bankDetails.any((b) => b['name'] == paidFormController.text);
+      return TableRow(
+        children: [
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isNewPaidForm) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0XFFFEF0C7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'New',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0XFFDC6803),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: widgetOnRight,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Default for all other fields
     return TableRow(
       children: [
         TableCell(
